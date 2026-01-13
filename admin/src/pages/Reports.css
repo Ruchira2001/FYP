@@ -1,0 +1,106 @@
+/* ===================================
+   REPORTS PAGE STYLES
+   =================================== */
+
+.reports-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+/* Stats Row */
+.reports-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-5);
+}
+
+/* Full Width Chart */
+.chart-card.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Charts Row */
+.reports-charts-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: var(--space-5);
+}
+
+/* Disease Name Cell */
+.disease-name-cell {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-forest-green);
+}
+
+.count-cell {
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Trend Badge */
+.trend-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    border-radius: var(--radius-sm);
+}
+
+.trend-badge.up {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--color-success);
+}
+
+.trend-badge.down {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--color-error);
+}
+
+/* Status Badges */
+[class^="status-badge-"] {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    border-radius: var(--radius-full);
+}
+
+.status-badge-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--color-success);
+}
+
+.status-badge-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--color-warning);
+}
+
+.status-badge-info {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--color-info);
+}
+
+/* Chart Legend */
+.chart-card .chart-legend {
+    display: flex;
+    gap: var(--space-4);
+}
+
+/* Responsive */
+@media (max-width: 1280px) {
+    .reports-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .reports-charts-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .reports-stats {
+        grid-template-columns: 1fr;
+    }
+}
