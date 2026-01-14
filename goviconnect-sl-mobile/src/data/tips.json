@@ -1,0 +1,100 @@
+{
+    "tips": [
+        {
+            "id": "tip-1",
+            "type": "tip",
+            "title": "Water efficiently",
+            "titleSi": "කාර්යක්ෂමව ජලය දෙන්න",
+            "content": "Water your crops early morning (6-8 AM) to reduce evaporation and allow leaves to dry before evening.",
+            "contentSi": "වාෂ්පීකරණය අඩු කිරීමට සහ සවස් වරුවට පෙර කොළ වියළීමට ඉඩ දීමට ඔබේ බෝගවලට උදේ (උ.ව. 6-8) ජලය දෙන්න.",
+            "category": "watering",
+            "crop": null
+        },
+        {
+            "id": "tip-2",
+            "type": "tip",
+            "title": "Mulching benefits",
+            "titleSi": "වසු ව්‍යාප්තියේ ප්‍රයෝජන",
+            "content": "Apply organic mulch around plants to retain moisture, suppress weeds, and regulate soil temperature.",
+            "contentSi": "තෙතමනය රඳවා ගැනීමට, වල් මර්දනය කිරීමට, සහ පස් උෂ්ණත්වය නියාමනය කිරීමට ශාක වටා කාබනික වසු තට්ටුවක් යොදන්න.",
+            "category": "general",
+            "crop": null
+        },
+        {
+            "id": "tip-3",
+            "type": "tip",
+            "title": "Rotate your crops",
+            "titleSi": "ඔබේ බෝග මාරු කරන්න",
+            "content": "Rotate crops each season to prevent soil-borne diseases and maintain soil fertility.",
+            "contentSi": "පසෙන් පැතිරෙන රෝග වැළැක්වීමට සහ පසෙහි සාරවත් බව පවත්වා ගැනීමට සෑම කන්නයකම බෝග මාරු කරන්න.",
+            "category": "planting",
+            "crop": null
+        },
+        {
+            "id": "tip-4",
+            "type": "tip",
+            "title": "Natural pest control",
+            "titleSi": "ස්වභාවික පළිබෝධ පාලනය",
+            "content": "Plant marigolds near vegetables to naturally repel aphids and other pests.",
+            "contentSi": "ඇෆිඩ් සහ අනෙකුත් පළිබෝධකයන් ස්වභාවිකව පලවා හැරීමට එළවළු අසල මැරිගෝල්ඩ් සිටුවන්න.",
+            "category": "pest_control",
+            "crop": "vegetables"
+        },
+        {
+            "id": "tip-5",
+            "type": "tip",
+            "title": "Tea fertilization",
+            "titleSi": "තේ පොහොර යෙදීම",
+            "content": "Apply NPK fertilizer in splits - 40% in March/April and 60% in September/October for tea.",
+            "contentSi": "තේ සඳහා NPK පොහොර කොටස් වශයෙන් යොදන්න - 40% මාර්තු/අප්‍රේල් මාසයේදී සහ 60% සැප්තැම්බර්/ඔක්තෝබර් මාසයේදී.",
+            "category": "fertilizing",
+            "crop": "tea"
+        }
+    ],
+    "feedItems": [
+        {
+            "id": "feed-1",
+            "type": "tip",
+            "title": "Today's Tip: Protect from Sun",
+            "titleSi": "අද ඉඟිය: හිරු එළියෙන් ආරක්ෂා කරන්න",
+            "content": "Use shade cloth (40-50%) for seedlings during peak summer to prevent heat stress.",
+            "contentSi": "තාප ආතතිය වැළැක්වීමට උපරිම ගිම්හානයේදී පැළ සඳහා සෙවන රෙදි (40-50%) භාවිතා කරන්න.",
+            "timestamp": "2026-01-14T06:00:00.000Z",
+            "image": null
+        },
+        {
+            "id": "feed-2",
+            "type": "guide",
+            "title": "New Guide: Organic Composting",
+            "titleSi": "නව මාර්ගෝපදේශය: කාබනික කොම්පෝස්ට්",
+            "content": "Learn how to create nutrient-rich compost from kitchen waste and garden debris.",
+            "contentSi": "මුළුතැන්ගේ අපද්‍රව්‍ය සහ වත්ත කසල වලින් පෝෂ්‍ය පොහොසත් කොම්පෝස්ට් නිර්මාණය කරන ආකාරය ඉගෙන ගන්න.",
+            "timestamp": "2026-01-13T10:00:00.000Z",
+            "guideId": "organic-composting",
+            "image": null
+        },
+        {
+            "id": "feed-3",
+            "type": "meeting",
+            "title": "Upcoming: Organic Farming Session",
+            "titleSi": "ඉදිරි: කාබනික ගොවිතැන් සැසිය",
+            "content": "Join Dr. Kamal Perera for a live session on organic farming techniques this Saturday.",
+            "contentSi": "මෙම සෙනසුරාදා කාබනික ගොවිතැන් ක්‍රම පිළිබඳ සජීවී සැසියකට ආචාර්ය කමල් පෙරේරා සමඟ එක්වන්න.",
+            "timestamp": "2026-01-14T08:00:00.000Z",
+            "meetingId": "session-1",
+            "image": null
+        },
+        {
+            "id": "feed-4",
+            "type": "saved",
+            "title": "Continue: Tea Cultivation Guide",
+            "titleSi": "දිගටම: තේ වගා මාර්ගෝපදේශය",
+            "content": "You're 60% through the tea cultivation best practices guide. Pick up where you left off!",
+            "contentSi": "ඔබ තේ වගාවේ හොඳම පිළිවෙත් මාර්ගෝපදේශයේ 60% ක් අවසන් කර ඇත. ඔබ නතර කළ තැනින් ආරම්භ කරන්න!",
+            "timestamp": "2026-01-12T15:00:00.000Z",
+            "guideId": "tea-guide",
+            "progress": 60,
+            "image": null
+        }
+    ]
+}

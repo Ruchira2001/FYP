@@ -1,0 +1,81 @@
+{
+    "upcomingSessions": [
+        {
+            "id": "session-1",
+            "title": "Organic Farming Techniques",
+            "titleSi": "කාබනික ගොවිතැන් ක්‍රම",
+            "expertId": "expert-1",
+            "expertName": "Dr. Kamal Perera",
+            "expertAvatar": null,
+            "dateTime": "2026-01-20T10:00:00.000Z",
+            "duration": 60,
+            "description": "Learn sustainable organic farming practices for vegetables",
+            "descriptionSi": "එළවළු සඳහා තිරසාර කාබනික ගොවිතැන් පිළිවෙත් ඉගෙනගන්න",
+            "attendees": 45,
+            "maxAttendees": 100,
+            "meetingLink": "https://meet.example.com/session1"
+        },
+        {
+            "id": "session-2",
+            "title": "Pest Management for Paddy",
+            "titleSi": "වී සඳහා පළිබෝධ කළමනාකරණය",
+            "expertId": "expert-2",
+            "expertName": "Prof. Nimal Silva",
+            "expertAvatar": null,
+            "dateTime": "2026-01-22T14:00:00.000Z",
+            "duration": 45,
+            "description": "Integrated pest management strategies for rice cultivation",
+            "descriptionSi": "වී වගාව සඳහා ඒකාබද්ධ පළිබෝධ කළමනාකරණ උපාය මාර්ග",
+            "attendees": 32,
+            "maxAttendees": 80,
+            "meetingLink": "https://meet.example.com/session2"
+        },
+        {
+            "id": "session-3",
+            "title": "Tea Estate Management",
+            "titleSi": "තේ වත්ත කළමනාකරණය",
+            "expertId": "expert-3",
+            "expertName": "Dr. Anura Jayasinghe",
+            "expertAvatar": null,
+            "dateTime": "2026-01-25T09:00:00.000Z",
+            "duration": 90,
+            "description": "Best practices for tea cultivation and processing",
+            "descriptionSi": "තේ වගාව සහ සැකසුම සඳහා හොඳම පිළිවෙත්",
+            "attendees": 28,
+            "maxAttendees": 50,
+            "meetingLink": "https://meet.example.com/session3"
+        },
+        {
+            "id": "session-4",
+            "title": "Market Price Trends 2026",
+            "titleSi": "2026 වෙළඳපොළ මිල ප්‍රවණතා",
+            "expertId": "expert-4",
+            "expertName": "Mrs. Kumari Fernando",
+            "expertAvatar": null,
+            "dateTime": "2026-01-28T11:00:00.000Z",
+            "duration": 45,
+            "description": "Understanding agricultural market trends and pricing strategies",
+            "descriptionSi": "කෘෂිකාර්මික වෙළඳපොළ ප්‍රවණතා සහ මිල ගණන් උපාය මාර්ග තේරුම් ගැනීම",
+            "attendees": 67,
+            "maxAttendees": 100,
+            "meetingLink": "https://meet.example.com/session4"
+        }
+    ],
+    "myMeetings": [
+        {
+            "id": "my-meeting-1",
+            "expertId": "expert-1",
+            "expertName": "Dr. Kamal Perera",
+            "expertAvatar": null,
+            "topic": "Tomato Disease Consultation",
+            "topicSi": "තක්කාලි රෝග උපදේශනය",
+            "dateTime": "2026-01-18T09:30:00.000Z",
+            "duration": 30,
+            "status": "confirmed",
+            "notes": "Discussion about leaf blight issue",
+            "meetingLink": "https://meet.example.com/personal1",
+            "reminderSet": true,
+            "source": "scheduled"
+        }
+    ]
+}

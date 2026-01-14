@@ -1,0 +1,89 @@
+{
+    "experts": [
+        {
+            "id": "expert-1",
+            "name": "Dr. Kamal Perera",
+            "nameSi": "ආචාර්ය කමල් පෙරේරා",
+            "specialty": "Plant Pathology",
+            "specialtySi": "ශාක රෝගවේදය",
+            "avatar": null,
+            "rating": 4.8,
+            "consultations": 245,
+            "bio": "20+ years experience in crop disease management. Former researcher at Department of Agriculture.",
+            "bioSi": "බෝග රෝග කළමනාකරණයේ වසර 20+ අත්දැකීම්. කෘෂිකර්ම දෙපාර්තමේන්තුවේ හිටපු පර්යේෂකයා.",
+            "availability": "Mon-Fri, 9AM-5PM",
+            "languages": [
+                "en",
+                "si"
+            ]
+        },
+        {
+            "id": "expert-2",
+            "name": "Prof. Nimal Silva",
+            "nameSi": "මහාචාර්ය නිමල් සිල්වා",
+            "specialty": "Agronomy",
+            "specialtySi": "කෘෂි විද්‍යාව",
+            "avatar": null,
+            "rating": 4.9,
+            "consultations": 312,
+            "bio": "Professor of Agriculture at University of Peradeniya. Expert in paddy cultivation.",
+            "bioSi": "පේරාදෙණිය විශ්වවිද්‍යාලයේ කෘෂිකර්ම මහාචාර්ය. වී වගාවේ විශේෂඥයා.",
+            "availability": "Tue-Sat, 10AM-4PM",
+            "languages": [
+                "en",
+                "si"
+            ]
+        },
+        {
+            "id": "expert-3",
+            "name": "Dr. Anura Jayasinghe",
+            "nameSi": "ආචාර්ය අනුර ජයසිංහ",
+            "specialty": "Tea Cultivation",
+            "specialtySi": "තේ වගාව",
+            "avatar": null,
+            "rating": 4.7,
+            "consultations": 189,
+            "bio": "Former Tea Research Institute scientist. Specializes in organic tea production.",
+            "bioSi": "හිටපු තේ පර්යේෂණ ආයතන විද්‍යාඥයා. කාබනික තේ නිෂ්පාදනයේ විශේෂඥයි.",
+            "availability": "Mon-Thu, 8AM-3PM",
+            "languages": [
+                "en",
+                "si"
+            ]
+        },
+        {
+            "id": "expert-4",
+            "name": "Mrs. Kumari Fernando",
+            "nameSi": "කුමාරි ප්‍රනාන්දු මිය",
+            "specialty": "Agricultural Economics",
+            "specialtySi": "කෘෂිකාර්මික ආර්ථික විද්‍යාව",
+            "avatar": null,
+            "rating": 4.6,
+            "consultations": 156,
+            "bio": "Agricultural economist specializing in market analysis and price forecasting.",
+            "bioSi": "වෙළඳපොළ විශ්ලේෂණය සහ මිල පුරෝකථනයේ විශේෂඥ කෘෂිකාර්මික ආර්ථික විද්‍යාඥයා.",
+            "availability": "Wed-Sun, 9AM-6PM",
+            "languages": [
+                "en",
+                "si"
+            ]
+        },
+        {
+            "id": "expert-5",
+            "name": "Mr. Gamini Rathnayake",
+            "nameSi": "ගාමිණී රත්නායක මයා",
+            "specialty": "Spice Cultivation",
+            "specialtySi": "කුළුබඩු වගාව",
+            "avatar": null,
+            "rating": 4.8,
+            "consultations": 203,
+            "bio": "Expert in cinnamon, pepper, and clove cultivation. Training farmers for 15+ years.",
+            "bioSi": "කුරුඳු, ගම්මිරිස් සහ කරාබු නැටි වගාවේ විශේෂඥයා. වසර 15+ ගොවීන් පුහුණු කිරීම.",
+            "availability": "Mon-Fri, 8AM-4PM",
+            "languages": [
+                "en",
+                "si"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,373 @@
+{
+    "guides": [
+        {
+            "id": "tomato-guide",
+            "cropId": "tomato",
+            "title": "Complete Tomato Cultivation Guide",
+            "titleSi": "සම්පූර්ණ තක්කාලි වගා මාර්ගෝපදේශය",
+            "category": "vegetables",
+            "thumbnail": "tomato_thumb",
+            "overview": {
+                "content": "Tomatoes are one of the most popular crops in Sri Lanka, suitable for both home gardens and commercial cultivation. They thrive in warm climates with well-drained soil.",
+                "contentSi": "තක්කාලි ශ්‍රී ලංකාවේ වඩාත් ජනප්‍රිය බෝගවලින් එකකි, නිවාස වත්ත සහ වාණිජ වගාව යන දෙකටම සුදුසුය. ඔවුන් හොඳින් ජලය බැස යන පසක් සහිත උණුසුම් දේශගුණයක් තුළ වර්ධනය වේ.",
+                "climate": "Warm tropical, 20-30°C",
+                "climateSi": "උණුසුම් නිවර්තන, 20-30°C",
+                "soil": "Well-drained loamy soil, pH 6.0-7.0",
+                "soilSi": "හොඳින් ජලය බැස යන මැටි පස, pH 6.0-7.0",
+                "season": "Year-round with irrigation",
+                "seasonSi": "වාරිමාර්ග සමඟ වසර පුරා"
+            },
+            "diseases": [
+                {
+                    "name": "Early Blight",
+                    "nameSi": "මුල් දාහය",
+                    "symptoms": "Dark spots on leaves with concentric rings",
+                    "symptomsSi": "කේන්ද්‍රාභිමුඛ වළලු සහිත කොළවල අඳුරු ලප",
+                    "severity": "high"
+                },
+                {
+                    "name": "Late Blight",
+                    "nameSi": "පසු දාහය",
+                    "symptoms": "Water-soaked lesions on leaves and fruits",
+                    "symptomsSi": "කොළ සහ ඵලවල ජලයෙන් පොඟවා ගත් තුවාල",
+                    "severity": "high"
+                },
+                {
+                    "name": "Bacterial Wilt",
+                    "nameSi": "බැක්ටීරියා මැලවීම",
+                    "symptoms": "Sudden wilting of entire plant",
+                    "symptomsSi": "සම්පූර්ණ ශාකය හදිසියේ මැලවීම",
+                    "severity": "critical"
+                }
+            ],
+            "treatments": [
+                {
+                    "disease": "Early Blight",
+                    "methods": [
+                        "Apply copper-based fungicide",
+                        "Remove infected leaves",
+                        "Improve air circulation"
+                    ],
+                    "methodsSi": [
+                        "තඹ පදනම් දිලීර නාශකය යොදන්න",
+                        "ආසාදිත කොළ ඉවත් කරන්න",
+                        "වායු සංසරණය වැඩි දියුණු කරන්න"
+                    ]
+                },
+                {
+                    "disease": "Late Blight",
+                    "methods": [
+                        "Use resistant varieties",
+                        "Apply mancozeb fungicide",
+                        "Avoid overhead watering"
+                    ],
+                    "methodsSi": [
+                        "ප්‍රතිරෝධී ප්‍රභේද භාවිතා කරන්න",
+                        "මැන්කොසෙබ් දිලීර නාශකය යොදන්න",
+                        "ඉහළින් ජලය දීම වළකින්න"
+                    ]
+                }
+            ],
+            "bestPractices": [
+                {
+                    "title": "Soil Preparation",
+                    "titleSi": "පස සකස් කිරීම",
+                    "content": "Prepare raised beds with organic matter. Add compost 2 weeks before planting.",
+                    "contentSi": "කාබනික ද්‍රව්‍ය සහිත ඔසවන ලද ඇඳන් සකස් කරන්න. සිටුවීමට සති 2කට පෙර කොම්පෝස්ට් එකතු කරන්න."
+                },
+                {
+                    "title": "Spacing",
+                    "titleSi": "පරතරය",
+                    "content": "Maintain 60cm between rows and 45cm between plants for optimal growth.",
+                    "contentSi": "ප්‍රශස්ත වර්ධනය සඳහා පේළි අතර 60cm සහ ශාක අතර 45cm පවත්වාගන්න."
+                },
+                {
+                    "title": "Watering",
+                    "titleSi": "ජලය දීම",
+                    "content": "Water at the base of plants early morning. Avoid wetting leaves.",
+                    "contentSi": "උදේ කාලයේ ශාක පාදයේ ජලය දෙන්න. කොළ තෙමීම වළකින්න."
+                }
+            ],
+            "media": {
+                "videos": [
+                    "tomato_planting.mp4",
+                    "tomato_care.mp4"
+                ],
+                "images": [
+                    "tomato_healthy.jpg",
+                    "tomato_disease.jpg",
+                    "tomato_harvest.jpg"
+                ]
+            }
+        },
+        {
+            "id": "tea-guide",
+            "cropId": "tea",
+            "title": "Tea Cultivation Best Practices",
+            "titleSi": "තේ වගාවේ හොඳම පිළිවෙත්",
+            "category": "tea",
+            "thumbnail": "tea_thumb",
+            "overview": {
+                "content": "Sri Lanka is world-renowned for its Ceylon tea. Tea thrives in the central highlands with cool temperatures and high rainfall.",
+                "contentSi": "ශ්‍රී ලංකාව ලෝක ප්‍රසිද්ධ සිලෝන් තේ සඳහා ප්‍රසිද්ධයි. තේ සිසිල් උෂ්ණත්වය සහ ඉහළ වර්ෂාපතනය සහිත මධ්‍යම කඳුකරයේ වර්ධනය වේ.",
+                "climate": "Cool highland, 15-25°C",
+                "climateSi": "සිසිල් කඳුකර, 15-25°C",
+                "soil": "Acidic, well-drained soil, pH 4.5-5.5",
+                "soilSi": "අම්ල, හොඳින් ජලය බැස යන පස, pH 4.5-5.5",
+                "season": "Year-round harvesting",
+                "seasonSi": "වසර පුරා අස්වැන්න"
+            },
+            "diseases": [
+                {
+                    "name": "Blister Blight",
+                    "nameSi": "බිබිලි දාහය",
+                    "symptoms": "Light green blisters on young leaves",
+                    "symptomsSi": "තරුණ කොළවල ලා කොළ බිබිලි",
+                    "severity": "high"
+                },
+                {
+                    "name": "Grey Blight",
+                    "nameSi": "අළු දාහය",
+                    "symptoms": "Grey-brown lesions on mature leaves",
+                    "symptomsSi": "පරිණත කොළවල අළු-දුඹුරු තුවාල",
+                    "severity": "medium"
+                }
+            ],
+            "treatments": [
+                {
+                    "disease": "Blister Blight",
+                    "methods": [
+                        "Apply copper fungicide",
+                        "Proper shade management",
+                        "Regular plucking"
+                    ],
+                    "methodsSi": [
+                        "තඹ දිලීර නාශකය යොදන්න",
+                        "නිසි සෙවන කළමනාකරණය",
+                        "නිතිපතා අතු කඩනවා"
+                    ]
+                }
+            ],
+            "bestPractices": [
+                {
+                    "title": "Plucking",
+                    "titleSi": "අතු කැඩීම",
+                    "content": "Pluck the bud and two leaves (two leaves and a bud) for best quality.",
+                    "contentSi": "හොඳම ගුණාත්මක බව සඳහා මුකුලය සහ කොළ දෙකක් (කොළ දෙකක් සහ මුකුලයක්) කඩන්න."
+                },
+                {
+                    "title": "Pruning",
+                    "titleSi": "කප්පාදු කිරීම",
+                    "content": "Prune bushes every 3-4 years to maintain productivity.",
+                    "contentSi": "ඵලදායීතාවය පවත්වා ගැනීමට සෑම වසර 3-4 කට වරක් පඳුරු කප්පාදු කරන්න."
+                }
+            ],
+            "media": {
+                "videos": [
+                    "tea_plucking.mp4"
+                ],
+                "images": [
+                    "tea_plantation.jpg",
+                    "tea_leaves.jpg"
+                ]
+            }
+        },
+        {
+            "id": "paddy-guide",
+            "cropId": "paddy",
+            "title": "Paddy Cultivation Guide",
+            "titleSi": "වී වගා මාර්ගෝපදේශය",
+            "category": "paddy",
+            "thumbnail": "paddy_thumb",
+            "overview": {
+                "content": "Rice is the staple food of Sri Lanka. Paddy cultivation requires proper water management and fertile soil.",
+                "contentSi": "සහල් ශ්‍රී ලංකාවේ ප්‍රධාන ආහාරයයි. වී වගාවට නිසි ජල කළමනාකරණය සහ සාරවත් පසක් අවශ්‍ය වේ.",
+                "climate": "Warm tropical, 25-35°C",
+                "climateSi": "උණුසුම් නිවර්තන, 25-35°C",
+                "soil": "Clay loam, good water retention",
+                "soilSi": "මැටි මැටි, හොඳ ජල රඳවා ගැනීම",
+                "season": "Maha (Oct-Mar) and Yala (Apr-Sep)",
+                "seasonSi": "මහ (ඔක්-මාර්) සහ යල (අප්‍රේල්-සැප්)"
+            },
+            "diseases": [
+                {
+                    "name": "Rice Blast",
+                    "nameSi": "වී පිපිරීම",
+                    "symptoms": "Diamond-shaped lesions on leaves",
+                    "symptomsSi": "කොළවල දියමන්ති හැඩැති තුවාල",
+                    "severity": "critical"
+                },
+                {
+                    "name": "Brown Spot",
+                    "nameSi": "දුඹුරු ලප",
+                    "symptoms": "Brown oval spots on leaves",
+                    "symptomsSi": "කොළවල දුඹුරු ඕවලාකාර ලප",
+                    "severity": "medium"
+                }
+            ],
+            "treatments": [
+                {
+                    "disease": "Rice Blast",
+                    "methods": [
+                        "Use resistant varieties",
+                        "Apply tricyclazole",
+                        "Balanced fertilization"
+                    ],
+                    "methodsSi": [
+                        "ප්‍රතිරෝධී ප්‍රභේද භාවිතා කරන්න",
+                        "ට්‍රයිසයික්ලසෝල් යොදන්න",
+                        "සමතුලිත පොහොර යෙදීම"
+                    ]
+                }
+            ],
+            "bestPractices": [
+                {
+                    "title": "Water Management",
+                    "titleSi": "ජල කළමනාකරණය",
+                    "content": "Maintain 5-7cm water level. Drain before harvesting.",
+                    "contentSi": "5-7cm ජල මට්ටම පවත්වාගන්න. අස්වැන්නට පෙර ජලය බැස යන්න."
+                },
+                {
+                    "title": "Transplanting",
+                    "titleSi": "බද්ධ කිරීම",
+                    "content": "Transplant 21-25 day old seedlings for best results.",
+                    "contentSi": "හොඳම ප්‍රතිඵල සඳහා දින 21-25 පැරණි පැළ බද්ධ කරන්න."
+                }
+            ],
+            "media": {
+                "videos": [
+                    "paddy_planting.mp4"
+                ],
+                "images": [
+                    "paddy_field.jpg",
+                    "paddy_harvest.jpg"
+                ]
+            }
+        },
+        {
+            "id": "chili-guide",
+            "cropId": "chili",
+            "title": "Chili Pepper Cultivation",
+            "titleSi": "මිරිස් වගාව",
+            "category": "vegetables",
+            "thumbnail": "chili_thumb",
+            "overview": {
+                "content": "Chili peppers are essential in Sri Lankan cuisine. They grow well in warm conditions with moderate water.",
+                "contentSi": "මිරිස් ශ්‍රී ලංකා ආහාර පිසීමේ අත්‍යවශ්‍ය අංගයකි. ඔවුන් මධ්‍යස්ථ ජලය සහිත උණුසුම් තත්ත්වයන් තුළ හොඳින් වැඩෙයි.",
+                "climate": "Warm, 20-30°C",
+                "climateSi": "උණුසුම්, 20-30°C",
+                "soil": "Well-drained sandy loam",
+                "soilSi": "හොඳින් ජලය බැස යන වැලි මැටි",
+                "season": "Year-round in lowlands",
+                "seasonSi": "පහත් බිම්වල වසර පුරා"
+            },
+            "diseases": [
+                {
+                    "name": "Anthracnose",
+                    "nameSi": "ඇන්ත්‍රැක්නෝස්",
+                    "symptoms": "Sunken lesions on fruits",
+                    "symptomsSi": "ඵලවල ගිලුණු තුවාල",
+                    "severity": "high"
+                },
+                {
+                    "name": "Leaf Curl",
+                    "nameSi": "පත්‍ර රෝලිම",
+                    "symptoms": "Curling and yellowing of leaves",
+                    "symptomsSi": "කොළ රෝල් කිරීම සහ කහ වීම",
+                    "severity": "medium"
+                }
+            ],
+            "treatments": [
+                {
+                    "disease": "Anthracnose",
+                    "methods": [
+                        "Use disease-free seeds",
+                        "Apply mancozeb",
+                        "Remove infected fruits"
+                    ],
+                    "methodsSi": [
+                        "රෝග රහිත බීජ භාවිතා කරන්න",
+                        "මැන්කොසෙබ් යොදන්න",
+                        "ආසාදිත ඵල ඉවත් කරන්න"
+                    ]
+                }
+            ],
+            "bestPractices": [
+                {
+                    "title": "Staking",
+                    "titleSi": "පොලු ගැසීම",
+                    "content": "Stake plants when they reach 30cm to support fruit weight.",
+                    "contentSi": "ඵල බර ආධාරක සඳහා 30cm ළඟා වූ විට ශාකවලට පොලු ගසන්න."
+                }
+            ],
+            "media": {
+                "videos": [
+                    "chili_growing.mp4"
+                ],
+                "images": [
+                    "chili_plant.jpg",
+                    "chili_harvest.jpg"
+                ]
+            }
+        },
+        {
+            "id": "cinnamon-guide",
+            "cropId": "cinnamon",
+            "title": "Ceylon Cinnamon Cultivation",
+            "titleSi": "සිලෝන් කුරුඳු වගාව",
+            "category": "spices",
+            "thumbnail": "cinnamon_thumb",
+            "overview": {
+                "content": "Sri Lanka produces the finest True Cinnamon (Ceylon Cinnamon) in the world. It's cultivated primarily in the low country wet zone.",
+                "contentSi": "ශ්‍රී ලංකාව ලෝකයේ හොඳම සැබෑ කුරුඳු (සිලෝන් කුරුඳු) නිෂ්පාදනය කරයි. එය ප්‍රධාන වශයෙන් පහත් බිම් තෙත් කලාපයේ වගා කරයි.",
+                "climate": "Wet zone tropical",
+                "climateSi": "තෙත් කලාප නිවර්තන",
+                "soil": "Sandy loam, well-drained",
+                "soilSi": "වැලි මැටි, හොඳින් ජලය බැස යයි",
+                "season": "Harvesting twice yearly",
+                "seasonSi": "අස්වැන්න වසරකට දෙවරක්"
+            },
+            "diseases": [
+                {
+                    "name": "Rough Bark Disease",
+                    "nameSi": "රළු පොත්ත රෝගය",
+                    "symptoms": "Rough patches on bark surface",
+                    "symptomsSi": "පොතු මතුපිටවල රළු පැල්ලම්",
+                    "severity": "medium"
+                }
+            ],
+            "treatments": [
+                {
+                    "disease": "Rough Bark Disease",
+                    "methods": [
+                        "Apply lime wash",
+                        "Improve drainage",
+                        "Remove affected bark"
+                    ],
+                    "methodsSi": [
+                        "හුණු සේදීම යොදන්න",
+                        "ජලාපවහනය වැඩි දියුණු කරන්න",
+                        "බලපෑමට ලක් වූ පොත්ත ඉවත් කරන්න"
+                    ]
+                }
+            ],
+            "bestPractices": [
+                {
+                    "title": "Harvesting",
+                    "titleSi": "අස්වැන්න",
+                    "content": "Harvest when shoots are 1.5-2m tall. Peel bark in the morning for best quality.",
+                    "contentSi": "දළු 1.5-2m උස වූ විට අස්වැන්න නෙලන්න. හොඳම ගුණාත්මක බව සඳහා උදේ පොත්ත ගලවන්න."
+                }
+            ],
+            "media": {
+                "videos": [
+                    "cinnamon_peeling.mp4"
+                ],
+                "images": [
+                    "cinnamon_tree.jpg",
+                    "cinnamon_quills.jpg"
+                ]
+            }
+        }
+    ]
+}

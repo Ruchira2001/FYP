@@ -1,0 +1,136 @@
+{
+    "chats": [
+        {
+            "id": "chat-1",
+            "expertId": "expert-1",
+            "expertName": "Dr. Kamal Perera",
+            "expertAvatar": null,
+            "lastMessage": "The treatment should work within 2 weeks. Let me know if you need more help.",
+            "lastMessageSi": "ප්‍රතිකාරය සති 2ක් ඇතුළත ක්‍රියා කළ යුතුය. ඔබට තවත් උදව් අවශ්‍ය නම් මට දන්වන්න.",
+            "lastMessageTime": "2026-01-14T10:30:00.000Z",
+            "unreadCount": 0,
+            "online": true
+        },
+        {
+            "id": "chat-2",
+            "expertId": "expert-2",
+            "expertName": "Prof. Nimal Silva",
+            "expertAvatar": null,
+            "lastMessage": "I recommend checking the water levels in your paddy field.",
+            "lastMessageSi": "ඔබේ කුඹුරේ ජල මට්ටම් පරීක්ෂා කරන ලෙස මම නිර්දේශ කරමි.",
+            "lastMessageTime": "2026-01-13T16:45:00.000Z",
+            "unreadCount": 2,
+            "online": false
+        },
+        {
+            "id": "chat-3",
+            "expertId": "expert-5",
+            "expertName": "Mr. Gamini Rathnayake",
+            "expertAvatar": null,
+            "lastMessage": "For cinnamon, the best time to harvest is during the rainy season.",
+            "lastMessageSi": "කුරුඳු සඳහා, අස්වැන්න නෙලීමට හොඳම කාලය වර්ෂා සමයේදීය.",
+            "lastMessageTime": "2026-01-12T09:15:00.000Z",
+            "unreadCount": 0,
+            "online": false
+        }
+    ],
+    "messages": {
+        "chat-1": [
+            {
+                "id": "msg-1-1",
+                "chatId": "chat-1",
+                "senderId": "user",
+                "senderType": "user",
+                "content": "Hello Dr. Perera, my tomato plants have brown spots on the leaves.",
+                "type": "text",
+                "timestamp": "2026-01-14T09:00:00.000Z",
+                "synced": true
+            },
+            {
+                "id": "msg-1-2",
+                "chatId": "chat-1",
+                "senderId": "expert-1",
+                "senderType": "expert",
+                "content": "Hello! Can you share a photo of the affected leaves? That will help me diagnose the issue.",
+                "type": "text",
+                "timestamp": "2026-01-14T09:05:00.000Z",
+                "synced": true
+            },
+            {
+                "id": "msg-1-3",
+                "chatId": "chat-1",
+                "senderId": "user",
+                "senderType": "user",
+                "content": "Here's a photo of the leaf",
+                "type": "image",
+                "attachmentData": {
+                    "imageUri": "tomato_disease.jpg"
+                },
+                "timestamp": "2026-01-14T09:10:00.000Z",
+                "synced": true
+            },
+            {
+                "id": "msg-1-4",
+                "chatId": "chat-1",
+                "senderId": "expert-1",
+                "senderType": "expert",
+                "content": "This looks like Early Blight. I recommend applying a copper-based fungicide and removing the affected leaves.",
+                "type": "text",
+                "timestamp": "2026-01-14T09:20:00.000Z",
+                "synced": true
+            },
+            {
+                "id": "msg-1-5",
+                "chatId": "chat-1",
+                "senderId": "user",
+                "senderType": "user",
+                "content": "Thank you! How often should I apply the fungicide?",
+                "type": "text",
+                "timestamp": "2026-01-14T10:00:00.000Z",
+                "synced": true
+            },
+            {
+                "id": "msg-1-6",
+                "chatId": "chat-1",
+                "senderId": "expert-1",
+                "senderType": "expert",
+                "content": "The treatment should work within 2 weeks. Let me know if you need more help.",
+                "type": "text",
+                "timestamp": "2026-01-14T10:30:00.000Z",
+                "synced": true
+            }
+        ],
+        "chat-2": [
+            {
+                "id": "msg-2-1",
+                "chatId": "chat-2",
+                "senderId": "user",
+                "senderType": "user",
+                "content": "Prof. Silva, my paddy is showing yellowing leaves. What could be the problem?",
+                "type": "text",
+                "timestamp": "2026-01-13T15:30:00.000Z",
+                "synced": true
+            },
+            {
+                "id": "msg-2-2",
+                "chatId": "chat-2",
+                "senderId": "expert-2",
+                "senderType": "expert",
+                "content": "Yellowing can be due to nitrogen deficiency or water stress. How are the water levels in your field?",
+                "type": "text",
+                "timestamp": "2026-01-13T16:00:00.000Z",
+                "synced": true
+            },
+            {
+                "id": "msg-2-3",
+                "chatId": "chat-2",
+                "senderId": "expert-2",
+                "senderType": "expert",
+                "content": "I recommend checking the water levels in your paddy field.",
+                "type": "text",
+                "timestamp": "2026-01-13T16:45:00.000Z",
+                "synced": true
+            }
+        ]
+    }
+}
