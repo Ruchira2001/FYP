@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, View } from 'react-native';
+import { TouchableOpacity, Text, ActivityIndicator, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 
@@ -13,7 +13,6 @@ interface PrimaryButtonProps {
     icon?: keyof typeof Ionicons.glyphMap;
     iconPosition?: 'left' | 'right';
     fullWidth?: boolean;
-    className?: string;
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -26,61 +25,59 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     icon,
     iconPosition = 'left',
     fullWidth = false,
-    className = '',
 }) => {
     const getBackgroundColor = () => {
-        if (disabled) return 'bg-neutral-200';
+        if (disabled) return COLORS.neutral[200];
         switch (variant) {
             case 'primary':
-                return 'bg-primary-500';
+                return COLORS.primary[500];
             case 'secondary':
-                return 'bg-secondary-500';
+                return COLORS.secondary[500];
             case 'outline':
-                return 'bg-transparent border-2 border-primary-500';
             case 'ghost':
-                return 'bg-transparent';
+                return 'transparent';
             default:
-                return 'bg-primary-500';
+                return COLORS.primary[500];
         }
     };
 
     const getTextColor = () => {
-        if (disabled) return 'text-neutral-400';
+        if (disabled) return COLORS.neutral[400];
         switch (variant) {
             case 'primary':
             case 'secondary':
-                return 'text-white';
+                return '#ffffff';
             case 'outline':
             case 'ghost':
-                return 'text-primary-600';
+                return COLORS.primary[600];
             default:
-                return 'text-white';
+                return '#ffffff';
         }
     };
 
     const getPadding = () => {
         switch (size) {
             case 'sm':
-                return 'px-4 py-2';
+                return { paddingHorizontal: 16, paddingVertical: 8 };
             case 'md':
-                return 'px-6 py-3';
+                return { paddingHorizontal: 24, paddingVertical: 12 };
             case 'lg':
-                return 'px-8 py-4';
+                return { paddingHorizontal: 32, paddingVertical: 16 };
             default:
-                return 'px-6 py-3';
+                return { paddingHorizontal: 24, paddingVertical: 12 };
         }
     };
 
     const getTextSize = () => {
         switch (size) {
             case 'sm':
-                return 'text-sm';
+                return 14;
             case 'md':
-                return 'text-base';
+                return 16;
             case 'lg':
-                return 'text-lg';
+                return 18;
             default:
-                return 'text-base';
+                return 16;
         }
     };
 
@@ -97,18 +94,14 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         }
     };
 
-    const getIconColor = () => {
-        if (disabled) return COLORS.neutral[400];
-        switch (variant) {
-            case 'primary':
-            case 'secondary':
-                return COLORS.white;
-            case 'outline':
-            case 'ghost':
-                return COLORS.primary[600];
-            default:
-                return COLORS.white;
+    const getBorderStyle = () => {
+        if (variant === 'outline') {
+            return {
+                borderWidth: 2,
+                borderColor: disabled ? COLORS.neutral[300] : COLORS.primary[500],
+            };
         }
+        return {};
     };
 
     return (
@@ -116,47 +109,44 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
             onPress={onPress}
             disabled={disabled || loading}
             activeOpacity={0.8}
-            className={`
-        ${getBackgroundColor()}
-        ${getPadding()}
-        rounded-xl
-        flex-row
-        items-center
-        justify-center
-        ${fullWidth ? 'w-full' : ''}
-        ${className}
-      `}
-            style={{
-                shadowColor: variant === 'primary' && !disabled ? COLORS.primary[500] : 'transparent',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: variant === 'primary' && !disabled ? 4 : 0,
-            }}
+            style={[
+                styles.button,
+                {
+                    backgroundColor: getBackgroundColor(),
+                    ...getPadding(),
+                    ...getBorderStyle(),
+                    width: fullWidth ? '100%' : undefined,
+                    shadowColor: variant === 'primary' && !disabled ? COLORS.primary[500] : 'transparent',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: variant === 'primary' && !disabled ? 4 : 0,
+                },
+            ]}
         >
             {loading ? (
                 <ActivityIndicator
                     size="small"
-                    color={variant === 'outline' || variant === 'ghost' ? COLORS.primary[500] : COLORS.white}
+                    color={variant === 'outline' || variant === 'ghost' ? COLORS.primary[500] : '#ffffff'}
                 />
             ) : (
-                <View className="flex-row items-center">
+                <View style={styles.content}>
                     {icon && iconPosition === 'left' && (
                         <Ionicons
                             name={icon}
                             size={getIconSize()}
-                            color={getIconColor()}
+                            color={getTextColor()}
                             style={{ marginRight: 8 }}
                         />
                     )}
-                    <Text className={`${getTextColor()} ${getTextSize()} font-semibold`}>
+                    <Text style={[styles.text, { color: getTextColor(), fontSize: getTextSize() }]}>
                         {title}
                     </Text>
                     {icon && iconPosition === 'right' && (
                         <Ionicons
                             name={icon}
                             size={getIconSize()}
-                            color={getIconColor()}
+                            color={getTextColor()}
                             style={{ marginLeft: 8 }}
                         />
                     )}
@@ -165,5 +155,21 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         </TouchableOpacity>
     );
 };
+
+const styles = StyleSheet.create({
+    button: {
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    content: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    text: {
+        fontWeight: '600',
+    },
+});
 
 export default PrimaryButton;

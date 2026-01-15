@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 
@@ -47,40 +47,34 @@ const InputField: React.FC<InputFieldProps> = ({
     };
 
     return (
-        <View className="mb-4">
+        <View style={styles.container}>
             {label && (
-                <Text className="text-sm font-medium text-neutral-700 mb-1.5">
+                <Text style={styles.label}>
                     {label}
                 </Text>
             )}
 
             <View
-                className={`
-          flex-row items-center
-          bg-white
-          rounded-xl
-          px-4
-          border-2
-          ${multiline ? 'py-3' : 'py-0'}
-        `}
-                style={{ borderColor: getBorderColor() }}
+                style={[
+                    styles.inputContainer,
+                    { borderColor: getBorderColor() },
+                    multiline && styles.inputContainerMultiline,
+                ]}
             >
                 {icon && (
                     <Ionicons
                         name={icon}
                         size={20}
                         color={isFocused ? COLORS.primary[500] : COLORS.neutral[400]}
-                        style={{ marginRight: 10 }}
+                        style={styles.icon}
                     />
                 )}
 
                 <TextInput
-                    className={`
-            flex-1
-            text-base
-            text-neutral-800
-            ${multiline ? '' : 'py-3'}
-          `}
+                    style={[
+                        styles.input,
+                        !multiline && styles.inputSingleLine,
+                    ]}
                     placeholder={placeholder}
                     placeholderTextColor={COLORS.neutral[400]}
                     value={value}
@@ -95,7 +89,6 @@ const InputField: React.FC<InputFieldProps> = ({
                     editable={editable}
                     maxLength={maxLength}
                     textAlignVertical={multiline ? 'top' : 'center'}
-                    style={{ minHeight: multiline ? numberOfLines * 24 : undefined }}
                 />
 
                 {rightIcon && (
@@ -110,13 +103,57 @@ const InputField: React.FC<InputFieldProps> = ({
             </View>
 
             {error && (
-                <View className="flex-row items-center mt-1.5">
+                <View style={styles.errorContainer}>
                     <Ionicons name="alert-circle" size={14} color={COLORS.error} />
-                    <Text className="text-xs text-red-500 ml-1">{error}</Text>
+                    <Text style={styles.errorText}>{error}</Text>
                 </View>
             )}
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        marginBottom: 16,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: COLORS.neutral[700],
+        marginBottom: 6,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        borderWidth: 2,
+    },
+    inputContainerMultiline: {
+        paddingVertical: 12,
+    },
+    icon: {
+        marginRight: 10,
+    },
+    input: {
+        flex: 1,
+        fontSize: 16,
+        color: COLORS.neutral[800],
+    },
+    inputSingleLine: {
+        paddingVertical: 12,
+    },
+    errorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 6,
+    },
+    errorText: {
+        fontSize: 12,
+        color: COLORS.error,
+        marginLeft: 4,
+    },
+});
 
 export default InputField;

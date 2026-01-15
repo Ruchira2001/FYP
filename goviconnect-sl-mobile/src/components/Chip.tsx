@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 
@@ -30,26 +30,30 @@ const Chip: React.FC<ChipProps> = ({
         switch (size) {
             case 'sm':
                 return {
-                    padding: 'px-2 py-1',
-                    textSize: 'text-xs',
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    fontSize: 12,
                     iconSize: 12,
                 };
             case 'md':
                 return {
-                    padding: 'px-3 py-1.5',
-                    textSize: 'text-sm',
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    fontSize: 14,
                     iconSize: 14,
                 };
             case 'lg':
                 return {
-                    padding: 'px-4 py-2',
-                    textSize: 'text-base',
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    fontSize: 16,
                     iconSize: 16,
                 };
             default:
                 return {
-                    padding: 'px-3 py-1.5',
-                    textSize: 'text-sm',
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    fontSize: 14,
                     iconSize: 14,
                 };
         }
@@ -72,35 +76,31 @@ const Chip: React.FC<ChipProps> = ({
     const getTextColor = () => {
         if (disabled) return COLORS.neutral[400];
         if (selected) {
-            return variant === 'outline' ? color : COLORS.white;
+            return variant === 'outline' ? color : '#ffffff';
         }
         return COLORS.neutral[600];
     };
 
-    const styles = getSizeStyles();
+    const sizeStyles = getSizeStyles();
 
     return (
         <TouchableOpacity
             onPress={onPress}
             disabled={disabled || !onPress}
             activeOpacity={0.7}
-            className={`
-        ${styles.padding}
-        rounded-full
-        flex-row
-        items-center
-        justify-center
-        mr-2
-        mb-2
-      `}
-            style={{
-                backgroundColor: getBackgroundColor(),
-                borderWidth: variant === 'outline' || selected ? 1.5 : 0,
-                borderColor: getBorderColor(),
-            }}
+            style={[
+                styles.chip,
+                {
+                    paddingHorizontal: sizeStyles.paddingHorizontal,
+                    paddingVertical: sizeStyles.paddingVertical,
+                    backgroundColor: getBackgroundColor(),
+                    borderWidth: variant === 'outline' || selected ? 1.5 : 0,
+                    borderColor: getBorderColor(),
+                },
+            ]}
         >
             {emoji && (
-                <Text className="mr-1" style={{ fontSize: styles.iconSize + 2 }}>
+                <Text style={[styles.emoji, { fontSize: sizeStyles.iconSize + 2 }]}>
                     {emoji}
                 </Text>
             )}
@@ -108,20 +108,42 @@ const Chip: React.FC<ChipProps> = ({
             {icon && !emoji && (
                 <Ionicons
                     name={icon}
-                    size={styles.iconSize}
+                    size={sizeStyles.iconSize}
                     color={getTextColor()}
-                    style={{ marginRight: 4 }}
+                    style={styles.icon}
                 />
             )}
 
             <Text
-                className={`${styles.textSize} font-medium`}
-                style={{ color: getTextColor() }}
+                style={[
+                    styles.label,
+                    { fontSize: sizeStyles.fontSize, color: getTextColor() },
+                ]}
             >
                 {label}
             </Text>
         </TouchableOpacity>
     );
 };
+
+const styles = StyleSheet.create({
+    chip: {
+        borderRadius: 50,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 8,
+        marginBottom: 8,
+    },
+    emoji: {
+        marginRight: 4,
+    },
+    icon: {
+        marginRight: 4,
+    },
+    label: {
+        fontWeight: '500',
+    },
+});
 
 export default Chip;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, StatusBar, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -179,11 +179,11 @@ const Register: React.FC = () => {
 
     const renderStep3 = () => (
         <View>
-            <Text className="text-sm text-neutral-600 mb-4">
+            <Text style={styles.cropsLabel}>
                 Select your main crops to get personalized recommendations:
             </Text>
 
-            <View className="flex-row flex-wrap">
+            <View style={styles.cropsContainer}>
                 {cropsData.crops.map((crop) => (
                     <Chip
                         key={crop.id}
@@ -202,55 +202,61 @@ const Register: React.FC = () => {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-white"
+            style={styles.container}
         >
             <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
             <ScrollView
-                className="flex-1"
+                style={styles.scrollView}
                 contentContainerStyle={{ flexGrow: 1 }}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
-                <View className="flex-1 px-6 pt-12 pb-8">
+                <View style={styles.content}>
                     {/* Back Button */}
                     <TouchableOpacity
                         onPress={handleBack}
-                        className="w-10 h-10 bg-neutral-100 rounded-full items-center justify-center mb-6"
+                        style={styles.backButton}
                     >
                         <Ionicons name="arrow-back" size={20} color={COLORS.neutral[700]} />
                     </TouchableOpacity>
 
                     {/* Header */}
-                    <View className="mb-8">
-                        <Text className="text-2xl font-bold text-neutral-800 mb-2">
+                    <View style={styles.header}>
+                        <Text style={styles.title}>
                             {t('auth.register_title')}
                         </Text>
-                        <Text className="text-sm text-neutral-500">
+                        <Text style={styles.subtitle}>
                             {t('auth.register_subtitle')}
                         </Text>
                     </View>
 
                     {/* Progress Steps */}
-                    <View className="flex-row items-center mb-8">
+                    <View style={styles.stepsContainer}>
                         {[1, 2, 3].map((s, index) => (
                             <React.Fragment key={s}>
                                 <View
-                                    className={`w-8 h-8 rounded-full items-center justify-center ${s <= step ? 'bg-primary-500' : 'bg-neutral-200'
-                                        }`}
+                                    style={[
+                                        styles.stepCircle,
+                                        s <= step ? styles.stepCircleActive : styles.stepCircleInactive
+                                    ]}
                                 >
                                     {s < step ? (
                                         <Ionicons name="checkmark" size={16} color="white" />
                                     ) : (
-                                        <Text className={`text-sm font-semibold ${s <= step ? 'text-white' : 'text-neutral-400'
-                                            }`}>
+                                        <Text style={[
+                                            styles.stepNumber,
+                                            s <= step ? styles.stepNumberActive : styles.stepNumberInactive
+                                        ]}>
                                             {s}
                                         </Text>
                                     )}
                                 </View>
                                 {index < 2 && (
                                     <View
-                                        className={`flex-1 h-1 mx-2 rounded-full ${s < step ? 'bg-primary-500' : 'bg-neutral-200'
-                                            }`}
+                                        style={[
+                                            styles.stepLine,
+                                            s < step ? styles.stepLineActive : styles.stepLineInactive
+                                        ]}
                                     />
                                 )}
                             </React.Fragment>
@@ -263,7 +269,7 @@ const Register: React.FC = () => {
                     {step === 3 && renderStep3()}
 
                     {/* Action Button */}
-                    <View className="mt-6">
+                    <View style={styles.actionButton}>
                         <PrimaryButton
                             title={step === 3 ? t('auth.register') : t('common.next')}
                             onPress={step === 3 ? handleRegister : handleNext}
@@ -276,12 +282,12 @@ const Register: React.FC = () => {
                     </View>
 
                     {/* Login Link */}
-                    <View className="flex-row justify-center mt-8">
-                        <Text className="text-neutral-500">
+                    <View style={styles.loginContainer}>
+                        <Text style={styles.loginText}>
                             {t('auth.already_have_account')}{' '}
                         </Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                            <Text className="text-primary-600 font-semibold">
+                            <Text style={styles.loginLink}>
                                 {t('auth.sign_in')}
                             </Text>
                         </TouchableOpacity>
@@ -291,5 +297,107 @@ const Register: React.FC = () => {
         </KeyboardAvoidingView>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#ffffff',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: 24,
+        paddingTop: 48,
+        paddingBottom: 32,
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        backgroundColor: COLORS.neutral[100],
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 24,
+    },
+    header: {
+        marginBottom: 32,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.neutral[800],
+        marginBottom: 8,
+    },
+    subtitle: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+    },
+    stepsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    stepCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepCircleActive: {
+        backgroundColor: COLORS.primary[500],
+    },
+    stepCircleInactive: {
+        backgroundColor: COLORS.neutral[200],
+    },
+    stepNumber: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    stepNumberActive: {
+        color: '#ffffff',
+    },
+    stepNumberInactive: {
+        color: COLORS.neutral[400],
+    },
+    stepLine: {
+        flex: 1,
+        height: 4,
+        marginHorizontal: 8,
+        borderRadius: 2,
+    },
+    stepLineActive: {
+        backgroundColor: COLORS.primary[500],
+    },
+    stepLineInactive: {
+        backgroundColor: COLORS.neutral[200],
+    },
+    cropsLabel: {
+        fontSize: 14,
+        color: COLORS.neutral[600],
+        marginBottom: 16,
+    },
+    cropsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    actionButton: {
+        marginTop: 24,
+    },
+    loginContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 32,
+    },
+    loginText: {
+        color: COLORS.neutral[500],
+    },
+    loginLink: {
+        color: COLORS.primary[600],
+        fontWeight: '600',
+    },
+});
 
 export default Register;

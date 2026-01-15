@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, StatusBar, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,33 +50,33 @@ const Login: React.FC = () => {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-white"
+            style={styles.container}
         >
             <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
             <ScrollView
-                className="flex-1"
+                style={styles.scrollView}
                 contentContainerStyle={{ flexGrow: 1 }}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
-                <View className="flex-1 px-6 pt-16 pb-8">
+                <View style={styles.content}>
                     {/* Header */}
-                    <View className="items-center mb-10">
-                        <View className="w-20 h-20 bg-primary-100 rounded-2xl items-center justify-center mb-6">
+                    <View style={styles.header}>
+                        <View style={styles.logoContainer}>
                             <Ionicons name="leaf" size={40} color={COLORS.primary[500]} />
                         </View>
 
-                        <Text className="text-2xl font-bold text-neutral-800 text-center mb-2">
+                        <Text style={styles.title}>
                             {t('auth.login_title')}
                         </Text>
 
-                        <Text className="text-sm text-neutral-500 text-center">
+                        <Text style={styles.subtitle}>
                             {t('auth.login_subtitle')}
                         </Text>
                     </View>
 
                     {/* Form */}
-                    <View className="mb-6">
+                    <View style={styles.form}>
                         <InputField
                             label={t('auth.email')}
                             placeholder="example@email.com"
@@ -103,9 +103,9 @@ const Login: React.FC = () => {
                         {/* Forgot Password */}
                         <TouchableOpacity
                             onPress={() => navigation.navigate('ForgotPassword')}
-                            className="self-end mb-6"
+                            style={styles.forgotPassword}
                         >
-                            <Text className="text-primary-600 font-medium">
+                            <Text style={styles.forgotPasswordText}>
                                 {t('auth.forgot_password')}
                             </Text>
                         </TouchableOpacity>
@@ -121,32 +121,29 @@ const Login: React.FC = () => {
                     />
 
                     {/* Divider */}
-                    <View className="flex-row items-center my-8">
-                        <View className="flex-1 h-px bg-neutral-200" />
-                        <Text className="mx-4 text-neutral-400 text-sm">or</Text>
-                        <View className="flex-1 h-px bg-neutral-200" />
+                    <View style={styles.divider}>
+                        <View style={styles.dividerLine} />
+                        <Text style={styles.dividerText}>or</Text>
+                        <View style={styles.dividerLine} />
                     </View>
 
-                    {/* Social Login (Placeholder) */}
-                    <View className="flex-row justify-center space-x-4 mb-8">
-                        <TouchableOpacity
-                            className="w-14 h-14 bg-neutral-100 rounded-xl items-center justify-center"
-                            style={{ marginRight: 16 }}
-                        >
+                    {/* Social Login */}
+                    <View style={styles.socialContainer}>
+                        <TouchableOpacity style={[styles.socialButton, { marginRight: 16 }]}>
                             <Ionicons name="logo-google" size={24} color={COLORS.neutral[700]} />
                         </TouchableOpacity>
-                        <TouchableOpacity className="w-14 h-14 bg-neutral-100 rounded-xl items-center justify-center">
+                        <TouchableOpacity style={styles.socialButton}>
                             <Ionicons name="logo-facebook" size={24} color={COLORS.neutral[700]} />
                         </TouchableOpacity>
                     </View>
 
                     {/* Register Link */}
-                    <View className="flex-row justify-center">
-                        <Text className="text-neutral-500">
+                    <View style={styles.registerContainer}>
+                        <Text style={styles.registerText}>
                             {t('auth.dont_have_account')}{' '}
                         </Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                            <Text className="text-primary-600 font-semibold">
+                            <Text style={styles.registerLink}>
                                 {t('auth.sign_up')}
                             </Text>
                         </TouchableOpacity>
@@ -156,5 +153,96 @@ const Login: React.FC = () => {
         </KeyboardAvoidingView>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#ffffff',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: 24,
+        paddingTop: 64,
+        paddingBottom: 32,
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    logoContainer: {
+        width: 80,
+        height: 80,
+        backgroundColor: COLORS.primary[100],
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 24,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.neutral[800],
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    subtitle: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+        textAlign: 'center',
+    },
+    form: {
+        marginBottom: 24,
+    },
+    forgotPassword: {
+        alignSelf: 'flex-end',
+        marginBottom: 24,
+    },
+    forgotPasswordText: {
+        color: COLORS.primary[600],
+        fontWeight: '500',
+    },
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 32,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: COLORS.neutral[200],
+    },
+    dividerText: {
+        marginHorizontal: 16,
+        color: COLORS.neutral[400],
+        fontSize: 14,
+    },
+    socialContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginBottom: 32,
+    },
+    socialButton: {
+        width: 56,
+        height: 56,
+        backgroundColor: COLORS.neutral[100],
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    registerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+    },
+    registerText: {
+        color: COLORS.neutral[500],
+    },
+    registerLink: {
+        color: COLORS.primary[600],
+        fontWeight: '600',
+    },
+});
 
 export default Login;

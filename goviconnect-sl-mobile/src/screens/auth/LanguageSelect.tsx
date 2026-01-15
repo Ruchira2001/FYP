@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,73 +34,73 @@ const LanguageSelect: React.FC = () => {
     };
 
     return (
-        <View className="flex-1 bg-white">
+        <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-            <View className="flex-1 px-6 pt-16">
+            <View style={styles.content}>
                 {/* Header */}
-                <View className="items-center mb-12">
-                    <View className="w-20 h-20 bg-primary-100 rounded-full items-center justify-center mb-6">
+                <View style={styles.header}>
+                    <View style={styles.iconContainer}>
                         <Ionicons name="language" size={40} color={COLORS.primary[500]} />
                     </View>
 
-                    <Text className="text-2xl font-bold text-neutral-800 text-center mb-2">
+                    <Text style={styles.title}>
                         {t('onboarding.select_language')}
                     </Text>
 
-                    <Text className="text-sm text-neutral-500 text-center">
+                    <Text style={styles.subtitle}>
                         {t('onboarding.language_note')}
                     </Text>
                 </View>
 
                 {/* Language Options */}
                 <View>
-                    {languages.map((lang) => (
-                        <TouchableOpacity
-                            key={lang.code}
-                            onPress={() => handleLanguageSelect(lang.code)}
-                            className={`flex-row items-center p-5 rounded-2xl border-2 mb-4 ${selectedLanguage === lang.code
-                                ? 'border-primary-500 bg-primary-50'
-                                : 'border-neutral-200 bg-white'
-                                }`}
-                            style={{
-                                shadowColor: selectedLanguage === lang.code ? COLORS.primary[500] : '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: selectedLanguage === lang.code ? 0.1 : 0.05,
-                                shadowRadius: 8,
-                                elevation: selectedLanguage === lang.code ? 3 : 1,
-                            }}
-                        >
-                            <View
-                                className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${selectedLanguage === lang.code ? 'bg-primary-500' : 'bg-neutral-100'
-                                    }`}
+                    {languages.map((lang) => {
+                        const isSelected = selectedLanguage === lang.code;
+                        return (
+                            <TouchableOpacity
+                                key={lang.code}
+                                onPress={() => handleLanguageSelect(lang.code)}
+                                style={[
+                                    styles.languageOption,
+                                    isSelected ? styles.languageOptionSelected : styles.languageOptionDefault,
+                                ]}
                             >
-                                <Text className={`text-lg font-bold ${selectedLanguage === lang.code ? 'text-white' : 'text-neutral-500'
-                                    }`}>
-                                    {lang.code.toUpperCase()}
-                                </Text>
-                            </View>
-
-                            <View className="flex-1">
-                                <Text className={`text-lg font-semibold ${selectedLanguage === lang.code ? 'text-primary-700' : 'text-neutral-800'
-                                    }`}>
-                                    {lang.nativeName}
-                                </Text>
-                                <Text className="text-sm text-neutral-500">{lang.name}</Text>
-                            </View>
-
-                            {selectedLanguage === lang.code && (
-                                <View className="w-6 h-6 bg-primary-500 rounded-full items-center justify-center">
-                                    <Ionicons name="checkmark" size={16} color="white" />
+                                <View style={[
+                                    styles.langCode,
+                                    isSelected ? styles.langCodeSelected : styles.langCodeDefault
+                                ]}>
+                                    <Text style={[
+                                        styles.langCodeText,
+                                        isSelected ? styles.langCodeTextSelected : styles.langCodeTextDefault
+                                    ]}>
+                                        {lang.code.toUpperCase()}
+                                    </Text>
                                 </View>
-                            )}
-                        </TouchableOpacity>
-                    ))}
+
+                                <View style={styles.langInfo}>
+                                    <Text style={[
+                                        styles.langNativeName,
+                                        isSelected && { color: COLORS.primary[700] }
+                                    ]}>
+                                        {lang.nativeName}
+                                    </Text>
+                                    <Text style={styles.langName}>{lang.name}</Text>
+                                </View>
+
+                                {isSelected && (
+                                    <View style={styles.checkmark}>
+                                        <Ionicons name="checkmark" size={16} color="white" />
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
             </View>
 
             {/* Continue Button */}
-            <View className="px-6 pb-12">
+            <View style={styles.buttonContainer}>
                 <PrimaryButton
                     title={t('common.confirm')}
                     onPress={handleContinue}
@@ -113,5 +113,116 @@ const LanguageSelect: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#ffffff',
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: 24,
+        paddingTop: 64,
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 48,
+    },
+    iconContainer: {
+        width: 80,
+        height: 80,
+        backgroundColor: COLORS.primary[100],
+        borderRadius: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 24,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.neutral[800],
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    subtitle: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+        textAlign: 'center',
+    },
+    languageOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        borderRadius: 16,
+        borderWidth: 2,
+        marginBottom: 16,
+    },
+    languageOptionSelected: {
+        borderColor: COLORS.primary[500],
+        backgroundColor: COLORS.primary[50],
+        shadowColor: COLORS.primary[500],
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    languageOptionDefault: {
+        borderColor: COLORS.neutral[200],
+        backgroundColor: '#ffffff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 1,
+    },
+    langCode: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    langCodeSelected: {
+        backgroundColor: COLORS.primary[500],
+    },
+    langCodeDefault: {
+        backgroundColor: COLORS.neutral[100],
+    },
+    langCodeText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    langCodeTextSelected: {
+        color: '#ffffff',
+    },
+    langCodeTextDefault: {
+        color: COLORS.neutral[500],
+    },
+    langInfo: {
+        flex: 1,
+    },
+    langNativeName: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    langName: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+    },
+    checkmark: {
+        width: 24,
+        height: 24,
+        backgroundColor: COLORS.primary[500],
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonContainer: {
+        paddingHorizontal: 24,
+        paddingBottom: 48,
+    },
+});
 
 export default LanguageSelect;
