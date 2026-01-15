@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Alert } from 'react-native';
+import { View, Text, ScrollView, Alert, StyleSheet } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton } from '../../components';
 import { COLORS } from '../../utils/constants';
-import { formatDateTime, formatDate, formatTime } from '../../utils/validators';
+import { formatDate, formatTime } from '../../utils/validators';
 import meetingsData from '../../data/meetings.json';
 
 type ParamList = {
@@ -25,14 +25,14 @@ const MeetingDetails: React.FC = () => {
 
     if (!meeting) {
         return (
-            <View className="flex-1 bg-neutral-50">
+            <View style={styles.container}>
                 <Header
                     title={t('meetings.meeting_details')}
                     showBack
                     onBackPress={() => navigation.goBack()}
                 />
-                <View className="flex-1 items-center justify-center">
-                    <Text className="text-neutral-500">Meeting not found</Text>
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>Meeting not found</Text>
                 </View>
             </View>
         );
@@ -58,82 +58,82 @@ const MeetingDetails: React.FC = () => {
     };
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('meetings.meeting_details')}
                 showBack
                 onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Meeting Card */}
-                <View className="mx-4 mt-4 bg-primary-500 rounded-2xl p-6">
-                    <View className="flex-row items-center mb-4">
-                        <View className="w-14 h-14 bg-white/20 rounded-full items-center justify-center mr-4">
+                <View style={styles.meetingCardBanner}>
+                    <View style={styles.bannerHeader}>
+                        <View style={styles.bannerIconContainer}>
                             <Ionicons name="videocam" size={28} color="white" />
                         </View>
-                        <View className="flex-1">
-                            <Text className="text-white/80 text-sm">Expert Session</Text>
-                            <Text className="text-xl font-bold text-white">
+                        <View style={styles.bannerTextContainer}>
+                            <Text style={styles.bannerSubtitle}>Expert Session</Text>
+                            <Text style={styles.bannerTitle}>
                                 {i18n.language === 'si' ? meeting.titleSi : meeting.title}
                             </Text>
                         </View>
                     </View>
 
-                    <View className="bg-white/10 rounded-xl p-4">
-                        <View className="flex-row items-center mb-2">
+                    <View style={styles.bannerDetails}>
+                        <View style={styles.bannerInfoRow}>
                             <Ionicons name="calendar" size={18} color="white" />
-                            <Text className="text-white ml-2">
+                            <Text style={styles.bannerInfoText}>
                                 {formatDate(meeting.dateTime, i18n.language)}
                             </Text>
                         </View>
-                        <View className="flex-row items-center mb-2">
+                        <View style={styles.bannerInfoRow}>
                             <Ionicons name="time" size={18} color="white" />
-                            <Text className="text-white ml-2">
+                            <Text style={styles.bannerInfoText}>
                                 {formatTime(meeting.dateTime, i18n.language)} ({meeting.duration} min)
                             </Text>
                         </View>
-                        <View className="flex-row items-center">
+                        <View style={styles.bannerInfoRowFinal}>
                             <Ionicons name="people" size={18} color="white" />
-                            <Text className="text-white ml-2">
+                            <Text style={styles.bannerInfoText}>
                                 {meeting.attendees}/{meeting.maxAttendees} attendees
                             </Text>
                         </View>
                     </View>
                 </View>
 
-                <View className="p-4">
+                <View style={styles.content}>
                     {/* Expert Info */}
-                    <View className="bg-white rounded-xl p-4 mb-4 border border-neutral-100">
-                        <Text className="text-sm text-neutral-400 uppercase mb-2">
+                    <View style={styles.card}>
+                        <Text style={styles.sectionLabel}>
                             {t('meetings.expert')}
                         </Text>
-                        <View className="flex-row items-center">
-                            <View className="w-12 h-12 bg-secondary-100 rounded-full items-center justify-center mr-3">
+                        <View style={styles.expertRow}>
+                            <View style={styles.expertIconContainer}>
                                 <Ionicons name="person" size={24} color={COLORS.secondary[600]} />
                             </View>
                             <View>
-                                <Text className="text-base font-semibold text-neutral-800">
+                                <Text style={styles.expertName}>
                                     {meeting.expertName}
                                 </Text>
-                                <Text className="text-sm text-primary-600">Agricultural Expert</Text>
+                                <Text style={styles.expertRole}>Agricultural Expert</Text>
                             </View>
                         </View>
                     </View>
 
                     {/* Description */}
-                    <View className="bg-white rounded-xl p-4 mb-4 border border-neutral-100">
-                        <Text className="text-sm text-neutral-400 uppercase mb-2">
+                    <View style={styles.card}>
+                        <Text style={styles.sectionLabel}>
                             About This Session
                         </Text>
-                        <Text className="text-sm text-neutral-700 leading-5">
+                        <Text style={styles.descriptionText}>
                             {i18n.language === 'si' ? meeting.descriptionSi : meeting.description}
                         </Text>
                     </View>
 
                     {/* Action Buttons */}
-                    <View className="flex-row mb-4">
-                        <View className="flex-1 mr-2">
+                    <View style={styles.actionsContainer}>
+                        <View style={styles.actionButtonWrapper}>
                             <PrimaryButton
                                 title={reminderSet ? t('meetings.reminder_set') : t('meetings.set_reminder')}
                                 onPress={handleSetReminder}
@@ -143,7 +143,8 @@ const MeetingDetails: React.FC = () => {
                                 fullWidth
                             />
                         </View>
-                        <View className="flex-1">
+                        <View style={styles.spacer} />
+                        <View style={styles.actionButtonWrapper}>
                             <PrimaryButton
                                 title={t('meetings.join_meeting')}
                                 onPress={handleJoinMeeting}
@@ -154,23 +155,23 @@ const MeetingDetails: React.FC = () => {
                     </View>
 
                     {/* Tips */}
-                    <View className="bg-blue-50 rounded-xl p-4">
-                        <Text className="text-blue-800 font-semibold mb-2">Tips for the session:</Text>
-                        <View className="flex-row items-start mb-1">
+                    <View style={styles.tipsContainer}>
+                        <Text style={styles.tipsTitle}>Tips for the session:</Text>
+                        <View style={styles.tipItem}>
                             <Ionicons name="checkmark-circle" size={16} color={COLORS.info} style={{ marginTop: 2 }} />
-                            <Text className="text-blue-700 text-sm ml-2 flex-1">
+                            <Text style={styles.tipText}>
                                 Prepare your questions in advance
                             </Text>
                         </View>
-                        <View className="flex-row items-start mb-1">
+                        <View style={styles.tipItem}>
                             <Ionicons name="checkmark-circle" size={16} color={COLORS.info} style={{ marginTop: 2 }} />
-                            <Text className="text-blue-700 text-sm ml-2 flex-1">
+                            <Text style={styles.tipText}>
                                 Have photos of your crops ready if needed
                             </Text>
                         </View>
-                        <View className="flex-row items-start">
+                        <View style={styles.tipItem}>
                             <Ionicons name="checkmark-circle" size={16} color={COLORS.info} style={{ marginTop: 2 }} />
-                            <Text className="text-blue-700 text-sm ml-2 flex-1">
+                            <Text style={styles.tipText}>
                                 Join 5 minutes early to test your connection
                             </Text>
                         </View>
@@ -180,5 +181,149 @@ const MeetingDetails: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    errorContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    errorText: {
+        color: COLORS.neutral[500],
+    },
+    scrollView: {
+        flex: 1,
+    },
+    meetingCardBanner: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        backgroundColor: COLORS.primary[500],
+        borderRadius: 16,
+        padding: 24,
+    },
+    bannerHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    bannerIconContainer: {
+        width: 56,
+        height: 56,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 28,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    bannerTextContainer: {
+        flex: 1,
+    },
+    bannerSubtitle: {
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 14,
+    },
+    bannerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#ffffff',
+    },
+    bannerDetails: {
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 12,
+        padding: 16,
+    },
+    bannerInfoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    bannerInfoRowFinal: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    bannerInfoText: {
+        color: '#ffffff',
+        marginLeft: 8,
+    },
+    content: {
+        padding: 16,
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+    },
+    sectionLabel: {
+        fontSize: 14,
+        color: COLORS.neutral[400],
+        textTransform: 'uppercase',
+        marginBottom: 8,
+    },
+    expertRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    expertIconContainer: {
+        width: 48,
+        height: 48,
+        backgroundColor: COLORS.secondary[100],
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    expertName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    expertRole: {
+        fontSize: 14,
+        color: COLORS.primary[600],
+    },
+    descriptionText: {
+        fontSize: 14,
+        color: COLORS.neutral[700],
+        lineHeight: 20,
+    },
+    actionsContainer: {
+        flexDirection: 'row',
+        marginBottom: 16,
+    },
+    actionButtonWrapper: {
+        flex: 1,
+    },
+    spacer: {
+        width: 8,
+    },
+    tipsContainer: {
+        backgroundColor: '#eff6ff', // blue-50
+        borderRadius: 12,
+        padding: 16,
+    },
+    tipsTitle: {
+        color: '#1e40af', // blue-800
+        fontWeight: '600',
+        marginBottom: 8,
+    },
+    tipItem: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 4,
+    },
+    tipText: {
+        color: '#1d4ed8', // blue-700
+        fontSize: 14,
+        marginLeft: 8,
+        flex: 1,
+    },
+});
 
 export default MeetingDetails;

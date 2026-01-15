@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -50,19 +50,15 @@ const MyMeetings: React.FC = () => {
 
         return (
             <TouchableOpacity
-                className="bg-white rounded-xl p-4 mb-3 border border-neutral-100"
-                style={{
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 1,
-                }}
+                style={styles.meetingCard}
+                onPress={() => { /* Perhaps navigate to MeetingDetails if applicable */ }}
             >
-                <View className="flex-row items-start">
+                <View style={styles.cardContent}>
                     <View
-                        className="w-12 h-12 rounded-xl items-center justify-center mr-3"
-                        style={{ backgroundColor: statusConfig.color + '20' }}
+                        style={[
+                            styles.iconContainer,
+                            { backgroundColor: statusConfig.color + '20' }
+                        ]}
                     >
                         <Ionicons
                             name={item.source === 'chat_booking' ? 'chatbubble' : 'calendar'}
@@ -71,39 +67,41 @@ const MyMeetings: React.FC = () => {
                         />
                     </View>
 
-                    <View className="flex-1">
-                        <View className="flex-row items-center justify-between mb-1">
-                            <Text className="text-base font-semibold text-neutral-800 flex-1" numberOfLines={1}>
+                    <View style={styles.detailsContainer}>
+                        <View style={styles.headerRow}>
+                            <Text style={styles.topic} numberOfLines={1}>
                                 {i18n.language === 'si' ? item.topicSi : item.topic}
                             </Text>
                             <View
-                                className="px-2 py-0.5 rounded-full ml-2"
-                                style={{ backgroundColor: statusConfig.color + '20' }}
+                                style={[
+                                    styles.statusBadge,
+                                    { backgroundColor: statusConfig.color + '20' }
+                                ]}
                             >
-                                <Text className="text-xs font-medium" style={{ color: statusConfig.color }}>
+                                <Text style={[styles.statusText, { color: statusConfig.color }]}>
                                     {i18n.language === 'si' ? statusConfig.labelSi : statusConfig.label}
                                 </Text>
                             </View>
                         </View>
 
-                        <Text className="text-sm text-primary-600">
+                        <Text style={styles.expertName}>
                             {item.expertName}
                         </Text>
 
-                        <View className="flex-row items-center mt-2">
+                        <View style={styles.metaRow}>
                             <Ionicons name="calendar-outline" size={14} color={COLORS.neutral[400]} />
-                            <Text className="text-xs text-neutral-500 ml-1">
+                            <Text style={styles.metaText}>
                                 {formatDateTime(item.dateTime, i18n.language)}
                             </Text>
-                            <Text className="text-xs text-neutral-400 ml-2">
+                            <Text style={styles.durationText}>
                                 • {item.duration} min
                             </Text>
                         </View>
 
                         {item.source === 'chat_booking' && (
-                            <View className="flex-row items-center mt-1">
+                            <View style={styles.sourceRow}>
                                 <Ionicons name="chatbubble-outline" size={12} color={COLORS.neutral[400]} />
-                                <Text className="text-xs text-neutral-400 ml-1">Booked from chat</Text>
+                                <Text style={styles.sourceText}>Booked from chat</Text>
                             </View>
                         )}
                     </View>
@@ -113,7 +111,7 @@ const MyMeetings: React.FC = () => {
     };
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('meetings.my_meetings')}
                 showBack
@@ -121,8 +119,8 @@ const MyMeetings: React.FC = () => {
             />
 
             {/* Filters */}
-            <View className="px-4 py-3">
-                <View className="flex-row flex-wrap">
+            <View style={styles.filtersContainer}>
+                <View style={styles.filtersWrapper}>
                     {filters.map((f) => (
                         <Chip
                             key={f.id}
@@ -141,7 +139,7 @@ const MyMeetings: React.FC = () => {
                     data={filteredMeetings}
                     renderItem={renderMeeting}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ padding: 16, paddingTop: 0 }}
+                    contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                 />
             ) : (
@@ -156,5 +154,103 @@ const MyMeetings: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    filtersContainer: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    filtersWrapper: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    listContent: {
+        padding: 16,
+        paddingTop: 0,
+    },
+    meetingCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
+    },
+    cardContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    detailsContainer: {
+        flex: 1,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    topic: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        flex: 1,
+    },
+    statusBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 12,
+        marginLeft: 8,
+    },
+    statusText: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    expertName: {
+        fontSize: 14,
+        color: COLORS.primary[600],
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    metaText: {
+        fontSize: 12,
+        color: COLORS.neutral[500],
+        marginLeft: 4,
+    },
+    durationText: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        marginLeft: 8,
+    },
+    sourceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
+    },
+    sourceText: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        marginLeft: 4,
+    },
+});
 
 export default MyMeetings;
