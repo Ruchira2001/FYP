@@ -147,6 +147,25 @@ const Profile: React.FC = () => {
                     )}
                 </View>
 
+                {/* Add Crop Guide Card */}
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('AddCropGuide')}
+                    style={styles.contributionCard}
+                >
+                    <View style={styles.contributionContent}>
+                        <View style={styles.contributionIconContainer}>
+                            <Ionicons name="add" size={24} color="#ffffff" />
+                        </View>
+                        <View style={styles.contributionTextInfo}>
+                            <Text style={styles.contributionTitle}>Add Your Crop Guide</Text>
+                            <Text style={styles.contributionSubtitle}>
+                                Share your knowledge with the community
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={24} color="#ffffff" />
+                    </View>
+                </TouchableOpacity>
+
                 {/* Quick Shortcuts */}
                 <View style={styles.shortcutsSection}>
                     <Text style={styles.sectionTitle}>
@@ -368,6 +387,44 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 12,
         fontSize: 16,
+    },
+    contributionCard: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        backgroundColor: COLORS.primary[600], // Updated to match app theme
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: COLORS.primary[600],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    contributionContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    contributionIconContainer: {
+        width: 48,
+        height: 48,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    contributionTextInfo: {
+        flex: 1,
+    },
+    contributionTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#ffffff',
+    },
+    contributionSubtitle: {
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.9)',
+        marginTop: 2,
     },
 });
 
