@@ -1,14 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, Dimensions, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, Dimensions, TouchableOpacity, StatusBar, ScrollView, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    useAnimatedScrollHandler,
-    interpolate,
-    Extrapolation,
-} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { COLORS } from '../../utils/constants';
@@ -48,32 +41,18 @@ const slides: OnboardingSlide[] = [
     },
 ];
 
-// Pagination Dot Component
-const PaginationDot: React.FC<{ index: number; scrollX: Animated.SharedValue<number> }> = ({ index, scrollX }) => {
-    const dotStyle = useAnimatedStyle(() => {
-        const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
-        const dotWidth = interpolate(
-            scrollX.value,
-            inputRange,
-            [8, 24, 8],
-            Extrapolation.CLAMP
-        );
-        const opacity = interpolate(
-            scrollX.value,
-            inputRange,
-            [0.3, 1, 0.3],
-            Extrapolation.CLAMP
-        );
-        return {
-            width: dotWidth,
-            opacity,
-        };
-    });
-
+// Simple Pagination Dot Component
+const PaginationDot: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     return (
-        <Animated.View
-            className="h-2 rounded-full bg-primary-500 mx-1"
-            style={dotStyle}
+        <View
+            style={{
+                width: isActive ? 24 : 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: COLORS.primary[500],
+                marginHorizontal: 4,
+                opacity: isActive ? 1 : 0.3,
+            }}
         />
     );
 };
@@ -81,15 +60,8 @@ const PaginationDot: React.FC<{ index: number; scrollX: Animated.SharedValue<num
 const Onboarding: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t } = useTranslation();
-    const scrollRef = useRef<Animated.ScrollView>(null);
+    const scrollRef = useRef<ScrollView>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const scrollX = useSharedValue(0);
-
-    const scrollHandler = useAnimatedScrollHandler({
-        onScroll: (event) => {
-            scrollX.value = event.contentOffset.x;
-        },
-    });
 
     const handleNext = () => {
         if (currentIndex < slides.length - 1) {
@@ -104,26 +76,46 @@ const Onboarding: React.FC = () => {
         navigation.replace('LanguageSelect');
     };
 
+    const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const index = Math.round(e.nativeEvent.contentOffset.x / width);
+        if (index !== currentIndex) {
+            setCurrentIndex(index);
+        }
+    };
+
     const renderSlide = (slide: OnboardingSlide) => {
         return (
-            <View key={slide.id} style={{ width }} className="items-center justify-center px-8">
+            <View key={slide.id} style={{ width, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
                 <View
-                    className="w-40 h-40 rounded-full items-center justify-center mb-10"
-                    style={{ backgroundColor: slide.color + '20' }}
+                    style={{
+                        width: 160,
+                        height: 160,
+                        borderRadius: 80,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 40,
+                        backgroundColor: slide.color + '20',
+                    }}
                 >
                     <View
-                        className="w-28 h-28 rounded-full items-center justify-center"
-                        style={{ backgroundColor: slide.color + '40' }}
+                        style={{
+                            width: 112,
+                            height: 112,
+                            borderRadius: 56,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: slide.color + '40',
+                        }}
                     >
                         <Ionicons name={slide.icon} size={56} color={slide.color} />
                     </View>
                 </View>
 
-                <Text className="text-2xl font-bold text-neutral-800 text-center mb-4">
+                <Text style={{ fontSize: 24, fontWeight: 'bold', color: COLORS.neutral[800], textAlign: 'center', marginBottom: 16 }}>
                     {t(slide.titleKey)}
                 </Text>
 
-                <Text className="text-base text-neutral-500 text-center leading-6">
+                <Text style={{ fontSize: 16, color: COLORS.neutral[500], textAlign: 'center', lineHeight: 24 }}>
                     {t(slide.descKey)}
                 </Text>
             </View>
@@ -131,39 +123,35 @@ const Onboarding: React.FC = () => {
     };
 
     return (
-        <View className="flex-1 bg-white">
+        <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
             <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
             {/* Skip Button */}
-            <View className="absolute top-12 right-6 z-10">
-                <TouchableOpacity onPress={handleSkip} className="py-2 px-4">
-                    <Text className="text-primary-600 font-medium">{t('common.skip')}</Text>
+            <View style={{ position: 'absolute', top: 48, right: 24, zIndex: 10 }}>
+                <TouchableOpacity onPress={handleSkip} style={{ paddingVertical: 8, paddingHorizontal: 16 }}>
+                    <Text style={{ color: COLORS.primary[600], fontWeight: '500' }}>{t('common.skip')}</Text>
                 </TouchableOpacity>
             </View>
 
             {/* Slides */}
-            <Animated.ScrollView
+            <ScrollView
                 ref={scrollRef}
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
-                onScroll={scrollHandler}
+                onMomentumScrollEnd={handleScroll}
                 scrollEventThrottle={16}
-                onMomentumScrollEnd={(e) => {
-                    const index = Math.round(e.nativeEvent.contentOffset.x / width);
-                    setCurrentIndex(index);
-                }}
-                className="flex-1 pt-20"
+                style={{ flex: 1, paddingTop: 80 }}
             >
                 {slides.map((slide) => renderSlide(slide))}
-            </Animated.ScrollView>
+            </ScrollView>
 
             {/* Bottom Section */}
-            <View className="px-8 pb-12">
+            <View style={{ paddingHorizontal: 32, paddingBottom: 48 }}>
                 {/* Pagination Dots */}
-                <View className="flex-row justify-center mb-8">
+                <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 32 }}>
                     {slides.map((_, index) => (
-                        <PaginationDot key={index} index={index} scrollX={scrollX} />
+                        <PaginationDot key={index} isActive={index === currentIndex} />
                     ))}
                 </View>
 
