@@ -13,7 +13,20 @@ LogBox.ignoreLogs([
     'Non-serializable values were found in the navigation state',
 ]);
 
+import {
+    useFonts,
+    IrishGrover_400Regular
+} from '@expo-google-fonts/irish-grover';
+
 export default function App() {
+    let [fontsLoaded] = useFonts({
+        IrishGrover_400Regular,
+    });
+
+    if (!fontsLoaded) {
+        return null;
+    }
+
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaProvider>

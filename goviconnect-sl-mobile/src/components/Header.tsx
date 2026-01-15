@@ -79,9 +79,12 @@ const Header: React.FC<HeaderProps> = ({
                     )}
 
                     {showCursiveTitle ? (
-                        <Text style={styles.cursiveTitle}>
-                            {t('common.app_name')}
-                        </Text>
+                        <View style={styles.logoContainer}>
+                            <Ionicons name="leaf" size={24} color={COLORS.primary[600]} style={{ marginRight: 6 }} />
+                            <Text style={styles.cursiveTitle}>
+                                {t('common.app_name')}
+                            </Text>
+                        </View>
                     ) : (
                         title && (
                             <Text style={styles.title} numberOfLines={1}>
@@ -186,13 +189,14 @@ const styles = StyleSheet.create({
         marginRight: 12,
         padding: 4,
     },
+    logoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     cursiveTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
+        fontSize: 26,
         color: COLORS.primary[600],
-        // Note: fontFamily 'cursive' might not be available on all devices, 
-        // usually safer to use a specific font or a fallback
-        fontStyle: 'italic',
+        fontFamily: 'IrishGrover_400Regular',
     },
     title: {
         fontSize: 18,
