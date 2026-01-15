@@ -13,6 +13,7 @@ interface ChipProps {
     variant?: 'default' | 'outline' | 'filled';
     color?: string;
     disabled?: boolean;
+    style?: any;
 }
 
 const Chip: React.FC<ChipProps> = ({
@@ -25,6 +26,7 @@ const Chip: React.FC<ChipProps> = ({
     variant = 'default',
     color = COLORS.primary[500],
     disabled = false,
+    style,
 }) => {
     const getSizeStyles = () => {
         switch (size) {
@@ -97,6 +99,7 @@ const Chip: React.FC<ChipProps> = ({
                     borderWidth: variant === 'outline' || selected ? 1.5 : 0,
                     borderColor: getBorderColor(),
                 },
+                style,
             ]}
         >
             {emoji && (

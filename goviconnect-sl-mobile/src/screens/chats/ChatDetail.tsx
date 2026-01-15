@@ -7,15 +7,17 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    Image,
+    StyleSheet,
+    SafeAreaView,
+    StatusBar,
+    Alert
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, PrimaryButton } from '../../components';
 import { COLORS } from '../../utils/constants';
-import { Message, saveMessage } from '../../services/storage';
+import { Message } from '../../services/storage';
 import { queueService } from '../../services/queueService';
 import { useConnectionStatus } from '../../services/netinfo';
 import { generateId, formatTime } from '../../utils/validators';
@@ -80,64 +82,64 @@ const ChatDetail: React.FC = () => {
         });
     };
 
+    const handleAttachment = (type: string) => {
+        setShowActions(false);
+        Alert.alert("Attachment", `You selected: ${type}`);
+        // Implement specific logic here
+    };
+
     const renderMessage = ({ item }: { item: Message }) => {
         const isUser = item.senderType === 'user';
 
         return (
-            <View className={`mb-3 ${isUser ? 'items-end' : 'items-start'}`}>
+            <View style={[styles.messageRow, isUser ? styles.rowEnd : styles.rowStart]}>
                 <View
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${isUser
-                            ? 'bg-primary-500 rounded-br-sm'
-                            : 'bg-white border border-neutral-100 rounded-bl-sm'
-                        }`}
-                    style={!isUser ? {
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.05,
-                        shadowRadius: 4,
-                        elevation: 1,
-                    } : undefined}
+                    style={[
+                        styles.bubble,
+                        isUser ? styles.bubbleUser : styles.bubbleExpert,
+                        !isUser && styles.bubbleShadow
+                    ]}
                 >
                     {item.type === 'image' && (
-                        <View className="w-48 h-36 bg-neutral-200 rounded-lg mb-2 items-center justify-center">
+                        <View style={styles.attachmentPlaceholder}>
                             <Ionicons name="image" size={32} color={COLORS.neutral[400]} />
                         </View>
                     )}
 
                     {item.type === 'diagnosis' && (
-                        <View className="bg-red-50 rounded-lg p-3 mb-2">
-                            <View className="flex-row items-center mb-1">
+                        <View style={[styles.attachmentBox, styles.diagnosisBox]}>
+                            <View style={styles.attachmentHeader}>
                                 <Ionicons name="medical" size={16} color={COLORS.error} />
-                                <Text className="text-red-700 font-medium ml-1">Diagnosis Result</Text>
+                                <Text style={styles.diagnosisTitle}>Diagnosis Result</Text>
                             </View>
-                            <Text className="text-red-600 text-sm">Attached for review</Text>
+                            <Text style={styles.diagnosisText}>Attached for review</Text>
                         </View>
                     )}
 
                     {item.type === 'prediction' && (
-                        <View className="bg-blue-50 rounded-lg p-3 mb-2">
-                            <View className="flex-row items-center mb-1">
+                        <View style={[styles.attachmentBox, styles.predictionBox]}>
+                            <View style={styles.attachmentHeader}>
                                 <Ionicons name="analytics" size={16} color={COLORS.info} />
-                                <Text className="text-blue-700 font-medium ml-1">Price Prediction</Text>
+                                <Text style={styles.predictionTitle}>Price Prediction</Text>
                             </View>
-                            <Text className="text-blue-600 text-sm">Attached for review</Text>
+                            <Text style={styles.predictionText}>Attached for review</Text>
                         </View>
                     )}
 
-                    <Text className={`text-base ${isUser ? 'text-white' : 'text-neutral-800'}`}>
+                    <Text style={[styles.messageText, isUser ? styles.textUser : styles.textExpert]}>
                         {item.content}
                     </Text>
 
-                    <View className="flex-row items-center justify-end mt-1">
-                        <Text className={`text-xs ${isUser ? 'text-white/70' : 'text-neutral-400'}`}>
+                    <View style={styles.metaRow}>
+                        <Text style={[styles.timestamp, isUser ? styles.timeUser : styles.timeExpert]}>
                             {formatTime(item.timestamp, i18n.language)}
                         </Text>
                         {isUser && (
                             <Ionicons
                                 name={item.synced ? 'checkmark-done' : 'time'}
                                 size={14}
-                                color={isUser ? 'rgba(255,255,255,0.7)' : COLORS.neutral[400]}
-                                style={{ marginLeft: 4 }}
+                                color={'rgba(255,255,255,0.7)'}
+                                style={styles.statusIcon}
                             />
                         )}
                     </View>
@@ -147,128 +149,401 @@ const ChatDetail: React.FC = () => {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            className="flex-1 bg-neutral-50"
-        >
-            {/* Header */}
-            <View className="bg-white border-b border-neutral-100">
-                <View className="flex-row items-center px-4 py-3">
-                    <TouchableOpacity
-                        onPress={() => navigation.goBack()}
-                        className="mr-3"
-                    >
-                        <Ionicons name="arrow-back" size={24} color={COLORS.neutral[700]} />
-                    </TouchableOpacity>
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <View style={styles.headerContent}>
+                        <TouchableOpacity
+                            onPress={() => navigation.goBack()}
+                            style={styles.backButton}
+                        >
+                            <Ionicons name="arrow-back" size={24} color={COLORS.neutral[700]} />
+                        </TouchableOpacity>
 
-                    <View className="relative">
-                        <View className="w-10 h-10 bg-primary-100 rounded-full items-center justify-center">
-                            <Ionicons name="person" size={20} color={COLORS.primary[600]} />
+                        <View style={styles.expertAvatarContainer}>
+                            <View style={styles.expertAvatar}>
+                                <Ionicons name="person" size={20} color={COLORS.primary[600]} />
+                            </View>
+                            {chat?.online && (
+                                <View style={styles.onlineDot} />
+                            )}
                         </View>
-                        {chat?.online && (
-                            <View className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
-                        )}
+
+                        <View style={styles.expertInfo}>
+                            <Text style={styles.expertName}>
+                                {chat?.expertName}
+                            </Text>
+                            <Text style={styles.statusText}>
+                                {chat?.online ? t('chats.online') : t('chats.offline')}
+                            </Text>
+                        </View>
+
+                        <TouchableOpacity onPress={handleBookMeeting} style={styles.bookButton}>
+                            <Ionicons name="calendar" size={20} color={COLORS.primary[700]} />
+                        </TouchableOpacity>
                     </View>
+                </View>
 
-                    <View className="flex-1 ml-3">
-                        <Text className="text-base font-semibold text-neutral-800">
-                            {chat?.expertName}
-                        </Text>
-                        <Text className="text-xs text-neutral-400">
-                            {chat?.online ? t('chats.online') : t('chats.offline')}
-                        </Text>
+                {/* Messages */}
+                <FlatList
+                    ref={flatListRef}
+                    data={messages}
+                    renderItem={renderMessage}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.messagesList}
+                    showsVerticalScrollIndicator={false}
+                    onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+                />
+
+                {/* Input Area */}
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                >
+                    {/* Quick Actions (WhatsApp style) */}
+                    {showActions && (
+                        <View style={styles.actionsPanel}>
+                            <View style={styles.actionsGrid}>
+                                <TouchableOpacity style={styles.actionItem} onPress={() => handleAttachment('Document')}>
+                                    <View style={[styles.actionIconCircle, { backgroundColor: '#5f66cd' }]}>
+                                        <Ionicons name="document-text" size={24} color="white" />
+                                    </View>
+                                    <Text style={styles.actionLabel}>Document</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.actionItem} onPress={() => handleAttachment('Camera')}>
+                                    <View style={[styles.actionIconCircle, { backgroundColor: '#ec407a' }]}>
+                                        <Ionicons name="camera" size={24} color="white" />
+                                    </View>
+                                    <Text style={styles.actionLabel}>Camera</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.actionItem} onPress={() => handleAttachment('Gallery')}>
+                                    <View style={[styles.actionIconCircle, { backgroundColor: '#ab47bc' }]}>
+                                        <Ionicons name="image" size={24} color="white" />
+                                    </View>
+                                    <Text style={styles.actionLabel}>Gallery</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.actionItem} onPress={() => handleAttachment('Audio')}>
+                                    <View style={[styles.actionIconCircle, { backgroundColor: '#ff9800' }]}>
+                                        <Ionicons name="musical-notes" size={24} color="white" />
+                                    </View>
+                                    <Text style={styles.actionLabel}>Audio</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.actionItem} onPress={() => handleAttachment('Location')}>
+                                    <View style={[styles.actionIconCircle, { backgroundColor: '#4caf50' }]}>
+                                        <Ionicons name="location" size={24} color="white" />
+                                    </View>
+                                    <Text style={styles.actionLabel}>Location</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.actionItem} onPress={() => handleAttachment('Contact')}>
+                                    <View style={[styles.actionIconCircle, { backgroundColor: '#2196f3' }]}>
+                                        <Ionicons name="person" size={24} color="white" />
+                                    </View>
+                                    <Text style={styles.actionLabel}>Contact</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+
+                    <View style={styles.inputArea}>
+                        <TouchableOpacity
+                            onPress={() => setShowActions(!showActions)}
+                            style={styles.attachButton}
+                        >
+                            <Ionicons
+                                name={showActions ? 'close' : 'add'}
+                                size={24}
+                                color={COLORS.neutral[600]}
+                            />
+                        </TouchableOpacity>
+
+                        <View style={styles.textInputWrapper}>
+                            <TextInput
+                                style={styles.textInput}
+                                placeholder={t('chats.type_message')}
+                                placeholderTextColor={COLORS.neutral[400]}
+                                value={inputText}
+                                onChangeText={setInputText}
+                                multiline
+                                maxLength={500}
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            onPress={handleSend}
+                            disabled={!inputText.trim()}
+                            style={[styles.sendButton, inputText.trim() ? styles.sendActive : styles.sendInactive]}
+                        >
+                            <Ionicons
+                                name="send"
+                                size={18}
+                                color={inputText.trim() ? 'white' : COLORS.neutral[400]}
+                            />
+                        </TouchableOpacity>
                     </View>
-
-                    <TouchableOpacity onPress={handleBookMeeting} className="bg-primary-100 px-3 py-2 rounded-lg">
-                        <Text className="text-primary-700 font-medium text-sm">
-                            {t('chats.book_meeting_cta')}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                </KeyboardAvoidingView>
             </View>
-
-            {/* Messages */}
-            <FlatList
-                ref={flatListRef}
-                data={messages}
-                renderItem={renderMessage}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ padding: 16 }}
-                showsVerticalScrollIndicator={false}
-                onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
-            />
-
-            {/* Quick Actions */}
-            {showActions && (
-                <View className="bg-white border-t border-neutral-100 px-4 py-3 flex-row">
-                    <TouchableOpacity
-                        className="flex-1 bg-red-50 rounded-xl py-3 mr-2 items-center flex-row justify-center"
-                        onPress={() => {
-                            setShowActions(false);
-                            // Add diagnosis attachment
-                        }}
-                    >
-                        <Ionicons name="medical" size={18} color={COLORS.error} />
-                        <Text className="text-red-700 font-medium ml-2 text-sm">
-                            {t('chats.send_diagnosis')}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        className="flex-1 bg-blue-50 rounded-xl py-3 items-center flex-row justify-center"
-                        onPress={() => {
-                            setShowActions(false);
-                            // Add prediction attachment
-                        }}
-                    >
-                        <Ionicons name="analytics" size={18} color={COLORS.info} />
-                        <Text className="text-blue-700 font-medium ml-2 text-sm">
-                            {t('chats.send_prediction')}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            {/* Input */}
-            <View className="bg-white border-t border-neutral-100 px-4 py-3 flex-row items-center">
-                <TouchableOpacity
-                    onPress={() => setShowActions(!showActions)}
-                    className="w-10 h-10 bg-neutral-100 rounded-full items-center justify-center mr-2"
-                >
-                    <Ionicons
-                        name={showActions ? 'close' : 'add'}
-                        size={24}
-                        color={COLORS.neutral[600]}
-                    />
-                </TouchableOpacity>
-
-                <View className="flex-1 bg-neutral-100 rounded-xl px-4 py-2 mr-2">
-                    <TextInput
-                        className="text-base text-neutral-800"
-                        placeholder={t('chats.type_message')}
-                        placeholderTextColor={COLORS.neutral[400]}
-                        value={inputText}
-                        onChangeText={setInputText}
-                        multiline
-                        maxLength={500}
-                    />
-                </View>
-
-                <TouchableOpacity
-                    onPress={handleSend}
-                    disabled={!inputText.trim()}
-                    className={`w-10 h-10 rounded-full items-center justify-center ${inputText.trim() ? 'bg-primary-500' : 'bg-neutral-200'
-                        }`}
-                >
-                    <Ionicons
-                        name="send"
-                        size={18}
-                        color={inputText.trim() ? 'white' : COLORS.neutral[400]}
-                    />
-                </TouchableOpacity>
-            </View>
-        </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
+
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#ffffff',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    },
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    header: {
+        backgroundColor: '#ffffff',
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+    },
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    backButton: {
+        marginRight: 12,
+    },
+    expertAvatarContainer: {
+        position: 'relative',
+        marginRight: 12,
+    },
+    expertAvatar: {
+        width: 40,
+        height: 40,
+        backgroundColor: COLORS.primary[100],
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    onlineDot: {
+        position: 'absolute',
+        bottom: -2,
+        right: -2,
+        width: 12,
+        height: 12,
+        backgroundColor: '#22c55e',
+        borderRadius: 6,
+        borderWidth: 2,
+        borderColor: '#ffffff',
+    },
+    expertInfo: {
+        flex: 1,
+    },
+    expertName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    statusText: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+    },
+    bookButton: {
+        backgroundColor: COLORS.primary[100],
+        padding: 8,
+        borderRadius: 20, // Circular/rounded
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 36,
+        height: 36,
+    },
+    messagesList: {
+        padding: 16,
+    },
+    messageRow: {
+        marginBottom: 12,
+        flexDirection: 'row',
+    },
+    rowEnd: {
+        justifyContent: 'flex-end',
+    },
+    rowStart: {
+        justifyContent: 'flex-start',
+    },
+    bubble: {
+        maxWidth: '80%',
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    bubbleUser: {
+        backgroundColor: COLORS.primary[500],
+        borderBottomRightRadius: 2,
+    },
+    bubbleExpert: {
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        borderBottomLeftRadius: 2,
+    },
+    bubbleShadow: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
+    },
+    attachmentPlaceholder: {
+        width: 192,
+        height: 144,
+        backgroundColor: COLORS.neutral[200],
+        borderRadius: 8,
+        marginBottom: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    attachmentBox: {
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 8,
+    },
+    diagnosisBox: {
+        backgroundColor: '#fef2f2', // red-50
+    },
+    predictionBox: {
+        backgroundColor: '#eff6ff', // blue-50
+    },
+    attachmentHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    diagnosisTitle: {
+        color: '#b91c1c', // red-700
+        fontWeight: '500',
+        marginLeft: 4,
+    },
+    predictionTitle: {
+        color: '#1d4ed8', // blue-700
+        fontWeight: '500',
+        marginLeft: 4,
+    },
+    diagnosisText: {
+        color: '#dc2626', // red-600
+        fontSize: 14,
+    },
+    predictionText: {
+        color: '#2563eb', // blue-600
+        fontSize: 14,
+    },
+    messageText: {
+        fontSize: 16,
+        lineHeight: 22,
+    },
+    textUser: {
+        color: '#ffffff',
+    },
+    textExpert: {
+        color: COLORS.neutral[800],
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginTop: 4,
+    },
+    timestamp: {
+        fontSize: 12,
+    },
+    timeUser: {
+        color: 'rgba(255,255,255,0.7)',
+    },
+    timeExpert: {
+        color: COLORS.neutral[400],
+    },
+    statusIcon: {
+        marginLeft: 4,
+    },
+    // New WhatsApp-style actions
+    actionsPanel: {
+        backgroundColor: '#ffffff',
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+        padding: 24,
+    },
+    actionsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        marginHorizontal: -12,
+    },
+    actionItem: {
+        width: '33.33%',
+        alignItems: 'center',
+        marginBottom: 24,
+        paddingHorizontal: 12,
+    },
+    actionIconCircle: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
+    actionLabel: {
+        fontSize: 12,
+        color: COLORS.neutral[600],
+        fontWeight: '500',
+    },
+    inputArea: {
+        backgroundColor: '#ffffff',
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    attachButton: {
+        width: 40,
+        height: 40,
+        backgroundColor: COLORS.neutral[100],
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 8,
+    },
+    textInputWrapper: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[100],
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginRight: 8,
+        minHeight: 40,
+    },
+    textInput: {
+        fontSize: 16,
+        color: COLORS.neutral[800],
+        maxHeight: 100,
+    },
+    sendButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    sendActive: {
+        backgroundColor: COLORS.primary[500],
+    },
+    sendInactive: {
+        backgroundColor: COLORS.neutral[200],
+    },
+});
 
 export default ChatDetail;
