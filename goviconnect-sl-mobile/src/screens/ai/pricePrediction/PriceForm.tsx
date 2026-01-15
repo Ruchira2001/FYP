@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -50,15 +50,15 @@ const PriceForm: React.FC = () => {
     };
 
     const renderStep1 = () => (
-        <View className="p-4">
-            <Text className="text-lg font-semibold text-neutral-800 mb-2">
+        <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>
                 {t('ai.select_crop')}
             </Text>
-            <Text className="text-sm text-neutral-500 mb-4">
+            <Text style={styles.stepDescription}>
                 Choose the crop you want to predict prices for
             </Text>
 
-            <View className="flex-row flex-wrap">
+            <View style={styles.chipContainer}>
                 {cropsData.crops.map((crop) => (
                     <Chip
                         key={crop.id}
@@ -72,7 +72,7 @@ const PriceForm: React.FC = () => {
                 ))}
             </View>
 
-            <View className="mt-6">
+            <View style={styles.inputContainer}>
                 <InputField
                     label={t('ai.crop_variety')}
                     placeholder="e.g., TRI 2023, Red Lady"
@@ -85,11 +85,11 @@ const PriceForm: React.FC = () => {
     );
 
     const renderStep2 = () => (
-        <View className="p-4">
-            <Text className="text-lg font-semibold text-neutral-800 mb-2">
+        <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>
                 {t('ai.land_size')}
             </Text>
-            <Text className="text-sm text-neutral-500 mb-4">
+            <Text style={styles.stepDescription}>
                 Enter the size of land for this crop
             </Text>
 
@@ -102,8 +102,8 @@ const PriceForm: React.FC = () => {
                 icon="resize-outline"
             />
 
-            <Text className="text-sm font-medium text-neutral-600 mb-2">Unit</Text>
-            <View className="flex-row flex-wrap mb-6">
+            <Text style={styles.sectionLabel}>Unit</Text>
+            <View style={styles.chipContainer}>
                 {LAND_UNITS.map((unit) => (
                     <Chip
                         key={unit.id}
@@ -119,11 +119,11 @@ const PriceForm: React.FC = () => {
     );
 
     const renderStep3 = () => (
-        <View className="p-4">
-            <Text className="text-lg font-semibold text-neutral-800 mb-2">
+        <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>
                 Additional Details (Optional)
             </Text>
-            <Text className="text-sm text-neutral-500 mb-4">
+            <Text style={styles.stepDescription}>
                 More details help improve prediction accuracy
             </Text>
 
@@ -154,36 +154,42 @@ const PriceForm: React.FC = () => {
     );
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('ai.price_prediction')}
                 showBack
                 onBackPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()}
             />
 
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Progress Steps */}
-                <View className="flex-row items-center px-4 py-4">
+                <View style={styles.stepsIndicator}>
                     {[1, 2, 3].map((s, index) => (
                         <React.Fragment key={s}>
                             <TouchableOpacity
                                 onPress={() => s < step && setStep(s)}
-                                className={`w-10 h-10 rounded-full items-center justify-center ${s <= step ? 'bg-primary-500' : 'bg-neutral-200'
-                                    }`}
+                                style={[
+                                    styles.stepCircle,
+                                    s <= step ? styles.stepCircleActive : styles.stepCircleInactive
+                                ]}
                             >
                                 {s < step ? (
                                     <Ionicons name="checkmark" size={18} color="white" />
                                 ) : (
-                                    <Text className={`text-sm font-semibold ${s <= step ? 'text-white' : 'text-neutral-400'
-                                        }`}>
+                                    <Text style={[
+                                        styles.stepNumber,
+                                        s <= step ? styles.stepNumberActive : styles.stepNumberInactive
+                                    ]}>
                                         {s}
                                     </Text>
                                 )}
                             </TouchableOpacity>
                             {index < 2 && (
                                 <View
-                                    className={`flex-1 h-1 mx-2 rounded-full ${s < step ? 'bg-primary-500' : 'bg-neutral-200'
-                                        }`}
+                                    style={[
+                                        styles.stepLine,
+                                        s < step ? styles.stepLineActive : styles.stepLineInactive
+                                    ]}
                                 />
                             )}
                         </React.Fragment>
@@ -191,14 +197,14 @@ const PriceForm: React.FC = () => {
                 </View>
 
                 {/* Step Labels */}
-                <View className="flex-row px-4 mb-4">
-                    <Text className={`flex-1 text-center text-xs ${step >= 1 ? 'text-primary-600' : 'text-neutral-400'}`}>
+                <View style={styles.stepLabelsContainer}>
+                    <Text style={[styles.stepLabel, step >= 1 ? styles.stepLabelActive : styles.stepLabelInactive]}>
                         {t('ai.select_crop')}
                     </Text>
-                    <Text className={`flex-1 text-center text-xs ${step >= 2 ? 'text-primary-600' : 'text-neutral-400'}`}>
+                    <Text style={[styles.stepLabel, step >= 2 ? styles.stepLabelActive : styles.stepLabelInactive]}>
                         {t('ai.land_size')}
                     </Text>
-                    <Text className={`flex-1 text-center text-xs ${step >= 3 ? 'text-primary-600' : 'text-neutral-400'}`}>
+                    <Text style={[styles.stepLabel, step >= 3 ? styles.stepLabelActive : styles.stepLabelInactive]}>
                         Details
                     </Text>
                 </View>
@@ -210,16 +216,16 @@ const PriceForm: React.FC = () => {
 
                 {/* Summary Card (on step 3) */}
                 {step === 3 && selectedCrop && (
-                    <View className="mx-4 bg-primary-50 rounded-xl p-4 mb-4">
-                        <Text className="text-sm font-semibold text-primary-800 mb-2">Summary</Text>
-                        <View className="flex-row items-center">
-                            <Text className="text-2xl mr-2">{getCropDisplay(selectedCrop).icon}</Text>
+                    <View style={styles.summaryCard}>
+                        <Text style={styles.summaryTitle}>Summary</Text>
+                        <View style={styles.summaryContent}>
+                            <Text style={styles.cropIcon}>{getCropDisplay(selectedCrop).icon}</Text>
                             <View>
-                                <Text className="text-base font-medium text-primary-700">
+                                <Text style={styles.summaryCropName}>
                                     {getCropDisplay(selectedCrop).name}
                                     {variety && ` (${variety})`}
                                 </Text>
-                                <Text className="text-sm text-primary-600">
+                                <Text style={styles.summaryDetails}>
                                     {landSize} {landUnit}
                                     {district && `, ${district}`}
                                 </Text>
@@ -230,7 +236,7 @@ const PriceForm: React.FC = () => {
             </ScrollView>
 
             {/* Action Buttons */}
-            <View className="p-4 border-t border-neutral-100 bg-white">
+            <View style={styles.footer}>
                 <PrimaryButton
                     title={step === 3 ? t('ai.predict_price') : t('common.next')}
                     onPress={step === 3 ? handlePredict : handleNext}
@@ -247,5 +253,137 @@ const PriceForm: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    scrollView: {
+        flex: 1,
+    },
+    stepsIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+    },
+    stepCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepCircleActive: {
+        backgroundColor: COLORS.primary[500],
+    },
+    stepCircleInactive: {
+        backgroundColor: COLORS.neutral[200],
+    },
+    stepNumber: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    stepNumberActive: {
+        color: '#ffffff',
+    },
+    stepNumberInactive: {
+        color: COLORS.neutral[400],
+    },
+    stepLine: {
+        flex: 1,
+        height: 4,
+        marginHorizontal: 8,
+        borderRadius: 2,
+    },
+    stepLineActive: {
+        backgroundColor: COLORS.primary[500],
+    },
+    stepLineInactive: {
+        backgroundColor: COLORS.neutral[200],
+    },
+    stepLabelsContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+        marginBottom: 16,
+    },
+    stepLabel: {
+        flex: 1,
+        textAlign: 'center',
+        fontSize: 12,
+    },
+    stepLabelActive: {
+        color: COLORS.primary[600],
+    },
+    stepLabelInactive: {
+        color: COLORS.neutral[400],
+    },
+    stepContainer: {
+        padding: 16,
+    },
+    stepTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        marginBottom: 8,
+    },
+    stepDescription: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+        marginBottom: 16,
+    },
+    chipContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 24,
+    },
+    inputContainer: {
+        marginTop: 24,
+    },
+    sectionLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: COLORS.neutral[600],
+        marginBottom: 8,
+        marginTop: 8,
+    },
+    summaryCard: {
+        marginHorizontal: 16,
+        backgroundColor: COLORS.primary[50],
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+    },
+    summaryTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.primary[800],
+        marginBottom: 8,
+    },
+    summaryContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    cropIcon: {
+        fontSize: 24,
+        marginRight: 8,
+    },
+    summaryCropName: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: COLORS.primary[700],
+    },
+    summaryDetails: {
+        fontSize: 14,
+        color: COLORS.primary[600],
+    },
+    footer: {
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+        backgroundColor: '#ffffff',
+    },
+});
 
 export default PriceForm;

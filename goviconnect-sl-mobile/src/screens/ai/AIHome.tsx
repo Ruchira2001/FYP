@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -11,12 +11,12 @@ const AIHome: React.FC = () => {
     const { t } = useTranslation();
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header title={t('ai.title')} />
 
-            <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* AI Crop Doctor */}
-                <View className="mb-4">
+                <View style={styles.cardWrapper}>
                     <ActionCard
                         title={t('ai.crop_doctor')}
                         description={t('ai.crop_doctor_desc')}
@@ -29,7 +29,7 @@ const AIHome: React.FC = () => {
                 </View>
 
                 {/* AI Price Prediction */}
-                <View className="mb-4">
+                <View style={styles.cardWrapper}>
                     <ActionCard
                         title={t('ai.price_prediction')}
                         description={t('ai.price_prediction_desc')}
@@ -42,8 +42,8 @@ const AIHome: React.FC = () => {
                 </View>
 
                 {/* Quick Access to History */}
-                <View className="flex-row mt-4">
-                    <View className="flex-1 mr-2">
+                <View style={styles.historyRow}>
+                    <View style={styles.historyCardWrapper}>
                         <ActionCard
                             title={t('ai.diagnosis_history')}
                             icon="time"
@@ -53,7 +53,8 @@ const AIHome: React.FC = () => {
                             size="sm"
                         />
                     </View>
-                    <View className="flex-1">
+                    <View style={styles.halfSpacer} />
+                    <View style={styles.historyCardWrapper}>
                         <ActionCard
                             title={t('ai.prediction_history')}
                             icon="analytics"
@@ -68,5 +69,29 @@ const AIHome: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    content: {
+        flex: 1,
+        padding: 16,
+    },
+    cardWrapper: {
+        marginBottom: 16,
+    },
+    historyRow: {
+        flexDirection: 'row',
+        marginTop: 16,
+    },
+    historyCardWrapper: {
+        flex: 1,
+    },
+    halfSpacer: {
+        width: 12,
+    },
+});
 
 export default AIHome;

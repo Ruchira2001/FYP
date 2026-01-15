@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,7 @@ import { predictCropPrice } from '../../../services/mockApi';
 import { savePredictionResult, PredictionResult } from '../../../services/storage';
 import { queueService } from '../../../services/queueService';
 import { useConnectionStatus } from '../../../services/netinfo';
-import { generateId, formatCurrency } from '../../../utils/validators';
+import { generateId } from '../../../utils/validators';
 import cropsData from '../../../data/crops.json';
 
 type ParamList = {
@@ -107,48 +107,48 @@ const PriceResult: React.FC = () => {
 
     if (loading) {
         return (
-            <View className="flex-1 bg-neutral-50">
+            <View style={styles.container}>
                 <Header
                     title={t('ai.price_prediction')}
                     showBack
                     onBackPress={() => navigation.goBack()}
                 />
-                <View className="flex-1 items-center justify-center">
-                    <View className="w-24 h-24 bg-blue-100 rounded-full items-center justify-center mb-4">
+                <View style={styles.loadingContainer}>
+                    <View style={styles.loaderCircle}>
                         <ActivityIndicator size="large" color={COLORS.info} />
                     </View>
-                    <Text className="text-lg font-semibold text-neutral-700 mb-2">
+                    <Text style={styles.loadingTitle}>
                         {t('ai.predicting')}
                     </Text>
-                    <Text className="text-sm text-neutral-400">Analyzing market data...</Text>
+                    <Text style={styles.loadingSubtitle}>Analyzing market data...</Text>
                 </View>
             </View>
         );
     }
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('ai.price_result')}
                 showBack
                 onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Crop Header */}
-                <View className="bg-blue-500 px-4 py-6">
-                    <View className="flex-row items-center">
-                        <View className="w-16 h-16 bg-white/20 rounded-2xl items-center justify-center mr-4">
-                            <Text className="text-3xl">{crop?.icon}</Text>
+                <View style={styles.headerBanner}>
+                    <View style={styles.headerContent}>
+                        <View style={styles.iconContainer}>
+                            <Text style={styles.icon}>{crop?.icon}</Text>
                         </View>
                         <View>
-                            <Text className="text-2xl font-bold text-white">
+                            <Text style={styles.cropName}>
                                 {i18n.language === 'si' ? crop?.nameSi : crop?.name}
                             </Text>
                             {params.variety && (
-                                <Text className="text-white/80">Variety: {params.variety}</Text>
+                                <Text style={styles.headerText}>Variety: {params.variety}</Text>
                             )}
-                            <Text className="text-white/80">
+                            <Text style={styles.headerText}>
                                 {params.landSize} {params.landUnit}
                                 {params.district && ` • ${params.district}`}
                             </Text>
@@ -156,68 +156,69 @@ const PriceResult: React.FC = () => {
                     </View>
                 </View>
 
-                <View className="p-4">
+                <View style={styles.content}>
                     {/* Price Range */}
-                    <View className="bg-white rounded-2xl p-6 mb-4 border border-neutral-100">
-                        <Text className="text-sm text-neutral-400 text-center mb-2">
+                    <View style={styles.card}>
+                        <Text style={styles.rangeLabel}>
                             {t('ai.price_range')}
                         </Text>
 
-                        <View className="flex-row items-center justify-center">
-                            <View className="items-center">
-                                <Text className="text-xs text-neutral-400 uppercase">{t('ai.low_estimate')}</Text>
-                                <Text className="text-2xl font-bold text-orange-500">
+                        <View style={styles.priceRow}>
+                            <View style={styles.priceItem}>
+                                <Text style={styles.priceLabel}>{t('ai.low_estimate')}</Text>
+                                <Text style={styles.lowPrice}>
                                     Rs. {result?.priceLow?.toLocaleString() || '---'}
                                 </Text>
                             </View>
 
-                            <View className="mx-4 items-center">
+                            <View style={styles.arrowContainer}>
                                 <Ionicons name="arrow-forward" size={24} color={COLORS.neutral[300]} />
                             </View>
 
-                            <View className="items-center">
-                                <Text className="text-xs text-neutral-400 uppercase">{t('ai.high_estimate')}</Text>
-                                <Text className="text-2xl font-bold text-green-500">
+                            <View style={styles.priceItem}>
+                                <Text style={styles.priceLabel}>{t('ai.high_estimate')}</Text>
+                                <Text style={styles.highPrice}>
                                     Rs. {result?.priceHigh?.toLocaleString() || '---'}
                                 </Text>
                             </View>
                         </View>
 
-                        <Text className="text-center text-neutral-400 text-sm mt-2">
+                        <Text style={styles.unitText}>
                             {t('ai.per_kg')}
                         </Text>
                     </View>
 
                     {/* Summary */}
-                    <View className="bg-blue-50 rounded-2xl p-4 mb-4">
-                        <View className="flex-row items-center mb-2">
+                    <View style={styles.summaryCard}>
+                        <View style={styles.cardHeader}>
                             <Ionicons name="analytics" size={20} color={COLORS.info} />
-                            <Text className="text-base font-semibold text-blue-800 ml-2">
+                            <Text style={styles.summaryTitle}>
                                 {t('ai.summary')}
                             </Text>
                         </View>
-                        <Text className="text-sm text-blue-700 leading-5">
+                        <Text style={styles.summaryText}>
                             {i18n.language === 'si' ? result?.summarySi : result?.summary}
                         </Text>
                     </View>
 
                     {/* Info Cards */}
-                    <View className="flex-row mb-4">
-                        <View className="flex-1 bg-green-50 rounded-xl p-3 mr-2">
+                    <View style={styles.infoRow}>
+                        <View style={styles.infoCardGreen}>
                             <Ionicons name="trending-up" size={20} color={COLORS.success} />
-                            <Text className="text-xs text-green-700 mt-1">Best selling period</Text>
-                            <Text className="text-sm font-medium text-green-800">Peak Season</Text>
+                            <Text style={styles.infoCardLabelGreen}>Best selling period</Text>
+                            <Text style={styles.infoCardValueGreen}>Peak Season</Text>
                         </View>
-                        <View className="flex-1 bg-orange-50 rounded-xl p-3">
+                        <View style={styles.infoSpacer} />
+                        <View style={styles.infoCardOrange}>
                             <Ionicons name="information-circle" size={20} color={COLORS.warning} />
-                            <Text className="text-xs text-orange-700 mt-1">Market condition</Text>
-                            <Text className="text-sm font-medium text-orange-800">Moderate demand</Text>
+                            <Text style={styles.infoCardLabelOrange}>Market condition</Text>
+                            <Text style={styles.infoCardValueOrange}>Moderate demand</Text>
                         </View>
                     </View>
 
                     {/* Action Buttons */}
-                    <View className="flex-row mt-2">
-                        <View className="flex-1 mr-2">
+                    <View style={styles.actionsContainer}>
+                        <View style={styles.actionButtonWrapper}>
                             <PrimaryButton
                                 title={saved ? t('learnhub.saved') : t('ai.save_prediction')}
                                 onPress={handleSave}
@@ -227,7 +228,8 @@ const PriceResult: React.FC = () => {
                                 fullWidth
                             />
                         </View>
-                        <View className="flex-1">
+                        <View style={styles.actionSpacer} />
+                        <View style={styles.actionButtonWrapper}>
                             <PrimaryButton
                                 title={t('ai.ask_expert')}
                                 onPress={handleAskExpert}
@@ -241,5 +243,189 @@ const PriceResult: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    loaderCircle: {
+        width: 96,
+        height: 96,
+        backgroundColor: '#dbeafe', // blue-100
+        borderRadius: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    loadingTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[700],
+        marginBottom: 8,
+    },
+    loadingSubtitle: {
+        fontSize: 14,
+        color: COLORS.neutral[400],
+    },
+    scrollView: {
+        flex: 1,
+    },
+    headerBanner: {
+        backgroundColor: '#3b82f6', // blue-500
+        paddingHorizontal: 16,
+        paddingVertical: 24,
+    },
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    iconContainer: {
+        width: 64,
+        height: 64,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    icon: {
+        fontSize: 30,
+    },
+    cropName: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#ffffff',
+    },
+    headerText: {
+        color: 'rgba(255,255,255,0.8)',
+    },
+    content: {
+        padding: 16,
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        padding: 24,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+    },
+    rangeLabel: {
+        fontSize: 14,
+        color: COLORS.neutral[400],
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    priceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    priceItem: {
+        alignItems: 'center',
+    },
+    priceLabel: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        textTransform: 'uppercase',
+    },
+    lowPrice: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#f97316', // orange-500
+    },
+    highPrice: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#22c55e', // green-500
+    },
+    arrowContainer: {
+        marginHorizontal: 16,
+        alignItems: 'center',
+    },
+    unitText: {
+        textAlign: 'center',
+        color: COLORS.neutral[400],
+        fontSize: 14,
+        marginTop: 8,
+    },
+    summaryCard: {
+        backgroundColor: '#eff6ff', // blue-50
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    summaryTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1e40af', // blue-800
+        marginLeft: 8,
+    },
+    summaryText: {
+        fontSize: 14,
+        color: '#1d4ed8', // blue-700
+        lineHeight: 20,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        marginBottom: 16,
+    },
+    infoCardGreen: {
+        flex: 1,
+        backgroundColor: '#f0fdf4', // green-50
+        borderRadius: 12,
+        padding: 12,
+    },
+    infoCardLabelGreen: {
+        fontSize: 12,
+        color: '#15803d', // green-700
+        marginTop: 4,
+    },
+    infoCardValueGreen: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#166534', // green-800
+    },
+    infoSpacer: {
+        width: 8,
+    },
+    infoCardOrange: {
+        flex: 1,
+        backgroundColor: '#fff7ed', // orange-50
+        borderRadius: 12,
+        padding: 12,
+    },
+    infoCardLabelOrange: {
+        fontSize: 12,
+        color: '#c2410c', // orange-700
+        marginTop: 4,
+    },
+    infoCardValueOrange: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#9a3412', // orange-800
+    },
+    actionsContainer: {
+        flexDirection: 'row',
+        marginTop: 8,
+    },
+    actionButtonWrapper: {
+        flex: 1,
+    },
+    actionSpacer: {
+        width: 8,
+    },
+});
 
 export default PriceResult;

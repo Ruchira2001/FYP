@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, Text, TouchableOpacity } from 'react-native';
+import { View, FlatList, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -34,52 +34,47 @@ const PredictionHistory: React.FC = () => {
 
     const renderItem = ({ item }: { item: PredictionResult }) => (
         <TouchableOpacity
-            className="bg-white rounded-xl p-4 mb-3 border border-neutral-100"
-            style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 1,
-            }}
+            style={styles.card}
+            // Add handler later if we want to view past result details
+            onPress={() => { /* navigation.navigate('PriceResult', { ...item }); */ }}
         >
-            <View className="flex-row items-start">
-                <View className="w-12 h-12 bg-blue-100 rounded-xl items-center justify-center mr-3">
-                    <Text className="text-2xl">{getCropIcon(item.crop)}</Text>
+            <View style={styles.cardContent}>
+                <View style={styles.iconContainer}>
+                    <Text style={styles.icon}>{getCropIcon(item.crop)}</Text>
                 </View>
 
-                <View className="flex-1">
-                    <Text className="text-base font-semibold text-neutral-800">
+                <View style={styles.mainInfo}>
+                    <Text style={styles.title}>
                         {i18n.language === 'si' ? item.cropSi : item.crop}
                         {item.variety && ` (${item.variety})`}
                     </Text>
-                    <Text className="text-xs text-neutral-400 mt-0.5">
+                    <Text style={styles.subtitle}>
                         {item.landSize} {item.landUnit}
                         {item.district && ` • ${item.district}`}
                     </Text>
 
-                    <View className="flex-row items-center mt-2">
-                        <Text className="text-sm font-medium text-orange-500">
+                    <View style={styles.priceRow}>
+                        <Text style={styles.priceLow}>
                             Rs. {item.priceLow}
                         </Text>
                         <Ionicons name="arrow-forward" size={12} color={COLORS.neutral[400]} style={{ marginHorizontal: 4 }} />
-                        <Text className="text-sm font-medium text-green-500">
+                        <Text style={styles.priceHigh}>
                             Rs. {item.priceHigh}
                         </Text>
-                        <Text className="text-xs text-neutral-400 ml-1">{t('ai.per_kg')}</Text>
+                        <Text style={styles.unit}>{t('ai.per_kg')}</Text>
                     </View>
                 </View>
 
-                <View className="items-end">
-                    <Text className="text-xs text-neutral-400">
+                <View style={styles.metaInfo}>
+                    <Text style={styles.date}>
                         {formatDateTime(item.createdAt, i18n.language)}
                     </Text>
                     {item.synced ? (
-                        <View className="flex-row items-center mt-1">
+                        <View style={styles.syncIcon}>
                             <Ionicons name="cloud-done" size={12} color={COLORS.success} />
                         </View>
                     ) : (
-                        <View className="flex-row items-center mt-1">
+                        <View style={styles.syncIcon}>
                             <Ionicons name="cloud-offline" size={12} color={COLORS.warning} />
                         </View>
                     )}
@@ -89,7 +84,7 @@ const PredictionHistory: React.FC = () => {
     );
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('ai.prediction_history')}
                 showBack
@@ -101,7 +96,7 @@ const PredictionHistory: React.FC = () => {
                     data={history}
                     renderItem={renderItem}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ padding: 16 }}
+                    contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                 />
             ) : (
@@ -116,5 +111,88 @@ const PredictionHistory: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    listContent: {
+        padding: 16,
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
+    },
+    cardContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        backgroundColor: '#dbeafe', // blue-100
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    icon: {
+        fontSize: 24,
+    },
+    mainInfo: {
+        flex: 1,
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    subtitle: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        marginTop: 2,
+    },
+    priceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    priceLow: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#f97316', // orange-500
+    },
+    priceHigh: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#22c55e', // green-500
+    },
+    unit: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        marginLeft: 4,
+    },
+    metaInfo: {
+        alignItems: 'flex-end',
+        marginLeft: 8,
+    },
+    date: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+    },
+    syncIcon: {
+        marginTop: 4,
+    },
+});
 
 export default PredictionHistory;

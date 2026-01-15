@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, Text, Image, TouchableOpacity } from 'react-native';
+import { View, FlatList, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -25,45 +25,40 @@ const DiagnosisHistory: React.FC = () => {
 
     const renderItem = ({ item }: { item: DiagnosisResult }) => (
         <TouchableOpacity
-            className="bg-white rounded-xl p-4 mb-3 border border-neutral-100 flex-row"
-            style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 4,
-                elevation: 1,
-            }}
+            style={styles.card}
+            // Add handler later if we want to view past result details
+            onPress={() => { /* navigation.navigate('CropDoctorResult', { result: item }); */ }}
         >
             <Image
                 source={{ uri: item.imageUri }}
-                className="w-16 h-16 rounded-lg"
+                style={styles.image}
                 resizeMode="cover"
             />
 
-            <View className="flex-1 ml-3">
-                <Text className="text-base font-semibold text-neutral-800">
+            <View style={styles.content}>
+                <Text style={styles.title}>
                     {i18n.language === 'si' ? item.diseaseNameSi : item.diseaseName}
                 </Text>
-                <Text className="text-xs text-neutral-400 mt-1">
+                <Text style={styles.date}>
                     {formatDateTime(item.createdAt, i18n.language)}
                 </Text>
 
-                <View className="flex-row items-center mt-2">
+                <View style={styles.metaRow}>
                     {item.synced ? (
-                        <View className="flex-row items-center">
+                        <View style={styles.statusBadge}>
                             <Ionicons name="cloud-done" size={14} color={COLORS.success} />
-                            <Text className="text-xs text-green-600 ml-1">Synced</Text>
+                            <Text style={styles.syncedText}>Synced</Text>
                         </View>
                     ) : (
-                        <View className="flex-row items-center">
+                        <View style={styles.statusBadge}>
                             <Ionicons name="cloud-offline" size={14} color={COLORS.warning} />
-                            <Text className="text-xs text-yellow-600 ml-1">Pending sync</Text>
+                            <Text style={styles.pendingText}>Pending sync</Text>
                         </View>
                     )}
 
-                    <View className="flex-row items-center ml-4">
-                        <Text className="text-xs text-neutral-400">Confidence: </Text>
-                        <Text className="text-xs font-medium text-neutral-600">
+                    <View style={styles.confidenceBadge}>
+                        <Text style={styles.metaLabel}>Confidence: </Text>
+                        <Text style={styles.metaValue}>
                             {Math.round(item.confidence * 100)}%
                         </Text>
                     </View>
@@ -75,7 +70,7 @@ const DiagnosisHistory: React.FC = () => {
     );
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('ai.diagnosis_history')}
                 showBack
@@ -87,7 +82,7 @@ const DiagnosisHistory: React.FC = () => {
                     data={history}
                     renderItem={renderItem}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ padding: 16 }}
+                    contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                 />
             ) : (
@@ -102,5 +97,82 @@ const DiagnosisHistory: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    listContent: {
+        padding: 16,
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
+    },
+    image: {
+        width: 64,
+        height: 64,
+        borderRadius: 8,
+    },
+    content: {
+        flex: 1,
+        marginLeft: 12,
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    date: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        marginTop: 4,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    syncedText: {
+        fontSize: 12,
+        color: '#16a34a', // green-600
+        marginLeft: 4,
+    },
+    pendingText: {
+        fontSize: 12,
+        color: '#ca8a04', // yellow-600
+        marginLeft: 4,
+    },
+    confidenceBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 16,
+    },
+    metaLabel: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+    },
+    metaValue: {
+        fontSize: 12,
+        fontWeight: '500',
+        color: COLORS.neutral[600],
+    },
+});
 
 export default DiagnosisHistory;
