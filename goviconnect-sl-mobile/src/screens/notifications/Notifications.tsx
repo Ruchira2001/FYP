@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip } from '../../components';
 import { COLORS, NOTIFICATION_TYPES } from '../../utils/constants';
-import { getNotifications, markNotificationRead, Notification } from '../../services/storage';
+import { markNotificationRead, Notification } from '../../services/storage';
 import { getRelativeTime } from '../../utils/validators';
 
 const Notifications: React.FC = () => {
@@ -102,29 +102,36 @@ const Notifications: React.FC = () => {
         return (
             <TouchableOpacity
                 onPress={() => handleNotificationPress(item)}
-                className={`flex-row items-start p-4 mb-2 rounded-xl border ${item.read ? 'bg-white border-neutral-100' : 'bg-primary-50 border-primary-100'
-                    }`}
+                style={[
+                    styles.notificationCard,
+                    item.read ? styles.cardRead : styles.cardUnread
+                ]}
             >
                 <View
-                    className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                    style={{ backgroundColor: typeConfig.color + '20' }}
+                    style={[
+                        styles.iconContainer,
+                        { backgroundColor: typeConfig.color + '20' }
+                    ]}
                 >
                     <Ionicons name={typeConfig.icon as any} size={20} color={typeConfig.color} />
                 </View>
 
-                <View className="flex-1">
-                    <View className="flex-row items-center justify-between mb-1">
-                        <Text className={`text-base ${item.read ? 'font-medium' : 'font-bold'} text-neutral-800`}>
+                <View style={styles.contentContainer}>
+                    <View style={styles.headerRow}>
+                        <Text style={[
+                            styles.title,
+                            item.read ? styles.titleRead : styles.titleUnread
+                        ]}>
                             {i18n.language === 'si' ? item.titleSi : item.title}
                         </Text>
                         {!item.read && (
-                            <View className="w-2 h-2 bg-primary-500 rounded-full" />
+                            <View style={styles.unreadDot} />
                         )}
                     </View>
-                    <Text className="text-sm text-neutral-600 mb-1">
+                    <Text style={styles.bodyText} numberOfLines={2}>
                         {i18n.language === 'si' ? item.bodySi : item.body}
                     </Text>
-                    <Text className="text-xs text-neutral-400">
+                    <Text style={styles.timeText}>
                         {getRelativeTime(item.createdAt, i18n.language)}
                     </Text>
                 </View>
@@ -133,7 +140,7 @@ const Notifications: React.FC = () => {
     };
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('notifications.title')}
                 showBack
@@ -141,7 +148,7 @@ const Notifications: React.FC = () => {
             />
 
             {/* Filters */}
-            <View className="flex-row px-4 py-3">
+            <View style={styles.filterContainer}>
                 <Chip
                     label={t('notifications.all')}
                     selected={filter === 'all'}
@@ -163,7 +170,7 @@ const Notifications: React.FC = () => {
                     data={filteredNotifications}
                     renderItem={renderNotification}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ padding: 16, paddingTop: 0 }}
+                    contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                 />
             ) : (
@@ -176,5 +183,84 @@ const Notifications: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50], // neutral-50
+    },
+    filterContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        // Add gap between items via direct margin in components or container logic
+        gap: 8,
+    },
+    listContent: {
+        padding: 16,
+        paddingTop: 0,
+    },
+    notificationCard: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        padding: 16,
+        marginBottom: 12,
+        borderRadius: 16,
+        borderWidth: 1,
+    },
+    cardRead: {
+        backgroundColor: '#ffffff',
+        borderColor: COLORS.neutral[100],
+    },
+    cardUnread: {
+        backgroundColor: COLORS.primary[50],
+        borderColor: COLORS.primary[100],
+    },
+    iconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    contentContainer: {
+        flex: 1,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    title: {
+        fontSize: 16,
+        color: COLORS.neutral[800],
+        flex: 1,
+        marginRight: 8,
+    },
+    titleRead: {
+        fontWeight: '500',
+    },
+    titleUnread: {
+        fontWeight: '700',
+    },
+    unreadDot: {
+        width: 8,
+        height: 8,
+        backgroundColor: COLORS.primary[500],
+        borderRadius: 4,
+    },
+    bodyText: {
+        fontSize: 14,
+        color: COLORS.neutral[600],
+        marginBottom: 6,
+        lineHeight: 20,
+    },
+    timeText: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+    },
+});
 
 export default Notifications;
