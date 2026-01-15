@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Switch, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Switch, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -34,44 +34,44 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('settings.title')}
                 showBack
                 onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-                <View className="p-4">
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                <View style={styles.scrollContent}>
                     {/* Language */}
                     <TouchableOpacity
                         onPress={handleLanguageChange}
-                        className="bg-white rounded-xl p-4 mb-3 border border-neutral-100 flex-row items-center"
+                        style={styles.settingCard}
                     >
-                        <View className="w-10 h-10 bg-primary-100 rounded-xl items-center justify-center mr-3">
+                        <View style={[styles.iconContainer, { backgroundColor: COLORS.primary[100] }]}>
                             <Ionicons name="language" size={22} color={COLORS.primary[600]} />
                         </View>
-                        <View className="flex-1">
-                            <Text className="text-base font-medium text-neutral-800">
+                        <View style={styles.settingTextContainer}>
+                            <Text style={styles.settingTitle}>
                                 {t('settings.language')}
                             </Text>
                         </View>
-                        <Text className="text-primary-600 font-medium mr-2">
+                        <Text style={styles.valueText}>
                             {getCurrentLanguage()}
                         </Text>
                         <Ionicons name="chevron-forward" size={20} color={COLORS.neutral[400]} />
                     </TouchableOpacity>
 
                     {/* Lite Mode */}
-                    <View className="bg-white rounded-xl p-4 mb-3 border border-neutral-100 flex-row items-center">
-                        <View className="w-10 h-10 bg-orange-100 rounded-xl items-center justify-center mr-3">
+                    <View style={styles.settingCard}>
+                        <View style={[styles.iconContainer, { backgroundColor: '#ffedd5' }]}>
                             <Ionicons name="flash" size={22} color={COLORS.warning} />
                         </View>
-                        <View className="flex-1">
-                            <Text className="text-base font-medium text-neutral-800">
+                        <View style={styles.settingTextContainer}>
+                            <Text style={styles.settingTitle}>
                                 {t('settings.lite_mode')}
                             </Text>
-                            <Text className="text-xs text-neutral-400 mt-0.5">
+                            <Text style={styles.settingDescription}>
                                 {t('settings.lite_mode_desc')}
                             </Text>
                         </View>
@@ -86,13 +86,13 @@ const Settings: React.FC = () => {
                     {/* Offline Downloads */}
                     <TouchableOpacity
                         onPress={() => navigation.navigate('LearnHubTab', { screen: 'OfflineDownloads' })}
-                        className="bg-white rounded-xl p-4 mb-3 border border-neutral-100 flex-row items-center"
+                        style={styles.settingCard}
                     >
-                        <View className="w-10 h-10 bg-green-100 rounded-xl items-center justify-center mr-3">
+                        <View style={[styles.iconContainer, { backgroundColor: '#dcfce7' }]}>
                             <Ionicons name="cloud-download" size={22} color={COLORS.success} />
                         </View>
-                        <View className="flex-1">
-                            <Text className="text-base font-medium text-neutral-800">
+                        <View style={styles.settingTextContainer}>
+                            <Text style={styles.settingTitle}>
                                 {t('settings.offline_downloads')}
                             </Text>
                         </View>
@@ -100,15 +100,15 @@ const Settings: React.FC = () => {
                     </TouchableOpacity>
 
                     {/* Notifications */}
-                    <View className="bg-white rounded-xl p-4 mb-3 border border-neutral-100 flex-row items-center">
-                        <View className="w-10 h-10 bg-blue-100 rounded-xl items-center justify-center mr-3">
+                    <View style={styles.settingCard}>
+                        <View style={[styles.iconContainer, { backgroundColor: '#dbeafe' }]}>
                             <Ionicons name="notifications" size={22} color={COLORS.info} />
                         </View>
-                        <View className="flex-1">
-                            <Text className="text-base font-medium text-neutral-800">
+                        <View style={styles.settingTextContainer}>
+                            <Text style={styles.settingTitle}>
                                 {t('settings.notifications')}
                             </Text>
-                            <Text className="text-xs text-neutral-400 mt-0.5">
+                            <Text style={styles.settingDescription}>
                                 {t('settings.notifications_desc')}
                             </Text>
                         </View>
@@ -122,13 +122,13 @@ const Settings: React.FC = () => {
 
                     {/* Clear Cache */}
                     <TouchableOpacity
-                        className="bg-white rounded-xl p-4 mb-3 border border-neutral-100 flex-row items-center"
+                        style={styles.settingCard}
                     >
-                        <View className="w-10 h-10 bg-red-100 rounded-xl items-center justify-center mr-3">
+                        <View style={[styles.iconContainer, { backgroundColor: '#fee2e2' }]}>
                             <Ionicons name="trash" size={22} color={COLORS.error} />
                         </View>
-                        <View className="flex-1">
-                            <Text className="text-base font-medium text-neutral-800">
+                        <View style={styles.settingTextContainer}>
+                            <Text style={styles.settingTitle}>
                                 {t('settings.clear_cache')}
                             </Text>
                         </View>
@@ -136,12 +136,12 @@ const Settings: React.FC = () => {
                     </TouchableOpacity>
 
                     {/* App Version */}
-                    <View className="mt-8 items-center">
-                        <View className="w-16 h-16 bg-primary-100 rounded-2xl items-center justify-center mb-3">
+                    <View style={styles.versionContainer}>
+                        <View style={styles.logoContainer}>
                             <Ionicons name="leaf" size={32} color={COLORS.primary[500]} />
                         </View>
-                        <Text className="text-primary-600 font-bold text-lg">Goviconnect SL</Text>
-                        <Text className="text-neutral-400 text-sm mt-1">
+                        <Text style={styles.appName}>Goviconnect SL</Text>
+                        <Text style={styles.versionText}>
                             {t('settings.app_version')}: {APP_VERSION}
                         </Text>
                     </View>
@@ -150,5 +150,77 @@ const Settings: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50], // neutral-50
+    },
+    content: {
+        flex: 1,
+    },
+    scrollContent: {
+        padding: 16,
+    },
+    settingCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    iconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    settingTextContainer: {
+        flex: 1,
+    },
+    settingTitle: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: COLORS.neutral[800],
+    },
+    settingDescription: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        marginTop: 2,
+    },
+    valueText: {
+        color: COLORS.primary[600],
+        fontWeight: '500',
+        marginRight: 8,
+    },
+    versionContainer: {
+        marginTop: 32,
+        alignItems: 'center',
+    },
+    logoContainer: {
+        width: 64,
+        height: 64,
+        backgroundColor: COLORS.primary[100],
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
+    },
+    appName: {
+        color: COLORS.primary[600],
+        fontWeight: 'bold',
+        fontSize: 18,
+    },
+    versionText: {
+        color: COLORS.neutral[400],
+        fontSize: 14,
+        marginTop: 4,
+    },
+});
 
 export default Settings;

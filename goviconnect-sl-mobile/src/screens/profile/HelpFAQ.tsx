@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -63,74 +63,177 @@ const HelpFAQ: React.FC = () => {
     };
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('profile.help_faq')}
                 showBack
                 onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
-                {/* Contact Support */}
-                <TouchableOpacity className="bg-primary-500 rounded-xl p-4 mb-4 flex-row items-center">
-                    <View className="w-12 h-12 bg-white/20 rounded-xl items-center justify-center mr-3">
-                        <Ionicons name="headset" size={24} color="white" />
-                    </View>
-                    <View className="flex-1">
-                        <Text className="text-white font-semibold text-lg">Contact Support</Text>
-                        <Text className="text-white/80 text-sm">Get help from our team</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={24} color="white" />
-                </TouchableOpacity>
-
-                {/* FAQs */}
-                <Text className="text-lg font-semibold text-neutral-800 mb-3">
-                    Frequently Asked Questions
-                </Text>
-
-                {faqs.map((faq) => (
-                    <TouchableOpacity
-                        key={faq.id}
-                        onPress={() => toggleExpand(faq.id)}
-                        className="bg-white rounded-xl mb-3 border border-neutral-100 overflow-hidden"
-                    >
-                        <View className="flex-row items-center p-4">
-                            <View className="flex-1">
-                                <Text className="text-base font-medium text-neutral-800">
-                                    {i18n.language === 'si' ? faq.questionSi : faq.question}
-                                </Text>
-                            </View>
-                            <Ionicons
-                                name={expandedId === faq.id ? 'chevron-up' : 'chevron-down'}
-                                size={20}
-                                color={COLORS.neutral[400]}
-                            />
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                <View style={styles.scrollContent}>
+                    {/* Contact Support */}
+                    <TouchableOpacity style={styles.supportCard}>
+                        <View style={styles.supportIconContainer}>
+                            <Ionicons name="headset" size={24} color="white" />
                         </View>
-
-                        {expandedId === faq.id && (
-                            <View className="px-4 pb-4 pt-0 border-t border-neutral-100">
-                                <Text className="text-sm text-neutral-600 leading-5 mt-3">
-                                    {i18n.language === 'si' ? faq.answerSi : faq.answer}
-                                </Text>
-                            </View>
-                        )}
+                        <View style={styles.supportTextContainer}>
+                            <Text style={styles.supportTitle}>Contact Support</Text>
+                            <Text style={styles.supportSubtitle}>Get help from our team</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={24} color="white" />
                     </TouchableOpacity>
-                ))}
 
-                {/* Additional Help */}
-                <View className="bg-blue-50 rounded-xl p-4 mt-4 flex-row items-center">
-                    <Ionicons name="information-circle" size={24} color={COLORS.info} />
-                    <View className="flex-1 ml-3">
-                        <Text className="text-sm text-blue-700">
-                            Can't find what you're looking for? Contact our support team for personalized assistance.
-                        </Text>
+                    {/* FAQs */}
+                    <Text style={styles.sectionTitle}>
+                        Frequently Asked Questions
+                    </Text>
+
+                    {faqs.map((faq) => (
+                        <TouchableOpacity
+                            key={faq.id}
+                            onPress={() => toggleExpand(faq.id)}
+                            style={styles.faqCard}
+                        >
+                            <View style={styles.faqHeader}>
+                                <View style={styles.questionContainer}>
+                                    <Text style={styles.questionText}>
+                                        {i18n.language === 'si' ? faq.questionSi : faq.question}
+                                    </Text>
+                                </View>
+                                <Ionicons
+                                    name={expandedId === faq.id ? 'chevron-up' : 'chevron-down'}
+                                    size={20}
+                                    color={COLORS.neutral[400]}
+                                />
+                            </View>
+
+                            {expandedId === faq.id && (
+                                <View style={styles.faqAnswerContainer}>
+                                    <Text style={styles.answerText}>
+                                        {i18n.language === 'si' ? faq.answerSi : faq.answer}
+                                    </Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    ))}
+
+                    {/* Additional Help */}
+                    <View style={styles.infoBox}>
+                        <Ionicons name="information-circle" size={24} color={COLORS.info} />
+                        <View style={styles.infoTextContainer}>
+                            <Text style={styles.infoText}>
+                                Can't find what you're looking for? Contact our support team for personalized assistance.
+                            </Text>
+                        </View>
                     </View>
-                </View>
 
-                <View className="h-8" />
+                    <View style={styles.bottomSpacer} />
+                </View>
             </ScrollView>
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50], // neutral-50
+    },
+    content: {
+        flex: 1,
+    },
+    scrollContent: {
+        padding: 16,
+    },
+    supportCard: {
+        backgroundColor: COLORS.primary[500],
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    supportIconContainer: {
+        width: 48,
+        height: 48,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    supportTextContainer: {
+        flex: 1,
+    },
+    supportTitle: {
+        color: '#ffffff',
+        fontWeight: '600',
+        fontSize: 18,
+    },
+    supportSubtitle: {
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 14,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        marginBottom: 12,
+    },
+    faqCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        overflow: 'hidden',
+    },
+    faqHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+    },
+    questionContainer: {
+        flex: 1,
+    },
+    questionText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: COLORS.neutral[800],
+    },
+    faqAnswerContainer: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        paddingTop: 0,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+    },
+    answerText: {
+        fontSize: 14,
+        color: COLORS.neutral[600],
+        lineHeight: 20,
+        marginTop: 12,
+    },
+    infoBox: {
+        backgroundColor: '#eff6ff', // blue-50
+        borderRadius: 12,
+        padding: 16,
+        marginTop: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    infoTextContainer: {
+        flex: 1,
+        marginLeft: 12,
+    },
+    infoText: {
+        fontSize: 14,
+        color: '#1d4ed8', // blue-700
+    },
+    bottomSpacer: {
+        height: 32,
+    },
+});
 
 export default HelpFAQ;

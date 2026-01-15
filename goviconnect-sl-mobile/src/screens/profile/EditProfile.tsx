@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -77,7 +77,7 @@ const EditProfile: React.FC = () => {
     };
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('profile.edit_profile')}
                 showBack
@@ -85,26 +85,26 @@ const EditProfile: React.FC = () => {
             />
 
             <ScrollView
-                className="flex-1"
+                style={styles.content}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
-                <View className="p-4">
+                <View style={styles.scrollContent}>
                     {/* Avatar Section */}
-                    <View className="items-center mb-6">
-                        <View className="w-24 h-24 bg-primary-100 rounded-full items-center justify-center mb-3">
-                            <Text className="text-5xl">👨‍🌾</Text>
+                    <View style={styles.avatarSection}>
+                        <View style={styles.avatarContainer}>
+                            <Text style={styles.avatarText}>👨‍🌾</Text>
                         </View>
                         <TouchableOpacity>
-                            <Text className="text-primary-600 font-medium">
+                            <Text style={styles.changePhotoText}>
                                 {t('profile.change_photo')}
                             </Text>
                         </TouchableOpacity>
                     </View>
 
                     {/* Form */}
-                    <View className="bg-white rounded-2xl p-4 mb-4">
-                        <Text className="text-lg font-semibold text-neutral-800 mb-4">
+                    <View style={styles.formCard}>
+                        <Text style={styles.sectionTitle}>
                             {t('profile.personal_info')}
                         </Text>
 
@@ -135,16 +135,16 @@ const EditProfile: React.FC = () => {
                         />
 
                         {/* District Picker */}
-                        <View className="mb-4">
-                            <Text className="text-sm font-medium text-neutral-700 mb-1.5">
+                        <View style={styles.districtContainer}>
+                            <Text style={styles.label}>
                                 {t('auth.district')}
                             </Text>
                             <TouchableOpacity
                                 onPress={() => setShowDistrictPicker(!showDistrictPicker)}
-                                className="flex-row items-center bg-white rounded-xl px-4 py-3 border-2 border-neutral-200"
+                                style={styles.districtButton}
                             >
-                                <Ionicons name="location-outline" size={20} color={COLORS.neutral[400]} style={{ marginRight: 10 }} />
-                                <Text className={`flex-1 text-base ${district ? 'text-neutral-800' : 'text-neutral-400'}`}>
+                                <Ionicons name="location-outline" size={20} color={COLORS.neutral[400]} style={styles.districtIcon} />
+                                <Text style={[styles.districtText, district ? styles.districtTextActive : styles.districtTextPlaceholder]}>
                                     {district || 'Select your district'}
                                 </Text>
                                 <Ionicons
@@ -155,8 +155,8 @@ const EditProfile: React.FC = () => {
                             </TouchableOpacity>
 
                             {showDistrictPicker && (
-                                <View className="bg-white border border-neutral-200 rounded-xl mt-2 max-h-48">
-                                    <ScrollView nestedScrollEnabled>
+                                <View style={styles.districtPicker}>
+                                    <ScrollView nestedScrollEnabled style={styles.districtScrollView}>
                                         {DISTRICTS.map((d) => (
                                             <TouchableOpacity
                                                 key={d}
@@ -164,9 +164,15 @@ const EditProfile: React.FC = () => {
                                                     setDistrict(d);
                                                     setShowDistrictPicker(false);
                                                 }}
-                                                className={`px-4 py-3 border-b border-neutral-100 ${district === d ? 'bg-primary-50' : ''}`}
+                                                style={[
+                                                    styles.districtItem,
+                                                    district === d && styles.districtItemActive
+                                                ]}
                                             >
-                                                <Text className={`text-base ${district === d ? 'text-primary-600 font-medium' : 'text-neutral-700'}`}>
+                                                <Text style={[
+                                                    styles.districtItemText,
+                                                    district === d ? styles.districtItemTextActive : styles.districtItemTextInactive
+                                                ]}>
                                                     {d}
                                                 </Text>
                                             </TouchableOpacity>
@@ -178,15 +184,15 @@ const EditProfile: React.FC = () => {
                     </View>
 
                     {/* My Crops */}
-                    <View className="bg-white rounded-2xl p-4 mb-4">
-                        <Text className="text-lg font-semibold text-neutral-800 mb-2">
+                    <View style={styles.formCard}>
+                        <Text style={styles.sectionTitle}>
                             {t('profile.my_crops_label')}
                         </Text>
-                        <Text className="text-sm text-neutral-500 mb-4">
+                        <Text style={styles.sectionSubtitle}>
                             Select the crops you grow
                         </Text>
 
-                        <View className="flex-row flex-wrap">
+                        <View style={styles.chipsContainer}>
                             {cropsData.crops.map((crop) => {
                                 const { name: cropName, icon } = getCropDisplay(crop.id);
                                 const isSelected = selectedCrops.includes(crop.id);
@@ -209,7 +215,7 @@ const EditProfile: React.FC = () => {
             </ScrollView>
 
             {/* Save Button */}
-            <View className="p-4 bg-white border-t border-neutral-100">
+            <View style={styles.footer}>
                 <PrimaryButton
                     title={t('common.save')}
                     onPress={handleSave}
@@ -221,5 +227,127 @@ const EditProfile: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50], // neutral-50
+    },
+    content: {
+        flex: 1,
+    },
+    scrollContent: {
+        padding: 16,
+    },
+    avatarSection: {
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    avatarContainer: {
+        width: 96,
+        height: 96,
+        backgroundColor: COLORS.primary[100],
+        borderRadius: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
+    },
+    avatarText: {
+        fontSize: 48,
+    },
+    changePhotoText: {
+        color: COLORS.primary[600],
+        fontWeight: '500',
+    },
+    formCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        marginBottom: 16,
+    },
+    districtContainer: {
+        marginBottom: 16,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: COLORS.neutral[700],
+        marginBottom: 6,
+    },
+    districtButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderWidth: 2,
+        borderColor: COLORS.neutral[200],
+    },
+    districtIcon: {
+        marginRight: 10,
+    },
+    districtText: {
+        flex: 1,
+        fontSize: 16,
+    },
+    districtTextActive: {
+        color: COLORS.neutral[800],
+    },
+    districtTextPlaceholder: {
+        color: COLORS.neutral[400],
+    },
+    districtPicker: {
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+        borderRadius: 12,
+        marginTop: 8,
+        maxHeight: 192,
+    },
+    districtScrollView: {
+        maxHeight: 192,
+    },
+    districtItem: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+    },
+    districtItemActive: {
+        backgroundColor: COLORS.primary[50],
+    },
+    districtItemText: {
+        fontSize: 16,
+    },
+    districtItemTextActive: {
+        color: COLORS.primary[600],
+        fontWeight: '500',
+    },
+    districtItemTextInactive: {
+        color: COLORS.neutral[700],
+    },
+    sectionSubtitle: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+        marginBottom: 16,
+    },
+    chipsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    footer: {
+        padding: 16,
+        backgroundColor: '#ffffff',
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+    },
+});
 
 export default EditProfile;

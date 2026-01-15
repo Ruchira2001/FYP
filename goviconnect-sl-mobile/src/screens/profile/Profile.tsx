@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -97,35 +97,27 @@ const Profile: React.FC = () => {
     ];
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header title={t('profile.title')} />
 
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Profile Card */}
-                <View className="mx-4 mt-4 bg-white rounded-2xl p-5 border border-neutral-100"
-                    style={{
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.05,
-                        shadowRadius: 8,
-                        elevation: 2,
-                    }}
-                >
-                    <View className="flex-row items-center">
-                        <View className="w-16 h-16 bg-primary-100 rounded-full items-center justify-center mr-4">
-                            <Text className="text-3xl">👨‍🌾</Text>
+                <View style={styles.profileCard}>
+                    <View style={styles.profileHeader}>
+                        <View style={styles.avatarContainer}>
+                            <Text style={styles.avatarText}>👨‍🌾</Text>
                         </View>
-                        <View className="flex-1">
-                            <Text className="text-xl font-bold text-neutral-800">
+                        <View style={styles.userInfo}>
+                            <Text style={styles.userName}>
                                 {user?.name || 'Farmer'}
                             </Text>
-                            <Text className="text-sm text-neutral-500">
+                            <Text style={styles.userDistrict}>
                                 {user?.district || user?.email}
                             </Text>
                         </View>
                         <TouchableOpacity
                             onPress={() => navigation.navigate('EditProfile')}
-                            className="w-10 h-10 bg-neutral-100 rounded-full items-center justify-center"
+                            style={styles.editButton}
                         >
                             <Ionicons name="pencil" size={18} color={COLORS.neutral[600]} />
                         </TouchableOpacity>
@@ -133,20 +125,20 @@ const Profile: React.FC = () => {
 
                     {/* My Crops */}
                     {user?.crops && user.crops.length > 0 && (
-                        <View className="mt-4 pt-4 border-t border-neutral-100">
-                            <Text className="text-xs text-neutral-400 uppercase mb-2">
+                        <View style={styles.cropsSection}>
+                            <Text style={styles.sectionLabel}>
                                 {t('profile.my_crops_label')}
                             </Text>
-                            <View className="flex-row flex-wrap">
+                            <View style={styles.cropsList}>
                                 {user.crops.map((cropId) => {
                                     const { name, icon } = getCropDisplay(cropId);
                                     return (
                                         <View
                                             key={cropId}
-                                            className="flex-row items-center bg-primary-50 rounded-full px-3 py-1.5 mr-2 mb-2"
+                                            style={styles.cropBadge}
                                         >
-                                            <Text className="mr-1">{icon}</Text>
-                                            <Text className="text-sm text-primary-700">{name}</Text>
+                                            <Text style={styles.cropIcon}>{icon}</Text>
+                                            <Text style={styles.cropName}>{name}</Text>
                                         </View>
                                     );
                                 })}
@@ -156,31 +148,26 @@ const Profile: React.FC = () => {
                 </View>
 
                 {/* Quick Shortcuts */}
-                <View className="px-4 py-4">
-                    <Text className="text-lg font-semibold text-neutral-800 mb-3">
+                <View style={styles.shortcutsSection}>
+                    <Text style={styles.sectionTitle}>
                         {t('profile.shortcuts')}
                     </Text>
-                    <View className="flex-row flex-wrap justify-between">
+                    <View style={styles.shortcutsGrid}>
                         {shortcuts.map((item) => (
                             <TouchableOpacity
                                 key={item.id}
                                 onPress={item.onPress}
-                                className="w-[48%] bg-white rounded-xl p-4 mb-3 border border-neutral-100"
-                                style={{
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 1 },
-                                    shadowOpacity: 0.05,
-                                    shadowRadius: 4,
-                                    elevation: 1,
-                                }}
+                                style={styles.shortcutCard}
                             >
                                 <View
-                                    className="w-10 h-10 rounded-xl items-center justify-center mb-2"
-                                    style={{ backgroundColor: item.color + '20' }}
+                                    style={[
+                                        styles.shortcutIconContainer,
+                                        { backgroundColor: item.color + '20' }
+                                    ]}
                                 >
                                     <Ionicons name={item.icon as any} size={20} color={item.color} />
                                 </View>
-                                <Text className="text-sm font-medium text-neutral-700" numberOfLines={2}>
+                                <Text style={styles.shortcutLabel} numberOfLines={2}>
                                     {item.label}
                                 </Text>
                             </TouchableOpacity>
@@ -189,14 +176,16 @@ const Profile: React.FC = () => {
                 </View>
 
                 {/* Menu Items */}
-                <View className="px-4 pb-8">
-                    <View className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
+                <View style={styles.menuSection}>
+                    <View style={styles.menuContainer}>
                         {menuItems.map((item, index) => (
                             <TouchableOpacity
                                 key={item.id}
                                 onPress={item.onPress}
-                                className={`flex-row items-center px-4 py-4 ${index < menuItems.length - 1 ? 'border-b border-neutral-100' : ''
-                                    }`}
+                                style={[
+                                    styles.menuItem,
+                                    index < menuItems.length - 1 && styles.menuItemBorder
+                                ]}
                             >
                                 <Ionicons
                                     name={item.icon as any}
@@ -204,8 +193,10 @@ const Profile: React.FC = () => {
                                     color={item.color || COLORS.neutral[600]}
                                 />
                                 <Text
-                                    className="flex-1 ml-3 text-base"
-                                    style={{ color: item.color || COLORS.neutral[800] }}
+                                    style={[
+                                        styles.menuLabel,
+                                        { color: item.color || COLORS.neutral[800] }
+                                    ]}
                                 >
                                     {item.label}
                                 </Text>
@@ -218,5 +209,166 @@ const Profile: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50], // neutral-50
+    },
+    content: {
+        flex: 1,
+    },
+    profileCard: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    profileHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    avatarContainer: {
+        width: 64,
+        height: 64,
+        backgroundColor: COLORS.primary[100],
+        borderRadius: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    avatarText: {
+        fontSize: 30,
+    },
+    userInfo: {
+        flex: 1,
+    },
+    userName: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: COLORS.neutral[800],
+    },
+    userDistrict: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+    },
+    editButton: {
+        width: 40,
+        height: 40,
+        backgroundColor: COLORS.neutral[100],
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cropsSection: {
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+    },
+    sectionLabel: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        textTransform: 'uppercase',
+        marginBottom: 8,
+    },
+    cropsList: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    cropBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.primary[50],
+        borderRadius: 9999,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        marginRight: 8,
+        marginBottom: 8,
+    },
+    cropIcon: {
+        marginRight: 4,
+    },
+    cropName: {
+        fontSize: 14,
+        color: COLORS.primary[700],
+    },
+    shortcutsSection: {
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        marginBottom: 12,
+    },
+    shortcutsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    shortcutCard: {
+        width: '48%',
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
+    },
+    shortcutIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
+    shortcutLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: COLORS.neutral[700],
+    },
+    menuSection: {
+        paddingHorizontal: 16,
+        paddingBottom: 32,
+    },
+    menuContainer: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        overflow: 'hidden',
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+    },
+    menuItemBorder: {
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+    },
+    menuLabel: {
+        flex: 1,
+        marginLeft: 12,
+        fontSize: 16,
+    },
+});
 
 export default Profile;
