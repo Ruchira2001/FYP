@@ -10,7 +10,7 @@ import { Home } from '../screens/home';
 import { LearnHub, CropDetails, SavedLibrary, OfflineDownloads } from '../screens/learnhub';
 import { AIHome, CropDoctorUpload, CropDoctorResult, DiagnosisHistory, PriceForm, PriceResult, PredictionHistory } from '../screens/ai';
 import { Meetings, MeetingDetails, MyMeetings } from '../screens/meetings';
-import { Profile, Settings, HelpFAQ } from '../screens/profile';
+import { Profile, Settings, HelpFAQ, EditProfile } from '../screens/profile';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -64,6 +64,7 @@ const ProfileStackNavigator = () => (
         <ProfileStack.Screen name="ProfileScreen" component={Profile} />
         <ProfileStack.Screen name="Settings" component={Settings} />
         <ProfileStack.Screen name="HelpFAQ" component={HelpFAQ} />
+        <ProfileStack.Screen name="EditProfile" component={EditProfile} />
     </ProfileStack.Navigator>
 );
 

@@ -12,6 +12,7 @@ import { Splash, Onboarding, LanguageSelect, Login, Register, ForgotPassword } f
 // Import global screens
 import { Notifications } from '../screens/notifications';
 import { ChatsList, ChatDetail, BookMeetingFromChat } from '../screens/chats';
+import { LanguageModal } from '../screens/home';
 
 const RootStack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
@@ -88,6 +89,14 @@ const RootNavigator: React.FC = () => {
                     options={{
                         animation: 'slide_from_bottom',
                         presentation: 'modal',
+                    }}
+                />
+                <RootStack.Screen
+                    name="LanguageModal"
+                    component={LanguageModal}
+                    options={{
+                        animation: 'slide_from_bottom',
+                        presentation: 'transparentModal',
                     }}
                 />
             </RootStack.Navigator>

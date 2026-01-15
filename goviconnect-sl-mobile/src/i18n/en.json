@@ -179,7 +179,9 @@
         "settings": "Settings",
         "help_faq": "Help & FAQ",
         "logout": "Logout",
-        "logout_confirm": "Are you sure you want to logout?"
+        "logout_confirm": "Are you sure you want to logout?",
+        "change_photo": "Change Photo",
+        "personal_info": "Personal Information"
     },
     "settings": {
         "title": "Settings",
