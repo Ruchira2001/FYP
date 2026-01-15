@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 
@@ -42,89 +42,96 @@ const CropCard: React.FC<CropCardProps> = ({
         switch (size) {
             case 'sm':
                 return {
-                    card: 'w-24',
+                    width: 96,
                     iconSize: 32,
-                    iconContainer: 'w-12 h-12',
-                    textSize: 'text-xs',
+                    iconContainer: 48,
+                    textSize: 12,
                 };
             case 'md':
                 return {
-                    card: 'w-36',
+                    width: '100%', // Flexible width controlled by parent
                     iconSize: 40,
-                    iconContainer: 'w-16 h-16',
-                    textSize: 'text-sm',
+                    iconContainer: 64,
+                    textSize: 14,
                 };
             case 'lg':
                 return {
-                    card: 'w-full',
+                    width: '100%',
                     iconSize: 48,
-                    iconContainer: 'w-20 h-20',
-                    textSize: 'text-base',
+                    iconContainer: 80,
+                    textSize: 16,
                 };
             default:
                 return {
-                    card: 'w-36',
+                    width: 144,
                     iconSize: 40,
-                    iconContainer: 'w-16 h-16',
-                    textSize: 'text-sm',
+                    iconContainer: 64,
+                    textSize: 14,
                 };
         }
     };
 
-    const styles = getSizeStyles();
+    const sizeStyles = getSizeStyles();
+
+    const renderContent = () => {
+        if (thumbnail) {
+            return (
+                <Image
+                    source={{ uri: thumbnail }}
+                    style={styles.thumbnail}
+                    resizeMode="cover"
+                />
+            );
+        }
+        if (emoji) {
+            return <Text style={{ fontSize: sizeStyles.iconSize }}>{emoji}</Text>;
+        }
+        return <Ionicons name="leaf" size={sizeStyles.iconSize} color={color} />;
+    };
 
     return (
         <TouchableOpacity
             onPress={onPress}
             activeOpacity={0.7}
-            className={`
-        ${size !== 'lg' ? styles.card : ''}
-        bg-white
-        rounded-2xl
-        p-4
-        mr-3
-        mb-3
-        border
-        border-neutral-100
-        ${size === 'lg' ? 'flex-row items-center' : 'items-center'}
-      `}
-            style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 2,
-            }}
+            style={[
+                styles.card,
+                size === 'lg' ? styles.cardHorizontal : styles.cardVertical,
+                /* @ts-ignore */
+                size !== 'lg' && size !== 'md' && { width: sizeStyles.width },
+                size === 'md' && { width: '100%' }
+            ]}
         >
             {/* Icon/Emoji Container */}
             <View
-                className={`${styles.iconContainer} rounded-2xl items-center justify-center ${size === 'lg' ? 'mr-4' : 'mb-3'}`}
-                style={{ backgroundColor: `${color}15` }}
+                style={[
+                    styles.iconContainer,
+                    {
+                        width: sizeStyles.iconContainer,
+                        height: sizeStyles.iconContainer,
+                        backgroundColor: `${color}15`,
+                        marginRight: size === 'lg' ? 16 : 0,
+                        marginBottom: size === 'lg' ? 0 : 12,
+                    }
+                ]}
             >
-                {thumbnail ? (
-                    <Image
-                        source={{ uri: thumbnail }}
-                        className="w-full h-full rounded-2xl"
-                        resizeMode="cover"
-                    />
-                ) : emoji ? (
-                    <Text style={{ fontSize: styles.iconSize }}>{emoji}</Text>
-                ) : (
-                    <Ionicons name="leaf" size={styles.iconSize} color={color} />
-                )}
+                {renderContent()}
             </View>
 
             {/* Content */}
-            <View className={size === 'lg' ? 'flex-1' : 'items-center'}>
+            <View style={size === 'lg' ? styles.contentHorizontal : styles.contentVertical}>
                 <Text
-                    className={`${styles.textSize} font-semibold text-neutral-800 ${size !== 'lg' ? 'text-center' : ''}`}
+                    style={[
+                        styles.name,
+                        { fontSize: sizeStyles.textSize },
+                        size !== 'lg' && styles.textCenter
+                    ]}
                     numberOfLines={size === 'lg' ? 1 : 2}
                 >
                     {displayName}
                 </Text>
 
                 {size === 'lg' && (
-                    <Text className="text-xs text-neutral-400 capitalize mt-0.5">
+                    <Text style={styles.category}>
                         {category}
                     </Text>
                 )}
@@ -132,14 +139,17 @@ const CropCard: React.FC<CropCardProps> = ({
 
             {/* Status Icons */}
             {showStatus && (isSaved || isDownloaded) && (
-                <View className={`flex-row ${size === 'lg' ? '' : 'absolute top-2 right-2'}`}>
+                <View style={[
+                    styles.statusContainer,
+                    size === 'lg' ? styles.statusStatic : styles.statusAbsolute
+                ]}>
                     {isSaved && (
-                        <View className="w-5 h-5 rounded-full bg-primary-100 items-center justify-center mr-1">
+                        <View style={styles.statusIcon}>
                             <Ionicons name="bookmark" size={12} color={COLORS.primary[600]} />
                         </View>
                     )}
                     {isDownloaded && (
-                        <View className="w-5 h-5 rounded-full bg-green-100 items-center justify-center">
+                        <View style={[styles.statusIcon, { backgroundColor: '#dcfce7' }]}>
                             <Ionicons name="cloud-download" size={12} color={COLORS.success} />
                         </View>
                     )}
@@ -153,5 +163,79 @@ const CropCard: React.FC<CropCardProps> = ({
         </TouchableOpacity>
     );
 };
+
+const styles = StyleSheet.create({
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    cardVertical: {
+        alignItems: 'center',
+    },
+    cardHorizontal: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        marginBottom: 12,
+    },
+    iconContainer: {
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    thumbnail: {
+        width: '100%',
+        height: '100%',
+    },
+    contentHorizontal: {
+        flex: 1,
+    },
+    contentVertical: {
+        alignItems: 'center',
+        width: '100%',
+    },
+    name: {
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    textCenter: {
+        textAlign: 'center',
+    },
+    category: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        textTransform: 'capitalize',
+        marginTop: 2,
+    },
+    statusContainer: {
+        flexDirection: 'row',
+    },
+    statusAbsolute: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+    },
+    statusStatic: {
+        marginRight: 8,
+    },
+    statusIcon: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: COLORS.primary[100],
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 4,
+    },
+});
 
 export default CropCard;

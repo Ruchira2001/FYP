@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList } from 'react-native';
+import { View, FlatList, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Header, CropCard, EmptyState } from '../../components';
-import { getSavedLearnHub, removeLearnHubItem, SavedLearnHubItem } from '../../services/storage';
+import { getSavedLearnHub, SavedLearnHubItem } from '../../services/storage';
 import cropsData from '../../data/crops.json';
+import { COLORS } from '../../utils/constants';
 
 const SavedLibrary: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -25,24 +26,26 @@ const SavedLibrary: React.FC = () => {
         const crop = cropsData.crops.find(c => c.id === item.id);
 
         return (
-            <CropCard
-                id={item.id}
-                name={item.title}
-                nameSi={item.titleSi}
-                category={item.category}
-                emoji={crop?.icon || '🌱'}
-                color={crop?.color}
-                onPress={() => navigation.navigate('CropDetails', { cropId: item.id })}
-                isSaved={true}
-                isDownloaded={item.isDownloaded}
-                locale={i18n.language}
-                size="lg"
-            />
+            <View style={styles.itemContainer}>
+                <CropCard
+                    id={item.id}
+                    name={item.title}
+                    nameSi={item.titleSi}
+                    category={item.category}
+                    emoji={crop?.icon || '🌱'}
+                    color={crop?.color}
+                    onPress={() => navigation.navigate('CropDetails', { cropId: item.id })}
+                    isSaved={true}
+                    isDownloaded={item.isDownloaded}
+                    locale={i18n.language}
+                    size="lg"
+                />
+            </View>
         );
     };
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('learnhub.saved_library')}
                 showBack
@@ -54,7 +57,7 @@ const SavedLibrary: React.FC = () => {
                     data={savedItems}
                     renderItem={renderItem}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ padding: 16 }}
+                    contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                 />
             ) : (
@@ -69,5 +72,18 @@ const SavedLibrary: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50], // Use neutral[50] for background
+    },
+    listContent: {
+        padding: 16,
+    },
+    itemContainer: {
+        marginBottom: 12, // Add spacing between items
+    },
+});
 
 export default SavedLibrary;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -86,29 +86,29 @@ const CropDetails: React.FC = () => {
     ];
 
     const renderOverview = () => (
-        <View className="p-4">
-            <Text className="text-base text-neutral-700 leading-6 mb-4">
+        <View style={styles.tabContent}>
+            <Text style={styles.overviewText}>
                 {i18n.language === 'si' ? guide?.overview.contentSi : guide?.overview.content}
             </Text>
 
-            <View className="flex-row flex-wrap">
-                <View className="w-1/2 mb-4">
-                    <Text className="text-xs text-neutral-400 uppercase mb-1">Climate</Text>
-                    <Text className="text-sm text-neutral-700 font-medium">
+            <View style={styles.overviewGrid}>
+                <View style={styles.overviewItem}>
+                    <Text style={styles.label}>Climate</Text>
+                    <Text style={styles.value}>
                         {i18n.language === 'si' ? guide?.overview.climateSi : guide?.overview.climate}
                     </Text>
                 </View>
 
-                <View className="w-1/2 mb-4">
-                    <Text className="text-xs text-neutral-400 uppercase mb-1">Soil</Text>
-                    <Text className="text-sm text-neutral-700 font-medium">
+                <View style={styles.overviewItem}>
+                    <Text style={styles.label}>Soil</Text>
+                    <Text style={styles.value}>
                         {i18n.language === 'si' ? guide?.overview.soilSi : guide?.overview.soil}
                     </Text>
                 </View>
 
-                <View className="w-full">
-                    <Text className="text-xs text-neutral-400 uppercase mb-1">Season</Text>
-                    <Text className="text-sm text-neutral-700 font-medium">
+                <View style={[styles.overviewItem, { width: '100%' }]}>
+                    <Text style={styles.label}>Season</Text>
+                    <Text style={styles.value}>
                         {i18n.language === 'si' ? guide?.overview.seasonSi : guide?.overview.season}
                     </Text>
                 </View>
@@ -117,34 +117,31 @@ const CropDetails: React.FC = () => {
     );
 
     const renderDiseases = () => (
-        <View className="p-4">
+        <View style={styles.tabContent}>
             {guide?.diseases.map((disease, index) => (
                 <View
                     key={index}
-                    className="bg-white rounded-xl p-4 mb-3 border border-neutral-100"
-                    style={{
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.05,
-                        shadowRadius: 4,
-                        elevation: 1,
-                    }}
+                    style={styles.card}
                 >
-                    <View className="flex-row items-center justify-between mb-2">
-                        <Text className="text-base font-semibold text-neutral-800">
+                    <View style={styles.cardHeader}>
+                        <Text style={styles.cardTitle}>
                             {i18n.language === 'si' ? disease.nameSi : disease.name}
                         </Text>
-                        <View className={`px-2 py-1 rounded-full ${disease.severity === 'critical' ? 'bg-red-100' :
-                                disease.severity === 'high' ? 'bg-orange-100' : 'bg-yellow-100'
-                            }`}>
-                            <Text className={`text-xs font-medium ${disease.severity === 'critical' ? 'text-red-600' :
-                                    disease.severity === 'high' ? 'text-orange-600' : 'text-yellow-600'
-                                }`}>
+                        <View style={[
+                            styles.badge,
+                            disease.severity === 'critical' ? styles.badgeCritical :
+                                disease.severity === 'high' ? styles.badgeHigh : styles.badgeMedium
+                        ]}>
+                            <Text style={[
+                                styles.badgeText,
+                                disease.severity === 'critical' ? styles.textCritical :
+                                    disease.severity === 'high' ? styles.textHigh : styles.textMedium
+                            ]}>
                                 {disease.severity}
                             </Text>
                         </View>
                     </View>
-                    <Text className="text-sm text-neutral-600">
+                    <Text style={styles.cardContent}>
                         {i18n.language === 'si' ? disease.symptomsSi : disease.symptoms}
                     </Text>
                 </View>
@@ -153,16 +150,16 @@ const CropDetails: React.FC = () => {
     );
 
     const renderTreatment = () => (
-        <View className="p-4">
+        <View style={styles.tabContent}>
             {guide?.treatments.map((treatment, index) => (
-                <View key={index} className="mb-4">
-                    <Text className="text-base font-semibold text-neutral-800 mb-2">
+                <View key={index} style={styles.treatmentContainer}>
+                    <Text style={[styles.cardTitle, { marginBottom: 8 }]}>
                         {treatment.disease}
                     </Text>
                     {(i18n.language === 'si' ? treatment.methodsSi : treatment.methods).map((method, mIndex) => (
-                        <View key={mIndex} className="flex-row items-start mb-2">
+                        <View key={mIndex} style={styles.methodRow}>
                             <Ionicons name="checkmark-circle" size={18} color={COLORS.success} style={{ marginTop: 2 }} />
-                            <Text className="flex-1 ml-2 text-sm text-neutral-700">{method}</Text>
+                            <Text style={styles.methodText}>{method}</Text>
                         </View>
                     ))}
                 </View>
@@ -171,16 +168,16 @@ const CropDetails: React.FC = () => {
     );
 
     const renderPractices = () => (
-        <View className="p-4">
+        <View style={styles.tabContent}>
             {guide?.bestPractices.map((practice, index) => (
                 <View
                     key={index}
-                    className="bg-primary-50 rounded-xl p-4 mb-3"
+                    style={styles.practiceCard}
                 >
-                    <Text className="text-base font-semibold text-primary-800 mb-2">
+                    <Text style={styles.practiceTitle}>
                         {i18n.language === 'si' ? practice.titleSi : practice.title}
                     </Text>
-                    <Text className="text-sm text-primary-700">
+                    <Text style={styles.practiceContent}>
                         {i18n.language === 'si' ? practice.contentSi : practice.content}
                     </Text>
                 </View>
@@ -189,25 +186,25 @@ const CropDetails: React.FC = () => {
     );
 
     const renderMedia = () => (
-        <View className="p-4">
-            <Text className="text-sm text-neutral-500 mb-4">
+        <View style={styles.tabContent}>
+            <Text style={styles.mediaDescription}>
                 Videos and images related to {crop?.name} cultivation.
             </Text>
 
             {guide?.media.videos.map((video, index) => (
                 <TouchableOpacity
                     key={index}
-                    className="bg-neutral-100 rounded-xl h-40 mb-3 items-center justify-center"
+                    style={styles.videoPlaceholder}
                 >
                     <Ionicons name="play-circle" size={48} color={COLORS.neutral[400]} />
-                    <Text className="text-neutral-500 mt-2">{video}</Text>
+                    <Text style={styles.videoText}>{video}</Text>
                 </TouchableOpacity>
             ))}
 
-            <View className="flex-row flex-wrap -mx-1 mt-2">
+            <View style={styles.imageGrid}>
                 {guide?.media.images.map((image, index) => (
-                    <View key={index} className="w-1/3 p-1">
-                        <View className="bg-neutral-200 rounded-lg aspect-square items-center justify-center">
+                    <View key={index} style={styles.imageWrapper}>
+                        <View style={styles.imagePlaceholder}>
                             <Ionicons name="image" size={24} color={COLORS.neutral[400]} />
                         </View>
                     </View>
@@ -217,7 +214,7 @@ const CropDetails: React.FC = () => {
     );
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={i18n.language === 'si' ? guide?.titleSi || crop?.nameSi : guide?.title || crop?.name}
                 showBack
@@ -226,80 +223,311 @@ const CropDetails: React.FC = () => {
 
             {/* Hero Section */}
             <View
-                className="mx-4 mt-4 rounded-2xl p-6 items-center"
-                style={{ backgroundColor: crop?.color + '20' }}
+                style={[
+                    styles.heroSection,
+                    { backgroundColor: (crop?.color || COLORS.primary[500]) + '20' }
+                ]}
             >
-                <Text className="text-5xl mb-3">{crop?.icon}</Text>
-                <Text className="text-xl font-bold" style={{ color: crop?.color }}>
+                <Text style={styles.heroEmoji}>{crop?.icon}</Text>
+                <Text style={[styles.heroTitle, { color: crop?.color || COLORS.primary[600] }]}>
                     {i18n.language === 'si' ? crop?.nameSi : crop?.name}
                 </Text>
             </View>
 
             {/* Action Buttons */}
-            <View className="flex-row px-4 py-4">
+            <View style={styles.actionsContainer}>
                 <TouchableOpacity
                     onPress={handleSave}
-                    className={`flex-1 mr-2 py-3 rounded-xl flex-row items-center justify-center ${isSaved ? 'bg-primary-500' : 'bg-white border border-neutral-200'
-                        }`}
+                    style={[
+                        styles.actionButton,
+                        { marginRight: 8 },
+                        isSaved ? styles.actionButtonActive : styles.actionButtonInactive
+                    ]}
                 >
                     <Ionicons
                         name={isSaved ? 'bookmark' : 'bookmark-outline'}
                         size={18}
                         color={isSaved ? 'white' : COLORS.neutral[600]}
                     />
-                    <Text className={`ml-2 font-medium ${isSaved ? 'text-white' : 'text-neutral-700'}`}>
+                    <Text style={[
+                        styles.actionButtonText,
+                        isSaved ? styles.textWhite : styles.textNeutral
+                    ]}>
                         {isSaved ? t('learnhub.saved') : t('learnhub.save')}
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     onPress={handleDownload}
-                    className={`flex-1 py-3 rounded-xl flex-row items-center justify-center ${isDownloaded ? 'bg-green-500' : 'bg-white border border-neutral-200'
-                        }`}
+                    style={[
+                        styles.actionButton,
+                        isDownloaded ? styles.downloadButtonActive : styles.actionButtonInactive
+                    ]}
                 >
                     <Ionicons
                         name={isDownloaded ? 'cloud-done' : 'cloud-download-outline'}
                         size={18}
                         color={isDownloaded ? 'white' : COLORS.neutral[600]}
                     />
-                    <Text className={`ml-2 font-medium ${isDownloaded ? 'text-white' : 'text-neutral-700'}`}>
+                    <Text style={[
+                        styles.actionButtonText,
+                        isDownloaded ? styles.textWhite : styles.textNeutral
+                    ]}>
                         {isDownloaded ? t('learnhub.downloaded') : t('learnhub.download')}
                     </Text>
                 </TouchableOpacity>
             </View>
 
             {/* Tabs */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 16 }}
-            >
-                {tabs.map((tab) => (
-                    <TouchableOpacity
-                        key={tab.id}
-                        onPress={() => setActiveTab(tab.id)}
-                        className={`px-4 py-2 mr-2 rounded-full ${activeTab === tab.id ? 'bg-primary-500' : 'bg-neutral-200'
-                            }`}
-                    >
-                        <Text className={`text-sm font-medium ${activeTab === tab.id ? 'text-white' : 'text-neutral-600'
-                            }`}>
-                            {t(tab.labelKey)}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+            <View style={styles.tabsContainer}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.tabsContent}
+                >
+                    {tabs.map((tab) => (
+                        <TouchableOpacity
+                            key={tab.id}
+                            onPress={() => setActiveTab(tab.id)}
+                            style={[
+                                styles.tab,
+                                activeTab === tab.id ? styles.tabActive : styles.tabInactive
+                            ]}
+                        >
+                            <Text style={[
+                                styles.tabText,
+                                activeTab === tab.id ? styles.textWhite : styles.textNeutral
+                            ]}>
+                                {t(tab.labelKey)}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
 
             {/* Tab Content */}
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
                 {activeTab === 'overview' && renderOverview()}
                 {activeTab === 'diseases' && renderDiseases()}
                 {activeTab === 'treatment' && renderTreatment()}
                 {activeTab === 'practices' && renderPractices()}
                 {activeTab === 'media' && renderMedia()}
-                <View className="h-6" />
+                <View style={{ height: 24 }} />
             </ScrollView>
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    heroSection: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        borderRadius: 16,
+        padding: 24,
+        alignItems: 'center',
+    },
+    heroEmoji: {
+        fontSize: 48,
+        marginBottom: 12,
+    },
+    heroTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    actionsContainer: {
+        flexDirection: 'row',
+        padding: 16,
+    },
+    actionButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    actionButtonActive: {
+        backgroundColor: COLORS.primary[500],
+    },
+    downloadButtonActive: {
+        backgroundColor: COLORS.success,
+    },
+    actionButtonInactive: {
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+    },
+    actionButtonText: {
+        marginLeft: 8,
+        fontWeight: '500',
+    },
+    textWhite: {
+        color: '#ffffff',
+    },
+    textNeutral: {
+        color: COLORS.neutral[700],
+    },
+    tabsContainer: {
+        marginBottom: 8,
+    },
+    tabsContent: {
+        paddingHorizontal: 16,
+    },
+    tab: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginRight: 8,
+        borderRadius: 50,
+    },
+    tabActive: {
+        backgroundColor: COLORS.primary[500],
+    },
+    tabInactive: {
+        backgroundColor: COLORS.neutral[200],
+    },
+    tabText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    contentScroll: {
+        flex: 1,
+    },
+    tabContent: {
+        padding: 16,
+    },
+    overviewText: {
+        fontSize: 16,
+        color: COLORS.neutral[700],
+        lineHeight: 24,
+        marginBottom: 16,
+    },
+    overviewGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    overviewItem: {
+        width: '50%',
+        marginBottom: 16,
+    },
+    label: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        textTransform: 'uppercase',
+        marginBottom: 4,
+    },
+    value: {
+        fontSize: 14,
+        color: COLORS.neutral[700],
+        fontWeight: '500',
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    badge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 50,
+    },
+    badgeCritical: { backgroundColor: '#fee2e2' },
+    badgeHigh: { backgroundColor: '#ffedd5' },
+    badgeMedium: { backgroundColor: '#fef9c3' },
+    badgeText: { fontSize: 12, fontWeight: '500' },
+    textCritical: { color: COLORS.error },
+    textHigh: { color: '#ea580c' },
+    textMedium: { color: '#ca8a04' },
+    cardContent: {
+        fontSize: 14,
+        color: COLORS.neutral[600],
+    },
+    treatmentContainer: {
+        marginBottom: 16,
+    },
+    methodRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    methodText: {
+        flex: 1,
+        marginLeft: 8,
+        fontSize: 14,
+        color: COLORS.neutral[700],
+    },
+    practiceCard: {
+        backgroundColor: COLORS.primary[50],
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+    },
+    practiceTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.primary[800],
+        marginBottom: 8,
+    },
+    practiceContent: {
+        fontSize: 14,
+        color: COLORS.primary[700],
+    },
+    mediaDescription: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+        marginBottom: 16,
+    },
+    videoPlaceholder: {
+        backgroundColor: COLORS.neutral[100],
+        borderRadius: 12,
+        height: 160,
+        marginBottom: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    videoText: {
+        color: COLORS.neutral[500],
+        marginTop: 8,
+    },
+    imageGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginHorizontal: -4,
+        marginTop: 8,
+    },
+    imageWrapper: {
+        width: '33.33%',
+        padding: 4,
+    },
+    imagePlaceholder: {
+        backgroundColor: COLORS.neutral[200],
+        borderRadius: 8,
+        aspectRatio: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+});
 
 export default CropDetails;

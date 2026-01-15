@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -35,45 +35,39 @@ const LearnHub: React.FC = () => {
         return matchesCategory && matchesSearch;
     });
 
-    const guides = learnhubData.guides.filter((guide) => {
-        const matchesCategory = selectedCategory === 'all' || guide.category === selectedCategory;
-        const matchesSearch = searchQuery === '' ||
-            guide.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            guide.titleSi.includes(searchQuery);
-        return matchesCategory && matchesSearch;
-    });
-
     const renderCropItem = ({ item }: { item: typeof cropsData.crops[0] }) => {
         const isSaved = savedItems.some(s => s.id === item.id);
         const isDownloaded = savedItems.some(s => s.id === item.id && s.isDownloaded);
 
         return (
-            <CropCard
-                id={item.id}
-                name={item.name}
-                nameSi={item.nameSi}
-                category={item.category}
-                emoji={item.icon}
-                color={item.color}
-                onPress={() => navigation.navigate('CropDetails', { cropId: item.id })}
-                isSaved={isSaved}
-                isDownloaded={isDownloaded}
-                locale={i18n.language}
-                size="md"
-            />
+            <View style={styles.cropCardWrapper}>
+                <CropCard
+                    id={item.id}
+                    name={item.name}
+                    nameSi={item.nameSi}
+                    category={item.category}
+                    emoji={item.icon}
+                    color={item.color}
+                    onPress={() => navigation.navigate('CropDetails', { cropId: item.id })}
+                    isSaved={isSaved}
+                    isDownloaded={isDownloaded}
+                    locale={i18n.language}
+                    size="md"
+                />
+            </View>
         );
     };
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header title={t('learnhub.title')} />
 
             {/* Search Bar */}
-            <View className="px-4 py-3">
-                <View className="flex-row items-center bg-white rounded-xl px-4 py-3 border border-neutral-200">
+            <View style={styles.searchContainer}>
+                <View style={styles.searchBar}>
                     <Ionicons name="search" size={20} color={COLORS.neutral[400]} />
                     <TextInput
-                        className="flex-1 ml-3 text-base text-neutral-800"
+                        style={styles.searchInput}
                         placeholder={t('learnhub.search_placeholder')}
                         placeholderTextColor={COLORS.neutral[400]}
                         value={searchQuery}
@@ -88,41 +82,43 @@ const LearnHub: React.FC = () => {
             </View>
 
             {/* Category Chips */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
-            >
-                {CROP_CATEGORIES.map((category) => (
-                    <Chip
-                        key={category.id}
-                        label={i18n.language === 'si' ? category.nameSi : category.nameEn}
-                        selected={selectedCategory === category.id}
-                        onPress={() => setSelectedCategory(category.id)}
-                        variant="outline"
-                        size="md"
-                    />
-                ))}
-            </ScrollView>
+            <View style={styles.categoriesContainer}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.categoriesContent}
+                >
+                    {CROP_CATEGORIES.map((category) => (
+                        <Chip
+                            key={category.id}
+                            label={i18n.language === 'si' ? category.nameSi : category.nameEn}
+                            selected={selectedCategory === category.id}
+                            onPress={() => setSelectedCategory(category.id)}
+                            variant="outline"
+                            size="md"
+                        />
+                    ))}
+                </ScrollView>
+            </View>
 
             {/* Quick Links */}
-            <View className="flex-row px-4 py-2 space-x-3">
+            <View style={styles.quickLinksContainer}>
                 <TouchableOpacity
                     onPress={() => navigation.navigate('SavedLibrary')}
-                    className="flex-1 bg-primary-50 rounded-xl py-3 px-4 flex-row items-center mr-2"
+                    style={[styles.quickLink, { backgroundColor: COLORS.primary[50], marginRight: 12 }]}
                 >
                     <Ionicons name="bookmark" size={18} color={COLORS.primary[600]} />
-                    <Text className="text-primary-700 font-medium ml-2 text-sm">
+                    <Text style={[styles.quickLinkText, { color: COLORS.primary[700] }]}>
                         {t('learnhub.saved_library')}
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     onPress={() => navigation.navigate('OfflineDownloads')}
-                    className="flex-1 bg-green-50 rounded-xl py-3 px-4 flex-row items-center"
+                    style={[styles.quickLink, { backgroundColor: '#f0fdf4' }]}
                 >
                     <Ionicons name="cloud-download" size={18} color={COLORS.success} />
-                    <Text className="text-green-700 font-medium ml-2 text-sm">
+                    <Text style={[styles.quickLinkText, { color: '#15803d' }]}>
                         {t('learnhub.offline_downloads')}
                     </Text>
                 </TouchableOpacity>
@@ -135,8 +131,8 @@ const LearnHub: React.FC = () => {
                     renderItem={renderCropItem}
                     keyExtractor={(item) => item.id}
                     numColumns={2}
-                    contentContainerStyle={{ padding: 16 }}
-                    columnWrapperStyle={{ justifyContent: 'space-between' }}
+                    contentContainerStyle={styles.listContent}
+                    columnWrapperStyle={styles.columnWrapper}
                     showsVerticalScrollIndicator={false}
                 />
             ) : (
@@ -149,5 +145,68 @@ const LearnHub: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    searchContainer: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+    },
+    searchInput: {
+        flex: 1,
+        marginLeft: 12,
+        fontSize: 16,
+        color: COLORS.neutral[800],
+    },
+    categoriesContainer: {
+        marginBottom: 8,
+    },
+    categoriesContent: {
+        paddingHorizontal: 16,
+        paddingBottom: 8,
+    },
+    quickLinksContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+    },
+    quickLink: {
+        flex: 1,
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    quickLinkText: {
+        fontWeight: '500',
+        marginLeft: 8,
+        fontSize: 14,
+    },
+    listContent: {
+        padding: 16,
+    },
+    columnWrapper: {
+        justifyContent: 'space-between',
+    },
+    cropCardWrapper: {
+        width: '48%',
+        marginBottom: 16,
+    },
+});
 
 export default LearnHub;

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, TouchableOpacity, Text, Alert } from 'react-native';
+import { View, FlatList, TouchableOpacity, Text, Alert, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, CropCard, EmptyState } from '../../components';
+import { Header, EmptyState } from '../../components';
 import { COLORS } from '../../utils/constants';
-import { getSavedLearnHub, removeLearnHubItem, SavedLearnHubItem } from '../../services/storage';
+import { getSavedLearnHub, SavedLearnHubItem } from '../../services/storage';
 import cropsData from '../../data/crops.json';
 
 const OfflineDownloads: React.FC = () => {
@@ -33,7 +33,8 @@ const OfflineDownloads: React.FC = () => {
                     text: t('common.confirm'),
                     style: 'destructive',
                     onPress: async () => {
-                        // In real app, would remove download
+                        // In real app, would remove download logic
+                        // For now we just reload what's there (mock behavior)
                         await loadDownloads();
                     }
                 },
@@ -45,24 +46,26 @@ const OfflineDownloads: React.FC = () => {
         const crop = cropsData.crops.find(c => c.id === item.id);
 
         return (
-            <View className="flex-row items-center bg-white rounded-xl p-4 mb-3 border border-neutral-100">
+            <View style={styles.itemContainer}>
                 <View
-                    className="w-12 h-12 rounded-xl items-center justify-center mr-3"
-                    style={{ backgroundColor: (crop?.color || COLORS.primary[500]) + '20' }}
+                    style={[
+                        styles.iconContainer,
+                        { backgroundColor: (crop?.color || COLORS.primary[500]) + '20' }
+                    ]}
                 >
-                    <Text className="text-2xl">{crop?.icon || '🌱'}</Text>
+                    <Text style={styles.icon}>{crop?.icon || '🌱'}</Text>
                 </View>
 
-                <View className="flex-1">
-                    <Text className="text-base font-semibold text-neutral-800">
+                <View style={styles.textContainer}>
+                    <Text style={styles.title}>
                         {i18n.language === 'si' ? item.titleSi : item.title}
                     </Text>
-                    <Text className="text-xs text-neutral-400 capitalize">{item.category}</Text>
+                    <Text style={styles.subtitle}>{item.category}</Text>
                 </View>
 
                 <TouchableOpacity
                     onPress={() => handleRemoveDownload(item)}
-                    className="p-2"
+                    style={styles.deleteButton}
                 >
                     <Ionicons name="trash-outline" size={20} color={COLORS.error} />
                 </TouchableOpacity>
@@ -71,7 +74,7 @@ const OfflineDownloads: React.FC = () => {
     };
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             <Header
                 title={t('learnhub.offline_downloads')}
                 showBack
@@ -80,10 +83,10 @@ const OfflineDownloads: React.FC = () => {
 
             {downloads.length > 0 ? (
                 <>
-                    <View className="flex-row items-center justify-between px-4 py-3 bg-green-50 mx-4 mt-4 rounded-xl">
-                        <View className="flex-row items-center">
+                    <View style={styles.statusBanner}>
+                        <View style={styles.statusContent}>
                             <Ionicons name="cloud-done" size={24} color={COLORS.success} />
-                            <Text className="text-green-700 font-medium ml-2">
+                            <Text style={styles.statusText}>
                                 {downloads.length} items available offline
                             </Text>
                         </View>
@@ -93,7 +96,7 @@ const OfflineDownloads: React.FC = () => {
                         data={downloads}
                         renderItem={renderItem}
                         keyExtractor={(item) => item.id}
-                        contentContainerStyle={{ padding: 16 }}
+                        contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
                     />
                 </>
@@ -103,11 +106,75 @@ const OfflineDownloads: React.FC = () => {
                     title={t('learnhub.no_downloads')}
                     description="Download guides to access them without internet"
                     actionLabel={t('learnhub.title')}
-                    onAction={() => navigation.navigate('LearnHub')}
+                    onAction={() => navigation.navigate('LearnHubTab' as any)} // Cast just to be safe if types mismatch
                 />
             )}
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    statusBanner: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#f0fdf4', // green-50
+        marginHorizontal: 16,
+        marginTop: 16,
+        borderRadius: 12,
+    },
+    statusContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    statusText: {
+        color: '#15803d', // green-700
+        fontWeight: '500',
+        marginLeft: 8,
+    },
+    listContent: {
+        padding: 16,
+    },
+    itemContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    icon: {
+        fontSize: 24,
+    },
+    textContainer: {
+        flex: 1,
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    subtitle: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        textTransform: 'capitalize',
+    },
+    deleteButton: {
+        padding: 8,
+    },
+});
 
 export default OfflineDownloads;

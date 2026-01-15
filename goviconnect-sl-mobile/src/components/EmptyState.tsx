@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import PrimaryButton from './PrimaryButton';
@@ -54,34 +54,73 @@ const EmptyState: React.FC<EmptyStateProps> = ({
     const displayIcon = icon || config.icon;
 
     return (
-        <View className="flex-1 items-center justify-center px-8 py-12">
+        <View style={styles.container}>
             <View
-                className="w-20 h-20 rounded-full items-center justify-center mb-4"
-                style={{ backgroundColor: config.bgColor }}
+                style={[
+                    styles.iconContainer,
+                    { backgroundColor: config.bgColor }
+                ]}
             >
                 <Ionicons name={displayIcon} size={40} color={config.color} />
             </View>
 
-            <Text className="text-lg font-semibold text-neutral-700 text-center mb-2">
+            <Text style={styles.title}>
                 {title}
             </Text>
 
             {description && (
-                <Text className="text-sm text-neutral-500 text-center mb-6 max-w-xs">
+                <Text style={styles.description}>
                     {description}
                 </Text>
             )}
 
             {actionLabel && onAction && (
-                <PrimaryButton
-                    title={actionLabel}
-                    onPress={onAction}
-                    variant="primary"
-                    size="md"
-                />
+                <View style={styles.buttonContainer}>
+                    <PrimaryButton
+                        title={actionLabel}
+                        onPress={onAction}
+                        variant="primary"
+                        size="md"
+                    />
+                </View>
             )}
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 32,
+        paddingVertical: 48,
+    },
+    iconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[700],
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    description: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+        textAlign: 'center',
+        marginBottom: 24,
+        maxWidth: 250,
+    },
+    buttonContainer: {
+        marginTop: 8,
+    },
+});
 
 export default EmptyState;
