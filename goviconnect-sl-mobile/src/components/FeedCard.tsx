@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { getRelativeTime } from '../utils/validators';
@@ -74,21 +74,14 @@ const FeedCard: React.FC<FeedCardProps> = ({
         <TouchableOpacity
             onPress={onPress}
             activeOpacity={0.7}
-            className="bg-white rounded-2xl border border-neutral-100 overflow-hidden mb-4"
-            style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 2,
-            }}
+            style={styles.card}
         >
             {/* Image (if available and not in lite mode) */}
             {image && !liteMode && (
-                <View className="h-40 bg-neutral-100">
+                <View style={styles.imageContainer}>
                     <Image
                         source={{ uri: image }}
-                        className="w-full h-full"
+                        style={styles.image}
                         resizeMode="cover"
                     />
                 </View>
@@ -97,66 +90,173 @@ const FeedCard: React.FC<FeedCardProps> = ({
             {/* Lite mode image placeholder */}
             {image && liteMode && (
                 <TouchableOpacity
-                    className="h-20 bg-neutral-100 items-center justify-center"
+                    style={styles.placeholderContainer}
                     onPress={onPress}
                 >
                     <Ionicons name="image-outline" size={24} color={COLORS.neutral[400]} />
-                    <Text className="text-neutral-400 text-xs mt-1">Tap to load image</Text>
+                    <Text style={styles.placeholderText}>Tap to load image</Text>
                 </TouchableOpacity>
             )}
 
-            <View className="p-4">
+            <View style={styles.content}>
                 {/* Type Badge */}
-                <View className="flex-row items-center mb-2">
+                <View style={styles.header}>
                     <View
-                        className="flex-row items-center px-2 py-1 rounded-full mr-2"
-                        style={{ backgroundColor: config.bgColor }}
+                        style={[
+                            styles.badge,
+                            { backgroundColor: config.bgColor }
+                        ]}
                     >
                         <Ionicons name={config.icon} size={14} color={config.color} />
-                        <Text className="text-xs font-medium ml-1" style={{ color: config.color }}>
+                        <Text style={[styles.badgeText, { color: config.color }]}>
                             {config.label}
                         </Text>
                     </View>
                     {timestamp && (
-                        <Text className="text-xs text-neutral-400">
+                        <Text style={styles.timestamp}>
                             {getRelativeTime(timestamp, i18n.language)}
                         </Text>
                     )}
                 </View>
 
                 {/* Title */}
-                <Text className="text-base font-semibold text-neutral-800 mb-1" numberOfLines={2}>
+                <Text style={styles.title} numberOfLines={2}>
                     {title}
                 </Text>
 
                 {/* Content */}
-                <Text className="text-sm text-neutral-500" numberOfLines={2}>
+                <Text style={styles.description} numberOfLines={2}>
                     {content}
                 </Text>
 
                 {/* Progress Bar (for saved/continue type) */}
                 {type === 'saved' && progress !== undefined && (
-                    <View className="mt-3">
-                        <View className="flex-row justify-between mb-1">
-                            <Text className="text-xs text-neutral-400">Progress</Text>
-                            <Text className="text-xs text-primary-600 font-medium">{progress}%</Text>
+                    <View style={styles.progressContainer}>
+                        <View style={styles.progressHeader}>
+                            <Text style={styles.progressLabel}>Progress</Text>
+                            <Text style={styles.progressValue}>{progress}%</Text>
                         </View>
-                        <View className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+                        <View style={styles.progressBarBg}>
                             <View
-                                className="h-full bg-primary-500 rounded-full"
-                                style={{ width: `${progress}%` }}
+                                style={[
+                                    styles.progressBarFill,
+                                    { width: `${progress}%` }
+                                ]}
                             />
                         </View>
                     </View>
                 )}
 
                 {/* Action Arrow */}
-                <View className="flex-row justify-end mt-2">
+                <View style={styles.footer}>
                     <Ionicons name="chevron-forward" size={20} color={COLORS.neutral[400]} />
                 </View>
             </View>
         </TouchableOpacity>
     );
 };
+
+const styles = StyleSheet.create({
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        overflow: 'hidden',
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    imageContainer: {
+        height: 160,
+        backgroundColor: COLORS.neutral[100],
+    },
+    image: {
+        width: '100%',
+        height: '100%',
+    },
+    placeholderContainer: {
+        height: 80,
+        backgroundColor: COLORS.neutral[100],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    placeholderText: {
+        color: COLORS.neutral[400],
+        fontSize: 12,
+        marginTop: 4,
+    },
+    content: {
+        padding: 16,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    badge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 50,
+        marginRight: 8,
+    },
+    badgeText: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginLeft: 4,
+    },
+    timestamp: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        marginBottom: 4,
+    },
+    description: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+    },
+    progressContainer: {
+        marginTop: 12,
+    },
+    progressHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    progressLabel: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+    },
+    progressValue: {
+        fontSize: 12,
+        color: COLORS.primary[600],
+        fontWeight: '500',
+    },
+    progressBarBg: {
+        height: 8,
+        backgroundColor: COLORS.neutral[100],
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: COLORS.primary[500],
+        borderRadius: 4,
+    },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginTop: 8,
+    },
+});
 
 export default FeedCard;

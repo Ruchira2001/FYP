@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,76 +33,89 @@ const LanguageModal: React.FC = () => {
     };
 
     return (
-        <View className="flex-1 bg-black/50 justify-end">
+        <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="rgba(0,0,0,0.5)" />
 
-            <View className="bg-white rounded-t-3xl">
+            <View style={styles.modalContent}>
                 {/* Handle */}
-                <View className="items-center pt-3 pb-2">
-                    <View className="w-10 h-1 bg-neutral-300 rounded-full" />
+                <View style={styles.handleContainer}>
+                    <View style={styles.handle} />
                 </View>
 
                 {/* Header */}
-                <View className="flex-row items-center justify-between px-4 pb-4 border-b border-neutral-100">
+                <View style={styles.header}>
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
-                        className="p-2"
+                        style={styles.closeButton}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                         <Ionicons name="close" size={24} color={COLORS.neutral[600]} />
                     </TouchableOpacity>
 
-                    <Text className="text-lg font-semibold text-neutral-800">
+                    <Text style={styles.title}>
                         {t('onboarding.select_language')}
                     </Text>
 
-                    <View className="w-10" />
+                    <View style={{ width: 40 }} />
                 </View>
 
                 {/* Language Options */}
-                <View className="p-4">
-                    {languages.map((lang) => (
-                        <TouchableOpacity
-                            key={lang.code}
-                            onPress={() => handleLanguageSelect(lang.code)}
-                            className={`flex-row items-center p-4 rounded-xl border-2 mb-3 ${selectedLanguage === lang.code
-                                ? 'border-primary-500 bg-primary-50'
-                                : 'border-neutral-200 bg-white'
-                                }`}
-                        >
-                            <View
-                                className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${selectedLanguage === lang.code ? 'bg-primary-500' : 'bg-neutral-100'
-                                    }`}
+                <View style={styles.optionsContainer}>
+                    {languages.map((lang) => {
+                        const isSelected = selectedLanguage === lang.code;
+                        return (
+                            <TouchableOpacity
+                                key={lang.code}
+                                onPress={() => handleLanguageSelect(lang.code)}
+                                style={[
+                                    styles.option,
+                                    isSelected ? styles.optionSelected : styles.optionDefault
+                                ]}
                             >
-                                <Text className={`text-lg font-bold ${selectedLanguage === lang.code ? 'text-white' : 'text-neutral-500'
-                                    }`}>
-                                    {lang.code.toUpperCase()}
-                                </Text>
-                            </View>
-
-                            <View className="flex-1">
-                                <Text className={`text-lg font-semibold ${selectedLanguage === lang.code ? 'text-primary-700' : 'text-neutral-800'
-                                    }`}>
-                                    {lang.nativeName}
-                                </Text>
-                                <Text className="text-sm text-neutral-500">{lang.name}</Text>
-                            </View>
-
-                            {selectedLanguage === lang.code && (
-                                <View className="w-6 h-6 bg-primary-500 rounded-full items-center justify-center">
-                                    <Ionicons name="checkmark" size={16} color="white" />
+                                <View
+                                    style={[
+                                        styles.iconContainer,
+                                        isSelected ? styles.iconContainerSelected : styles.iconContainerDefault
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.langCode,
+                                            isSelected ? styles.langCodeSelected : styles.langCodeDefault
+                                        ]}
+                                    >
+                                        {lang.code.toUpperCase()}
+                                    </Text>
                                 </View>
-                            )}
-                        </TouchableOpacity>
-                    ))}
 
-                    <Text className="text-sm text-neutral-400 text-center mt-2 mb-4">
+                                <View style={styles.textContainer}>
+                                    <Text
+                                        style={[
+                                            styles.nativeName,
+                                            isSelected ? styles.nativeNameSelected : styles.nativeNameDefault
+                                        ]}
+                                    >
+                                        {lang.nativeName}
+                                    </Text>
+                                    <Text style={styles.englishName}>{lang.name}</Text>
+                                </View>
+
+                                {isSelected && (
+                                    <View style={styles.checkmark}>
+                                        <Ionicons name="checkmark" size={16} color="white" />
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
+
+                    <Text style={styles.note}>
                         {t('onboarding.language_note')}
                     </Text>
                 </View>
 
                 {/* Confirm Button */}
-                <View className="px-4 pb-8">
+                <View style={styles.buttonContainer}>
                     <PrimaryButton
                         title={t('common.confirm')}
                         onPress={handleConfirm}
@@ -115,5 +128,125 @@ const LanguageModal: React.FC = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#ffffff',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+    },
+    handleContainer: {
+        alignItems: 'center',
+        paddingTop: 12,
+        paddingBottom: 8,
+    },
+    handle: {
+        width: 40,
+        height: 4,
+        backgroundColor: COLORS.neutral[300],
+        borderRadius: 2,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+    },
+    closeButton: {
+        padding: 8,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    optionsContainer: {
+        padding: 16,
+    },
+    option: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 2,
+        marginBottom: 12,
+    },
+    optionSelected: {
+        borderColor: COLORS.primary[500],
+        backgroundColor: COLORS.primary[50],
+    },
+    optionDefault: {
+        borderColor: COLORS.neutral[200],
+        backgroundColor: '#ffffff',
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    iconContainerSelected: {
+        backgroundColor: COLORS.primary[500],
+    },
+    iconContainerDefault: {
+        backgroundColor: COLORS.neutral[100],
+    },
+    langCode: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    langCodeSelected: {
+        color: '#ffffff',
+    },
+    langCodeDefault: {
+        color: COLORS.neutral[500],
+    },
+    textContainer: {
+        flex: 1,
+    },
+    nativeName: {
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    nativeNameSelected: {
+        color: COLORS.primary[700],
+    },
+    nativeNameDefault: {
+        color: COLORS.neutral[800],
+    },
+    englishName: {
+        fontSize: 14,
+        color: COLORS.neutral[500],
+    },
+    checkmark: {
+        width: 24,
+        height: 24,
+        backgroundColor: COLORS.primary[500],
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    note: {
+        fontSize: 14,
+        color: COLORS.neutral[400],
+        textAlign: 'center',
+        marginTop: 8,
+        marginBottom: 16,
+    },
+    buttonContainer: {
+        paddingHorizontal: 16,
+        paddingBottom: 32,
+    },
+});
 
 export default LanguageModal;

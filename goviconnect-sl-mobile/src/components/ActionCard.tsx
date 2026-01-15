@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 
@@ -30,85 +30,133 @@ const ActionCard: React.FC<ActionCardProps> = ({
         switch (size) {
             case 'sm':
                 return {
-                    padding: 'p-3',
+                    padding: 12,
                     iconSize: 24,
-                    iconContainer: 'w-10 h-10',
-                    titleSize: 'text-sm',
-                    descSize: 'text-xs',
+                    iconContainer: 40,
+                    titleSize: 14,
+                    descSize: 12,
                 };
             case 'md':
                 return {
-                    padding: 'p-4',
+                    padding: 16,
                     iconSize: 28,
-                    iconContainer: 'w-12 h-12',
-                    titleSize: 'text-base',
-                    descSize: 'text-sm',
+                    iconContainer: 48,
+                    titleSize: 16,
+                    descSize: 14,
                 };
             case 'lg':
                 return {
-                    padding: 'p-5',
+                    padding: 20,
                     iconSize: 32,
-                    iconContainer: 'w-14 h-14',
-                    titleSize: 'text-lg',
-                    descSize: 'text-base',
+                    iconContainer: 56,
+                    titleSize: 18,
+                    descSize: 16,
                 };
             default:
                 return {
-                    padding: 'p-4',
+                    padding: 16,
                     iconSize: 28,
-                    iconContainer: 'w-12 h-12',
-                    titleSize: 'text-base',
-                    descSize: 'text-sm',
+                    iconContainer: 48,
+                    titleSize: 16,
+                    descSize: 14,
                 };
         }
     };
 
-    const styles = getSizeStyles();
+    const sizeStyles = getSizeStyles();
 
     return (
         <TouchableOpacity
             onPress={onPress}
             activeOpacity={0.7}
-            className={`
-        ${styles.padding}
-        bg-white
-        rounded-2xl
-        border
-        border-neutral-100
-        relative
-      `}
-            style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 2,
-            }}
+            style={[
+                styles.card,
+                { padding: sizeStyles.padding }
+            ]}
         >
             {badge && (
-                <View className="absolute top-2 right-2 bg-red-500 px-2 py-0.5 rounded-full">
-                    <Text className="text-white text-xs font-medium">{badge}</Text>
+                <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{badge}</Text>
                 </View>
             )}
 
             <View
-                className={`${styles.iconContainer} rounded-xl items-center justify-center mb-3`}
-                style={{ backgroundColor: iconBgColor }}
+                style={[
+                    styles.iconContainer,
+                    {
+                        width: sizeStyles.iconContainer,
+                        height: sizeStyles.iconContainer,
+                        backgroundColor: iconBgColor
+                    }
+                ]}
             >
-                <Ionicons name={icon} size={styles.iconSize} color={iconColor} />
+                <Ionicons name={icon} size={sizeStyles.iconSize} color={iconColor} />
             </View>
 
-            <Text className={`${styles.titleSize} font-semibold text-neutral-800 mb-1`}>
+            <Text
+                style={[
+                    styles.title,
+                    { fontSize: sizeStyles.titleSize }
+                ]}
+            >
                 {title}
             </Text>
 
             {description && (
-                <Text className={`${styles.descSize} text-neutral-500`} numberOfLines={2}>
+                <Text
+                    style={[
+                        styles.description,
+                        { fontSize: sizeStyles.descSize }
+                    ]}
+                    numberOfLines={2}
+                >
                     {description}
                 </Text>
             )}
         </TouchableOpacity>
     );
 };
+
+const styles = StyleSheet.create({
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    badge: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: COLORS.error,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 12,
+    },
+    badgeText: {
+        color: '#ffffff',
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    iconContainer: {
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
+    },
+    title: {
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        marginBottom: 4,
+    },
+    description: {
+        color: COLORS.neutral[500],
+    },
+});
 
 export default ActionCard;

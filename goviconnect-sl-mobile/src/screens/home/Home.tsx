@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,8 @@ import { useApp } from '../../context';
 import { getMyCrops, getNotifications, getChats } from '../../services/storage';
 import cropsData from '../../data/crops.json';
 import tipsData from '../../data/tips.json';
+
+const { width } = Dimensions.get('window');
 
 const Home: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -88,7 +90,7 @@ const Home: React.FC = () => {
     ];
 
     return (
-        <View className="flex-1 bg-neutral-50">
+        <View style={styles.container}>
             {/* Header */}
             <Header
                 showCursiveTitle
@@ -103,7 +105,7 @@ const Home: React.FC = () => {
             />
 
             <ScrollView
-                className="flex-1"
+                style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
@@ -115,10 +117,10 @@ const Home: React.FC = () => {
                 }
             >
                 {/* Greeting */}
-                <View className="px-4 pt-4 pb-2">
-                    <Text className="text-lg text-neutral-500">
+                <View style={styles.greetingContainer}>
+                    <Text style={styles.greetingText}>
                         {t('home.greeting')},{' '}
-                        <Text className="text-neutral-800 font-semibold">
+                        <Text style={styles.greetingName}>
                             {user?.name?.split(' ')[0] || 'Farmer'}
                         </Text>
                         ! 👋
@@ -126,14 +128,14 @@ const Home: React.FC = () => {
                 </View>
 
                 {/* Quick Actions */}
-                <View className="px-4 py-4">
-                    <Text className="text-lg font-semibold text-neutral-800 mb-3">
+                <View style={styles.sectionContainer}>
+                    <Text style={styles.sectionTitle}>
                         {t('home.quick_actions')}
                     </Text>
 
-                    <View className="flex-row flex-wrap justify-between">
+                    <View style={styles.quickActionsGrid}>
                         {quickActions.map((action) => (
-                            <View key={action.id} className="w-[48%] mb-3">
+                            <View key={action.id} style={styles.actionCardWrapper}>
                                 <ActionCard
                                     title={action.title}
                                     icon={action.icon}
@@ -148,13 +150,13 @@ const Home: React.FC = () => {
                 </View>
 
                 {/* My Crops */}
-                <View className="px-4 py-2">
-                    <View className="flex-row justify-between items-center mb-3">
-                        <Text className="text-lg font-semibold text-neutral-800">
+                <View style={styles.sectionContainer}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>
                             {t('home.my_crops')}
                         </Text>
                         <TouchableOpacity onPress={() => navigation.navigate('ProfileTab', { screen: 'EditCrops' })}>
-                            <Text className="text-primary-600 text-sm font-medium">
+                            <Text style={styles.editLink}>
                                 {t('common.edit')}
                             </Text>
                         </TouchableOpacity>
@@ -163,7 +165,7 @@ const Home: React.FC = () => {
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ paddingRight: 16 }}
+                        contentContainerStyle={styles.cropsScrollContent}
                     >
                         {myCrops.map((cropId) => {
                             const { name, icon } = getCropDisplay(cropId);
@@ -174,17 +176,10 @@ const Home: React.FC = () => {
                                         screen: 'CropDetails',
                                         params: { cropId }
                                     })}
-                                    className="bg-white rounded-2xl px-4 py-3 mr-3 flex-row items-center border border-neutral-100"
-                                    style={{
-                                        shadowColor: '#000',
-                                        shadowOffset: { width: 0, height: 1 },
-                                        shadowOpacity: 0.05,
-                                        shadowRadius: 4,
-                                        elevation: 1,
-                                    }}
+                                    style={styles.cropCard}
                                 >
-                                    <Text className="text-xl mr-2">{icon}</Text>
-                                    <Text className="text-sm font-medium text-neutral-700">{name}</Text>
+                                    <Text style={styles.cropIcon}>{icon}</Text>
+                                    <Text style={styles.cropName}>{name}</Text>
                                 </TouchableOpacity>
                             );
                         })}
@@ -192,8 +187,8 @@ const Home: React.FC = () => {
                 </View>
 
                 {/* Feed */}
-                <View className="px-4 py-4">
-                    <Text className="text-lg font-semibold text-neutral-800 mb-3">
+                <View style={styles.sectionContainer}>
+                    <Text style={styles.sectionTitle}>
                         {t('home.feed')}
                     </Text>
 
@@ -225,10 +220,91 @@ const Home: React.FC = () => {
                 </View>
 
                 {/* Bottom Padding */}
-                <View className="h-6" />
+                <View style={{ height: 24 }} />
             </ScrollView>
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    scrollView: {
+        flex: 1,
+    },
+    greetingContainer: {
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 8,
+    },
+    greetingText: {
+        fontSize: 18,
+        color: COLORS.neutral[500],
+    },
+    greetingName: {
+        color: COLORS.neutral[800],
+        fontWeight: '600',
+    },
+    sectionContainer: {
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        marginBottom: 12,
+    },
+    quickActionsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    actionCardWrapper: {
+        width: '48%',
+        marginBottom: 12,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    editLink: {
+        color: COLORS.primary[600],
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    cropsScrollContent: {
+        paddingRight: 16,
+    },
+    cropCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginRight: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
+    },
+    cropIcon: {
+        fontSize: 20,
+        marginRight: 8,
+    },
+    cropName: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: COLORS.neutral[700],
+    },
+});
 
 export default Home;
