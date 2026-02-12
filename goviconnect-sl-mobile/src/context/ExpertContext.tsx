@@ -2,8 +2,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import {
     getSettings,
     saveSettings,
-    isOnboardingComplete,
-    setOnboardingComplete,
     AppSettings,
     defaultSettings,
     setItem,

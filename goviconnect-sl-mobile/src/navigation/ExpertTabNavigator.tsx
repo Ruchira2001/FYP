@@ -3,14 +3,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../../utils/constants';
+import { COLORS } from '../utils/constants';
 
 // Screens
-import ExpertHome from '../../screens/expert/home/ExpertHome';
-import ExpertChatsList from '../../screens/expert/chats/ExpertChatsList';
-import DiagnosisReviews from '../../screens/expert/diagnosis/DiagnosisReviews';
-import ExpertMeetings from '../../screens/expert/meetings/ExpertMeetings';
-import ExpertProfile from '../../screens/expert/profile/ExpertProfile';
+import ExpertHome from '../screens/expert/home/ExpertHome';
+import ExpertChatsList from '../screens/expert/chats/ExpertChatsList';
+import DiagnosisReviews from '../screens/expert/diagnosis/DiagnosisReviews';
+import ExpertMeetings from '../screens/expert/meetings/ExpertMeetings';
+import ExpertProfile from '../screens/expert/profile/ExpertProfile';
 
 // Stack navigators for each tab
 const HomeStack = createNativeStackNavigator();
