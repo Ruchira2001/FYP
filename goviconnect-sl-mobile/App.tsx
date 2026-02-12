@@ -3,10 +3,12 @@ import React from 'react';
 import { StatusBar, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { NavigationContainer } from '@react-navigation/native';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './src/i18n';
 import { AppProvider } from './src/context';
-import { RootNavigator } from './src/navigation';
+import { ExpertProvider } from './src/context/ExpertContext';
+import AppNavigator from './src/navigation/AppNavigator';
 
 // Ignore specific warnings (optional)
 LogBox.ignoreLogs([
@@ -32,12 +34,16 @@ export default function App() {
             <SafeAreaProvider>
                 <I18nextProvider i18n={i18n}>
                     <AppProvider>
-                        <StatusBar
-                            barStyle="dark-content"
-                            backgroundColor="#ffffff"
-                            translucent={false}
-                        />
-                        <RootNavigator />
+                        <ExpertProvider>
+                            <StatusBar
+                                barStyle="dark-content"
+                                backgroundColor="#ffffff"
+                                translucent={false}
+                            />
+                            <NavigationContainer>
+                                <AppNavigator />
+                            </NavigationContainer>
+                        </ExpertProvider>
                     </AppProvider>
                 </I18nextProvider>
             </SafeAreaProvider>

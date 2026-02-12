@@ -29,8 +29,8 @@ const AuthNavigator = () => (
     </AuthStack.Navigator>
 );
 
-// Root Navigator
-const RootNavigator: React.FC = () => {
+// Farmer Navigator Component (without NavigationContainer)
+export const FarmerNavigator: React.FC = () => {
     const { isAuthenticated, hasCompletedOnboarding, isInitialized } = useApp();
 
     if (!isInitialized) {
@@ -50,56 +50,63 @@ const RootNavigator: React.FC = () => {
     };
 
     return (
+        <RootStack.Navigator
+            initialRouteName={getInitialRouteName()}
+            screenOptions={{ headerShown: false }}
+        >
+            {/* Auth Flow */}
+            <RootStack.Screen name="Auth" component={AuthNavigator} />
+
+            {/* Main App with Tab Navigation */}
+            <RootStack.Screen name="MainTabs" component={TabNavigator} />
+
+            {/* Global Screens (accessible from anywhere) */}
+            <RootStack.Screen
+                name="Notifications"
+                component={Notifications}
+                options={{
+                    animation: 'slide_from_right',
+                }}
+            />
+            <RootStack.Screen
+                name="ChatsList"
+                component={ChatsList}
+                options={{
+                    animation: 'slide_from_right',
+                }}
+            />
+            <RootStack.Screen
+                name="ChatDetail"
+                component={ChatDetail}
+                options={{
+                    animation: 'slide_from_right',
+                }}
+            />
+            <RootStack.Screen
+                name="BookMeetingFromChat"
+                component={BookMeetingFromChat}
+                options={{
+                    animation: 'slide_from_bottom',
+                    presentation: 'modal',
+                }}
+            />
+            <RootStack.Screen
+                name="LanguageModal"
+                component={LanguageModal}
+                options={{
+                    animation: 'slide_from_bottom',
+                    presentation: 'transparentModal',
+                }}
+            />
+        </RootStack.Navigator>
+    );
+};
+
+// Default RootNavigator with Container (for backward compatibility if needed)
+const RootNavigator: React.FC = () => {
+    return (
         <NavigationContainer>
-            <RootStack.Navigator
-                initialRouteName={getInitialRouteName()}
-                screenOptions={{ headerShown: false }}
-            >
-                {/* Auth Flow */}
-                <RootStack.Screen name="Auth" component={AuthNavigator} />
-
-                {/* Main App with Tab Navigation */}
-                <RootStack.Screen name="MainTabs" component={TabNavigator} />
-
-                {/* Global Screens (accessible from anywhere) */}
-                <RootStack.Screen
-                    name="Notifications"
-                    component={Notifications}
-                    options={{
-                        animation: 'slide_from_right',
-                    }}
-                />
-                <RootStack.Screen
-                    name="ChatsList"
-                    component={ChatsList}
-                    options={{
-                        animation: 'slide_from_right',
-                    }}
-                />
-                <RootStack.Screen
-                    name="ChatDetail"
-                    component={ChatDetail}
-                    options={{
-                        animation: 'slide_from_right',
-                    }}
-                />
-                <RootStack.Screen
-                    name="BookMeetingFromChat"
-                    component={BookMeetingFromChat}
-                    options={{
-                        animation: 'slide_from_bottom',
-                        presentation: 'modal',
-                    }}
-                />
-                <RootStack.Screen
-                    name="LanguageModal"
-                    component={LanguageModal}
-                    options={{
-                        animation: 'slide_from_bottom',
-                        presentation: 'transparentModal',
-                    }}
-                />
-            </RootStack.Navigator>
+            <FarmerNavigator />
         </NavigationContainer>
     );
 };
