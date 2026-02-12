@@ -1,15 +1,19 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../utils/constants';
-
-const { width } = Dimensions.get('window');
+import { useApp } from '../context/AppContext';
+import { useExpert } from '../context/ExpertContext';
+import { useShop } from '../context/ShopContext';
 
 const RoleSelectionScreen: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
+    const { login: loginFarmer } = useApp();
+    const { login: loginExpert } = useExpert();
+    const { login: loginShop } = useShop();
 
     const handleFarmerSelect = () => {
         navigation.navigate('FarmerApp');
@@ -19,53 +23,109 @@ const RoleSelectionScreen: React.FC = () => {
         navigation.navigate('ExpertApp');
     };
 
+    const handleShopSelect = () => {
+        navigation.navigate('ShopApp');
+    };
+
+    // Quick Login Handlers
+    const quickLoginFarmer = async () => {
+        await loginFarmer('farmer@demo.com', 'password123');
+        navigation.navigate('FarmerApp');
+    };
+
+    const quickLoginExpert = async () => {
+        await loginExpert('expert@demo.com', 'password');
+        navigation.navigate('ExpertApp');
+    };
+
+    const quickLoginShop = async () => {
+        await loginShop({
+            id: 'S' + Date.now(),
+            name: 'Demo Shop',
+            email: 'shop@demo.com',
+            location: 'Colombo',
+            type: 'Business'
+        });
+        navigation.navigate('ShopApp');
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-            <View style={styles.content}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={styles.header}>
-                    <Text style={styles.welcomeText}>Welcome to</Text>
-                    <Text style={styles.logoText}>GoviConnect</Text>
-                    <Text style={styles.subtitle}>Choose your role to continue</Text>
+                    <View style={styles.logoContainer}>
+                        <Text style={styles.logoText}>GoviConnect</Text>
+                    </View>
+                    <Text style={styles.welcomeText}>Choose your role</Text>
+                    <Text style={styles.subText}>Select how you want to use the platform</Text>
                 </View>
 
-                <View style={styles.rolesContainer}>
-                    {/* Farmer Role Card */}
-                    <TouchableOpacity
-                        style={styles.roleCard}
-                        onPress={handleFarmerSelect}
-                        activeOpacity={0.9}
-                    >
-                        <View style={[styles.iconContainer, { backgroundColor: COLORS.primary[100] }]}>
-                            <Text style={styles.emoji}>👨‍🌾</Text>
-                        </View>
-                        <View style={styles.roleContent}>
-                            <Text style={styles.roleTitle}>I'm a Farmer</Text>
-                            <Text style={styles.roleDescription}>
-                                Get expert advice, diagnose crop diseases, and connect with buyers.
-                            </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={24} color={COLORS.neutral[400]} />
-                    </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.roleCard}
+                    onPress={handleFarmerSelect}
+                    activeOpacity={0.9}
+                >
+                    <View style={[styles.iconContainer, { backgroundColor: COLORS.primary[100] }]}>
+                        <Text style={styles.emoji}>👨‍🌾</Text>
+                    </View>
+                    <View style={styles.textContainer}>
+                        <Text style={styles.roleTitle}>I'm a Farmer</Text>
+                        <Text style={styles.roleDescription}>Manage your crops, get expert advice & access learning resources.</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={24} color={COLORS.neutral[400]} />
+                </TouchableOpacity>
 
-                    {/* Expert Role Card */}
-                    <TouchableOpacity
-                        style={styles.roleCard}
-                        onPress={handleExpertSelect}
-                        activeOpacity={0.9}
-                    >
-                        <View style={[styles.iconContainer, { backgroundColor: COLORS.secondary[100] }]}>
-                            <Text style={styles.emoji}>👨‍⚕️</Text>
-                        </View>
-                        <View style={styles.roleContent}>
-                            <Text style={styles.roleTitle}>I'm an Expert</Text>
-                            <Text style={styles.roleDescription}>
-                                Provide guidance, review diagnoses, and help farmers succeed.
-                            </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={24} color={COLORS.neutral[400]} />
-                    </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.roleCard}
+                    onPress={handleExpertSelect}
+                    activeOpacity={0.9}
+                >
+                    <View style={[styles.iconContainer, { backgroundColor: COLORS.secondary[100] }]}>
+                        <Text style={styles.emoji}>👨‍⚕️</Text>
+                    </View>
+                    <View style={styles.textContainer}>
+                        <Text style={styles.roleTitle}>I'm an Expert</Text>
+                        <Text style={styles.roleDescription}>Provide guidance, diagnose issues & support the farming community.</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={24} color={COLORS.neutral[400]} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.roleCard}
+                    onPress={handleShopSelect}
+                    activeOpacity={0.9}
+                >
+                    <View style={[styles.iconContainer, { backgroundColor: COLORS.info + '20' }]}>
+                        <Text style={styles.emoji}>🏪</Text>
+                    </View>
+                    <View style={styles.textContainer}>
+                        <Text style={styles.roleTitle}>I'm a Shop Owner</Text>
+                        <Text style={styles.roleDescription}>Source fresh wholesale produce for your business directly from farmers.</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={24} color={COLORS.neutral[400]} />
+                </TouchableOpacity>
+
+                <View style={styles.separator} />
+
+                {/* Quick Login Buttons */}
+                <View style={styles.quickLoginContainer}>
+                    <Text style={styles.quickLoginTitle}>Quick Login (Demo)</Text>
+                    <View style={styles.quickLoginButtons}>
+                        <TouchableOpacity style={[styles.quickBtn, { backgroundColor: COLORS.primary[500] }]} onPress={quickLoginFarmer}>
+                            <Text style={styles.quickBtnText}>Farmer</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.quickBtn, { backgroundColor: COLORS.secondary[500] }]} onPress={quickLoginExpert}>
+                            <Text style={styles.quickBtnText}>Expert</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.quickBtn, { backgroundColor: COLORS.info }]} onPress={quickLoginShop}>
+                            <Text style={styles.quickBtnText}>Shop</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <View style={styles.footer}>
@@ -73,7 +133,7 @@ const RoleSelectionScreen: React.FC = () => {
                         By continuing, you agree to our Terms & Privacy Policy
                     </Text>
                 </View>
-            </View>
+            </ScrollView>
         </SafeAreaView>
     );
 };
@@ -83,60 +143,60 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#ffffff',
     },
-    content: {
-        flex: 1,
+    scrollContent: {
+        flexGrow: 1,
         padding: 24,
         justifyContent: 'center',
     },
     header: {
-        marginBottom: 48,
         alignItems: 'center',
+        marginBottom: 40,
+        marginTop: 20,
     },
-    welcomeText: {
-        fontSize: 18,
-        color: COLORS.neutral[600],
-        marginBottom: 8,
+    logoContainer: {
+        marginBottom: 16,
     },
     logoText: {
-        fontSize: 36,
-        fontWeight: 'bold',
+        fontSize: 32,
         color: COLORS.primary[600],
-        marginBottom: 12,
         fontFamily: 'IrishGrover_400Regular',
     },
-    subtitle: {
+    welcomeText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.neutral[800],
+        marginBottom: 8,
+    },
+    subText: {
         fontSize: 16,
         color: COLORS.neutral[500],
         textAlign: 'center',
-    },
-    rolesContainer: {
-        width: '100%',
     },
     roleCard: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#ffffff',
-        borderRadius: 20,
-        padding: 20,
+        padding: 16,
+        borderRadius: 16,
         marginBottom: 20,
         borderWidth: 1,
-        borderColor: COLORS.neutral[200],
+        borderColor: COLORS.neutral[100],
         ...SHADOW.md,
     },
     iconContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        alignItems: 'center',
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         justifyContent: 'center',
+        alignItems: 'center',
         marginRight: 16,
     },
     emoji: {
         fontSize: 32,
     },
-    roleContent: {
+    textContainer: {
         flex: 1,
-        paddingRight: 8,
+        marginRight: 8,
     },
     roleTitle: {
         fontSize: 18,
@@ -149,13 +209,42 @@ const styles = StyleSheet.create({
         color: COLORS.neutral[500],
         lineHeight: 18,
     },
-    footer: {
-        position: 'absolute',
-        bottom: 24,
-        left: 0,
-        right: 0,
+    separator: {
+        height: 1,
+        backgroundColor: COLORS.neutral[200],
+        marginVertical: 20,
+    },
+    quickLoginContainer: {
         alignItems: 'center',
-        paddingHorizontal: 24,
+        marginBottom: 20,
+    },
+    quickLoginTitle: {
+        fontSize: 14,
+        color: COLORS.neutral[400],
+        marginBottom: 12,
+        fontWeight: '600',
+    },
+    quickLoginButtons: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+    },
+    quickBtn: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        minWidth: 80,
+        alignItems: 'center',
+        marginHorizontal: 6,
+    },
+    quickBtnText: {
+        color: '#ffffff',
+        fontWeight: 'bold',
+        fontSize: 12,
+    },
+    footer: {
+        marginTop: 10,
+        alignItems: 'center',
+        paddingBottom: 20,
     },
     footerText: {
         fontSize: 12,

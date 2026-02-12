@@ -13,6 +13,7 @@ interface PrimaryButtonProps {
     icon?: keyof typeof Ionicons.glyphMap;
     iconPosition?: 'left' | 'right';
     fullWidth?: boolean;
+    style?: any;
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -25,6 +26,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     icon,
     iconPosition = 'left',
     fullWidth = false,
+    style,
 }) => {
     const getBackgroundColor = () => {
         if (disabled) return COLORS.neutral[200];
@@ -122,6 +124,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
                     shadowRadius: 8,
                     elevation: variant === 'primary' && !disabled ? 4 : 0,
                 },
+                style,
             ]}
         >
             {loading ? (

@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import { useExpert } from '../context/ExpertContext';
+import { useShop } from '../context/ShopContext';
 import { FarmerNavigator } from './RootNavigator';
 import ExpertRootNavigator from './ExpertRootNavigator';
+import ShopNavigator from './ShopNavigator';
 import RoleSelectionScreen from '../screens/RoleSelectionScreen';
 import { View, ActivityIndicator } from 'react-native';
 import { COLORS } from '../utils/constants';
@@ -13,19 +15,22 @@ const Stack = createNativeStackNavigator();
 const AppNavigator: React.FC = () => {
     const { isAuthenticated: isFarmerAuth, isInitialized: isFarmerInitialized } = useApp();
     const { isAuthenticated: isExpertAuth, isInitialized: isExpertInitialized } = useExpert();
+    const { isAuthenticated: isShopAuth, isInitialized: isShopInitialized } = useShop();
     const [initialRoute, setInitialRoute] = useState<string | null>(null);
 
     useEffect(() => {
-        if (isFarmerInitialized && isExpertInitialized) {
+        if (isFarmerInitialized && isExpertInitialized && isShopInitialized) {
             if (isFarmerAuth) {
                 setInitialRoute('FarmerApp');
             } else if (isExpertAuth) {
                 setInitialRoute('ExpertApp');
+            } else if (isShopAuth) {
+                setInitialRoute('ShopApp');
             } else {
                 setInitialRoute('RoleSelection');
             }
         }
-    }, [isFarmerAuth, isExpertAuth, isFarmerInitialized, isExpertInitialized]);
+    }, [isFarmerAuth, isExpertAuth, isShopAuth, isFarmerInitialized, isExpertInitialized, isShopInitialized]);
 
     if (!initialRoute) {
         return (
@@ -57,6 +62,13 @@ const AppNavigator: React.FC = () => {
             <Stack.Screen
                 name="ExpertApp"
                 component={ExpertRootNavigator}
+                options={{
+                    animation: 'slide_from_right',
+                }}
+            />
+            <Stack.Screen
+                name="ShopApp"
+                component={ShopNavigator}
                 options={{
                     animation: 'slide_from_right',
                 }}

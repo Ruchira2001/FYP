@@ -8,6 +8,7 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from './src/i18n';
 import { AppProvider } from './src/context';
 import { ExpertProvider } from './src/context/ExpertContext';
+import { ShopProvider } from './src/context/ShopContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 // Ignore specific warnings (optional)
@@ -35,14 +36,16 @@ export default function App() {
                 <I18nextProvider i18n={i18n}>
                     <AppProvider>
                         <ExpertProvider>
-                            <StatusBar
-                                barStyle="dark-content"
-                                backgroundColor="#ffffff"
-                                translucent={false}
-                            />
-                            <NavigationContainer>
-                                <AppNavigator />
-                            </NavigationContainer>
+                            <ShopProvider>
+                                <StatusBar
+                                    barStyle="dark-content"
+                                    backgroundColor="#ffffff"
+                                    translucent={false}
+                                />
+                                <NavigationContainer>
+                                    <AppNavigator />
+                                </NavigationContainer>
+                            </ShopProvider>
                         </ExpertProvider>
                     </AppProvider>
                 </I18nextProvider>

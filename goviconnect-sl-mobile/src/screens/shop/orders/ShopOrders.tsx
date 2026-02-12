@@ -1,0 +1,145 @@
+import React from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Header } from '../../../components';
+import { COLORS, SHADOW } from '../../../utils/constants';
+import { Ionicons } from '@expo/vector-icons';
+
+const ORDERS = [
+    { id: 'ORD-7829', supplier: 'Green Valley Farms', items: 'Carrots (50kg), Potatoes (100kg)', total: 15400, status: 'Pending', date: 'Today, 10:30 AM' },
+    { id: 'ORD-7828', supplier: 'Lanka Spices Ltd', items: 'Cinnamon (5kg), Pepper (2kg)', total: 12500, status: 'Processing', date: 'Yesterday' },
+    { id: 'ORD-7825', supplier: 'Hill Country Co-op', items: 'Leeks (40kg)', total: 8000, status: 'Delivered', date: '10 Feb 2024' },
+    { id: 'ORD-7821', supplier: 'Organic Roots', items: 'Tomatoes (200kg)', total: 45000, status: 'Delivered', date: '08 Feb 2024' },
+    { id: 'ORD-7818', supplier: 'Kandy Fresh', items: 'Beans (30kg)', total: 6000, status: 'Cancelled', date: '05 Feb 2024' },
+];
+
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case 'Pending': return COLORS.warning;
+        case 'Processing': return COLORS.info;
+        case 'Delivered': return COLORS.success;
+        case 'Cancelled': return COLORS.error;
+        default: return COLORS.neutral[500];
+    }
+};
+
+const ShopOrders: React.FC = () => {
+    const renderOrder = ({ item }: { item: typeof ORDERS[0] }) => (
+        <TouchableOpacity style={styles.card}>
+            <View style={styles.cardHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={[styles.iconContainer, { backgroundColor: COLORS.primary[50] }]}>
+                        <Ionicons name="receipt-outline" size={20} color={COLORS.primary[600]} />
+                    </View>
+                    <View style={{ marginLeft: 12 }}>
+                        <Text style={styles.supplierName}>{item.supplier}</Text>
+                        <Text style={styles.orderId}>#{item.id}</Text>
+                    </View>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
+                    <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
+                </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.cardBody}>
+                <Text style={styles.itemsText} numberOfLines={2}>{item.items}</Text>
+                <View style={styles.footerRow}>
+                    <Text style={styles.dateText}>{item.date}</Text>
+                    <Text style={styles.totalText}>Rs. {item.total.toLocaleString()}</Text>
+                </View>
+            </View>
+        </TouchableOpacity>
+    );
+
+    return (
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <Header title="My Orders" showNotifications />
+            <FlatList
+                data={ORDERS}
+                renderItem={renderOrder}
+                keyExtractor={item => item.id}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+            />
+        </SafeAreaView>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#f8f9fa',
+    },
+    listContent: {
+        padding: 16,
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        marginBottom: 16,
+        padding: 16,
+        ...SHADOW.sm,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    iconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    supplierName: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: COLORS.neutral[800],
+    },
+    orderId: {
+        fontSize: 12,
+        color: COLORS.neutral[500],
+    },
+    statusBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    statusText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: COLORS.neutral[100],
+        marginVertical: 12,
+    },
+    cardBody: {
+
+    },
+    itemsText: {
+        fontSize: 14,
+        color: COLORS.neutral[600],
+        marginBottom: 12,
+        lineHeight: 20,
+    },
+    footerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    dateText: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+    },
+    totalText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: COLORS.neutral[900],
+    },
+});
+
+export default ShopOrders;

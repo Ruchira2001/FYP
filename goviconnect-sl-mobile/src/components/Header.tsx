@@ -20,6 +20,7 @@ interface HeaderProps {
     rightContent?: React.ReactNode;
     notificationCount?: number;
     chatUnreadCount?: number;
+    transparent?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -36,6 +37,7 @@ const Header: React.FC<HeaderProps> = ({
     rightContent,
     notificationCount = 0,
     chatUnreadCount = 0,
+    transparent = false,
 }) => {
     const { t } = useTranslation();
     const { status } = useConnectionStatus();
@@ -63,9 +65,9 @@ const Header: React.FC<HeaderProps> = ({
     };
 
     return (
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-            <View style={styles.container}>
+        <SafeAreaView style={[styles.safeArea, transparent && { backgroundColor: 'transparent' }]} edges={['top']}>
+            <StatusBar barStyle="dark-content" backgroundColor={transparent ? 'transparent' : '#ffffff'} translucent={transparent} />
+            <View style={[styles.container, transparent && { borderBottomWidth: 0, backgroundColor: 'transparent' }]}>
                 {/* Left Section */}
                 <View style={styles.leftSection}>
                     {showBack && (
