@@ -1,0 +1,451 @@
+{
+    "expertProfile": {
+        "id": "expert-1",
+        "name": "Dr. Kamal Perera",
+        "nameSi": "ආචාර්ය කමල් පෙරේරා",
+        "specialty": "Plant Pathology",
+        "specialtySi": "ශාක රෝගවේදය",
+        "email": "kamal.perera@goviconnect.lk",
+        "phone": "0712345678",
+        "district": "Kandy",
+        "rating": 4.8,
+        "totalConsultations": 245,
+        "farmersHelped": 189,
+        "yearsExperience": 20,
+        "bio": "20+ years experience in crop disease management. Former researcher at Department of Agriculture.",
+        "bioSi": "බෝග රෝග කළමනාකරණයේ වසර 20+ අත්දැකීම්. කෘෂිකර්ම දෙපාර්තමේන්තුවේ හිටපු පර්යේෂකයා.",
+        "qualifications": [
+            "PhD Plant Pathology",
+            "M.Sc. Agriculture",
+            "B.Sc. Botany"
+        ],
+        "specializations": [
+            "Vegetables",
+            "Fruits",
+            "Paddy"
+        ],
+        "availability": {
+            "monday": {
+                "start": "09:00",
+                "end": "17:00",
+                "available": true
+            },
+            "tuesday": {
+                "start": "09:00",
+                "end": "17:00",
+                "available": true
+            },
+            "wednesday": {
+                "start": "09:00",
+                "end": "17:00",
+                "available": true
+            },
+            "thursday": {
+                "start": "09:00",
+                "end": "17:00",
+                "available": true
+            },
+            "friday": {
+                "start": "09:00",
+                "end": "17:00",
+                "available": true
+            },
+            "saturday": {
+                "start": "10:00",
+                "end": "14:00",
+                "available": false
+            },
+            "sunday": {
+                "start": "",
+                "end": "",
+                "available": false
+            }
+        }
+    },
+    "dashboardStats": {
+        "todayConsultations": 5,
+        "pendingReviews": 8,
+        "upcomingMeetings": 3,
+        "unreadMessages": 12,
+        "weeklyTrend": {
+            "consultations": [
+                3,
+                5,
+                4,
+                7,
+                5,
+                6,
+                5
+            ],
+            "labels": [
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+                "Sun"
+            ]
+        }
+    },
+    "farmerRequests": [
+        {
+            "id": "req-1",
+            "farmerId": "farmer-1",
+            "farmerName": "Saman Perera",
+            "farmerDistrict": "Kandy",
+            "type": "diagnosis",
+            "cropName": "Tomato",
+            "cropNameSi": "තක්කාලි",
+            "title": "Brown spots on tomato leaves",
+            "titleSi": "තක්කාලි කොළ මත දුඹුරු පැල්ලම්",
+            "description": "My tomato plants have been developing brown spots on the lower leaves for about a week now. The spots seem to be spreading upward.",
+            "descriptionSi": "මගේ තක්කාලි පැළවල පහළ පත්‍ර මත දුඹුරු පැල්ලම් සති 1ක් පමණ තිස්සේ වර්ධනය වෙමින් පවතී.",
+            "imageUri": "tomato_spots.jpg",
+            "status": "pending",
+            "priority": "high",
+            "createdAt": "2026-02-12T08:30:00.000Z"
+        },
+        {
+            "id": "req-2",
+            "farmerId": "farmer-2",
+            "farmerName": "Kumara Silva",
+            "farmerDistrict": "Matale",
+            "type": "diagnosis",
+            "cropName": "Paddy",
+            "cropNameSi": "වී",
+            "title": "Yellowing paddy leaves",
+            "titleSi": "වී පත්‍ර කහ වීම",
+            "description": "Paddy leaves turning yellow from the tips. Already applied nitrogen fertilizer but no improvement.",
+            "descriptionSi": "වී පත්‍ර අග සිට කහ වෙමින් පවතී. දැනටමත් නයිට්‍රජන් පොහොර යොදා ඇතත් වැඩිදියුණුවක් නැත.",
+            "imageUri": null,
+            "status": "pending",
+            "priority": "medium",
+            "createdAt": "2026-02-12T07:15:00.000Z"
+        },
+        {
+            "id": "req-3",
+            "farmerId": "farmer-3",
+            "farmerName": "Nimal Jayawardena",
+            "farmerDistrict": "Kurunegala",
+            "type": "consultation",
+            "cropName": "Chili",
+            "cropNameSi": "මිරිස්",
+            "title": "Pest control advice needed",
+            "titleSi": "පළිබෝධ පාලන උපදෙස් අවශ්‍යයි",
+            "description": "My chili plants are being attacked by white flies. Need organic pest control methods.",
+            "descriptionSi": "මගේ මිරිස් පැළවලට සුදු මැස්සන්ගේ ප්‍රහාරයක් එල්ල වී ඇත. කාබනික පළිබෝධ පාලන ක්‍රම අවශ්‍යයි.",
+            "imageUri": null,
+            "status": "in_review",
+            "priority": "medium",
+            "createdAt": "2026-02-11T14:20:00.000Z"
+        },
+        {
+            "id": "req-4",
+            "farmerId": "farmer-4",
+            "farmerName": "Sunil Bandara",
+            "farmerDistrict": "Anuradhapura",
+            "type": "diagnosis",
+            "cropName": "Mango",
+            "cropNameSi": "අඹ",
+            "title": "Black spots on mango fruits",
+            "titleSi": "අඹ ගෙඩි මත කළු පැල්ලම්",
+            "description": "Developing black spots on mango fruits before they ripen. Affecting nearly half the harvest.",
+            "descriptionSi": "අඹ ගෙඩි ඉදෙන්නට පෙර කළු පැල්ලම් ඇති වේ. අස්වැන්නෙන් බාගයකට පමණ බලපා ඇත.",
+            "imageUri": "mango_spots.jpg",
+            "status": "completed",
+            "priority": "high",
+            "createdAt": "2026-02-10T11:00:00.000Z"
+        },
+        {
+            "id": "req-5",
+            "farmerId": "farmer-5",
+            "farmerName": "Ranjith Dissanayake",
+            "farmerDistrict": "Nuwara Eliya",
+            "type": "consultation",
+            "cropName": "Carrot",
+            "cropNameSi": "කැරට්",
+            "title": "Soil preparation for carrots",
+            "titleSi": "කැරට් සඳහා පස සකස් කිරීම",
+            "description": "Need guidance on proper soil preparation for carrot cultivation in Nuwara Eliya climate.",
+            "descriptionSi": "නුවර එළිය දේශගුණයේ කැරට් වගාව සඳහා නිසි පස සකස් කිරීම පිළිබඳ මඟ පෙන්වීම අවශ්‍යයි.",
+            "imageUri": null,
+            "status": "completed",
+            "priority": "low",
+            "createdAt": "2026-02-09T09:30:00.000Z"
+        }
+    ],
+    "diagnosisReviews": [
+        {
+            "id": "diag-1",
+            "farmerId": "farmer-1",
+            "farmerName": "Saman Perera",
+            "cropName": "Tomato",
+            "cropNameSi": "තක්කාලි",
+            "imageUri": "tomato_disease_1.jpg",
+            "aiDiagnosis": "Early Blight (Alternaria solani)",
+            "aiDiagnosisSi": "මුල් අග්නි රෝගය",
+            "aiConfidence": 87,
+            "aiTreatments": [
+                "Apply copper-based fungicide",
+                "Remove infected leaves",
+                "Ensure proper spacing between plants"
+            ],
+            "expertVerified": false,
+            "expertDiagnosis": null,
+            "expertNotes": null,
+            "status": "pending_review",
+            "submittedAt": "2026-02-12T08:30:00.000Z"
+        },
+        {
+            "id": "diag-2",
+            "farmerId": "farmer-6",
+            "farmerName": "Ajith Fernando",
+            "cropName": "Bean",
+            "cropNameSi": "බෝංචි",
+            "imageUri": "bean_disease.jpg",
+            "aiDiagnosis": "Bean Rust (Uromyces appendiculatus)",
+            "aiDiagnosisSi": "බෝංචි මලකඩ",
+            "aiConfidence": 72,
+            "aiTreatments": [
+                "Apply sulfur-based fungicide",
+                "Remove heavily infected plants",
+                "Practice crop rotation"
+            ],
+            "expertVerified": false,
+            "expertDiagnosis": null,
+            "expertNotes": null,
+            "status": "pending_review",
+            "submittedAt": "2026-02-11T15:45:00.000Z"
+        },
+        {
+            "id": "diag-3",
+            "farmerId": "farmer-7",
+            "farmerName": "Lakmal Herath",
+            "cropName": "Paddy",
+            "cropNameSi": "වී",
+            "imageUri": "paddy_blast.jpg",
+            "aiDiagnosis": "Rice Blast (Magnaporthe oryzae)",
+            "aiDiagnosisSi": "වී පිපිරුම් රෝගය",
+            "aiConfidence": 94,
+            "aiTreatments": [
+                "Apply tricyclazole fungicide",
+                "Reduce nitrogen fertilizer application",
+                "Manage water levels"
+            ],
+            "expertVerified": true,
+            "expertDiagnosis": "Confirmed: Rice Blast",
+            "expertNotes": "AI diagnosis is accurate. Also recommend resistant varieties for next season.",
+            "status": "verified",
+            "submittedAt": "2026-02-10T09:20:00.000Z"
+        },
+        {
+            "id": "diag-4",
+            "farmerId": "farmer-8",
+            "farmerName": "Dinesh Weerasinghe",
+            "cropName": "Banana",
+            "cropNameSi": "කෙසෙල්",
+            "imageUri": "banana_wilt.jpg",
+            "aiDiagnosis": "Panama Wilt (Fusarium oxysporum)",
+            "aiDiagnosisSi": "පැනමා මැකී යාම",
+            "aiConfidence": 65,
+            "aiTreatments": [
+                "Remove and destroy infected plants",
+                "Avoid planting in same area for 5 years",
+                "Use resistant varieties"
+            ],
+            "expertVerified": true,
+            "expertDiagnosis": "Corrected: Bacterial Wilt (Ralstonia solanacearum)",
+            "expertNotes": "The symptoms appear similar to Panama Wilt but the yellowing pattern suggests Bacterial Wilt instead. Recommend soil testing.",
+            "status": "corrected",
+            "submittedAt": "2026-02-09T12:10:00.000Z"
+        }
+    ],
+    "expertMeetings": [
+        {
+            "id": "exp-meeting-1",
+            "sessionTitle": "Organic Farming Techniques",
+            "sessionTitleSi": "කාබනික ගොවිතැන් ක්‍රම",
+            "type": "group",
+            "dateTime": "2026-02-14T10:00:00.000Z",
+            "duration": 60,
+            "attendees": 45,
+            "maxAttendees": 100,
+            "status": "upcoming",
+            "meetingLink": "https://meet.example.com/session1",
+            "description": "Teaching sustainable organic farming practices for vegetables and fruit cultivation.",
+            "descriptionSi": "එළවළු සහ පළතුරු වගාව සඳහා තිරසාර කාබනික ගොවිතැන් ක්‍රම ඉගැන්වීම."
+        },
+        {
+            "id": "exp-meeting-2",
+            "sessionTitle": "One-on-One: Tomato Disease",
+            "sessionTitleSi": "තනි පුද්ගල: තක්කාලි රෝග",
+            "type": "personal",
+            "farmerId": "farmer-1",
+            "farmerName": "Saman Perera",
+            "dateTime": "2026-02-13T14:00:00.000Z",
+            "duration": 30,
+            "attendees": 1,
+            "maxAttendees": 1,
+            "status": "upcoming",
+            "meetingLink": "https://meet.example.com/personal2",
+            "description": "Follow-up consultation about tomato disease treatment progress.",
+            "descriptionSi": "තක්කාලි රෝග ප්‍රතිකාර ප්‍රගතිය පිළිබඳ පසු විපරම් උපදේශනය."
+        },
+        {
+            "id": "exp-meeting-3",
+            "sessionTitle": "Pest Management Workshop",
+            "sessionTitleSi": "පළිබෝධ කළමනාකරණ වැඩමුළුව",
+            "type": "group",
+            "dateTime": "2026-02-15T09:00:00.000Z",
+            "duration": 90,
+            "attendees": 32,
+            "maxAttendees": 60,
+            "status": "upcoming",
+            "meetingLink": "https://meet.example.com/session3",
+            "description": "Comprehensive workshop on integrated pest management strategies.",
+            "descriptionSi": "ඒකාබද්ධ පළිබෝධ කළමනාකරණ උපාය මාර්ග පිළිබඳ සවිස්තරාත්මක වැඩමුළුව."
+        },
+        {
+            "id": "exp-meeting-4",
+            "sessionTitle": "Soil Health Assessment",
+            "sessionTitleSi": "පසෙහි සෞඛ්‍ය ඇගයීම",
+            "type": "group",
+            "dateTime": "2026-02-10T10:00:00.000Z",
+            "duration": 45,
+            "attendees": 28,
+            "maxAttendees": 50,
+            "status": "completed",
+            "meetingLink": null,
+            "description": "Understanding soil health indicators and testing methods.",
+            "descriptionSi": "පසෙහි සෞඛ්‍ය දර්ශක සහ පරීක්ෂණ ක්‍රම අවබෝධ කර ගැනීම."
+        }
+    ],
+    "farmerChats": [
+        {
+            "id": "exp-chat-1",
+            "farmerId": "farmer-1",
+            "farmerName": "Saman Perera",
+            "farmerDistrict": "Kandy",
+            "farmerCrops": [
+                "tomato",
+                "chili",
+                "brinjal"
+            ],
+            "lastMessage": "Thank you doctor! The treatment is working well.",
+            "lastMessageSi": "ස්තූතියි වෛද්‍ය! ප්‍රතිකාරය හොඳින් ක්‍රියා කරයි.",
+            "lastMessageTime": "2026-02-12T09:30:00.000Z",
+            "unreadCount": 2,
+            "online": true,
+            "hasActiveDiagnosis": true
+        },
+        {
+            "id": "exp-chat-2",
+            "farmerId": "farmer-2",
+            "farmerName": "Kumara Silva",
+            "farmerDistrict": "Matale",
+            "farmerCrops": [
+                "paddy",
+                "corn"
+            ],
+            "lastMessage": "Doctor, can you check the new photo I sent?",
+            "lastMessageSi": "වෛද්‍ය, මම එවූ නව ඡායාරූපය පරීක්ෂා කර බැලිය හැකිද?",
+            "lastMessageTime": "2026-02-12T08:15:00.000Z",
+            "unreadCount": 3,
+            "online": true,
+            "hasActiveDiagnosis": true
+        },
+        {
+            "id": "exp-chat-3",
+            "farmerId": "farmer-3",
+            "farmerName": "Nimal Jayawardena",
+            "farmerDistrict": "Kurunegala",
+            "farmerCrops": [
+                "chili",
+                "okra",
+                "eggplant"
+            ],
+            "lastMessage": "I will try the organic spray you recommended.",
+            "lastMessageSi": "ඔබ නිර්දේශ කළ කාබනික ඉසින ද්‍රව්‍යයක් මම උත්සාහ කරන්නම්.",
+            "lastMessageTime": "2026-02-11T16:45:00.000Z",
+            "unreadCount": 0,
+            "online": false,
+            "hasActiveDiagnosis": false
+        },
+        {
+            "id": "exp-chat-4",
+            "farmerId": "farmer-4",
+            "farmerName": "Sunil Bandara",
+            "farmerDistrict": "Anuradhapura",
+            "farmerCrops": [
+                "mango",
+                "papaya"
+            ],
+            "lastMessage": "The black spots issue has been resolved. Thank you!",
+            "lastMessageSi": "කළු පැල්ලම් ගැටලුව විසඳී ඇත. ස්තූතියි!",
+            "lastMessageTime": "2026-02-11T11:20:00.000Z",
+            "unreadCount": 0,
+            "online": false,
+            "hasActiveDiagnosis": false
+        },
+        {
+            "id": "exp-chat-5",
+            "farmerId": "farmer-5",
+            "farmerName": "Ranjith Dissanayake",
+            "farmerDistrict": "Nuwara Eliya",
+            "farmerCrops": [
+                "carrot",
+                "leek",
+                "potato"
+            ],
+            "lastMessage": "Can we schedule a meeting to discuss the soil test results?",
+            "lastMessageSi": "පසෙහි පරීක්ෂණ ප්‍රතිඵල සාකච්ඡා කිරීම සඳහා අපට රැස්වීමක් කාලසටහන්ගත කළ හැකිද?",
+            "lastMessageTime": "2026-02-10T14:00:00.000Z",
+            "unreadCount": 1,
+            "online": false,
+            "hasActiveDiagnosis": false
+        }
+    ],
+    "recentActivity": [
+        {
+            "id": "activity-1",
+            "type": "diagnosis_verified",
+            "title": "Verified Rice Blast diagnosis",
+            "titleSi": "වී පිපිරුම් රෝග විනිශ්චය තහවුරු කරන ලදී",
+            "farmerName": "Lakmal Herath",
+            "timestamp": "2026-02-10T09:25:00.000Z"
+        },
+        {
+            "id": "activity-2",
+            "type": "diagnosis_corrected",
+            "title": "Corrected Banana Wilt diagnosis",
+            "titleSi": "කෙසෙල් මැකී යාම විනිශ්චය නිවැරදි කරන ලදී",
+            "farmerName": "Dinesh Weerasinghe",
+            "timestamp": "2026-02-09T12:15:00.000Z"
+        },
+        {
+            "id": "activity-3",
+            "type": "meeting_completed",
+            "title": "Completed: Soil Health Assessment",
+            "titleSi": "සම්පූර්ණ: පසෙහි සෞඛ්‍ය ඇගයීම",
+            "farmerName": null,
+            "timestamp": "2026-02-10T11:00:00.000Z"
+        },
+        {
+            "id": "activity-4",
+            "type": "chat_response",
+            "title": "Responded to Saman Perera",
+            "titleSi": "සමන් පෙරේරාට ප්‍රතිචාර දැක්වීය",
+            "farmerName": "Saman Perera",
+            "timestamp": "2026-02-12T09:32:00.000Z"
+        },
+        {
+            "id": "activity-5",
+            "type": "guide_contributed",
+            "title": "Added organic pest control guide",
+            "titleSi": "කාබනික පළිබෝධ පාලන මාර්ගෝපදේශය එකතු කරන ලදී",
+            "farmerName": null,
+            "timestamp": "2026-02-08T15:00:00.000Z"
+        }
+    ]
+}

@@ -1,0 +1,439 @@
+import React, { useState, useRef, useEffect } from 'react';
+import {
+    View, Text, FlatList, TouchableOpacity, TextInput,
+    StyleSheet, KeyboardAvoidingView, Platform
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import { Header } from '../../../components';
+import { COLORS, SHADOW } from '../../../utils/constants';
+import { formatTime, generateId } from '../../../utils/validators';
+
+interface ChatMessage {
+    id: string;
+    senderId: string;
+    senderType: 'expert' | 'farmer';
+    content: string;
+    type: 'text' | 'image' | 'diagnosis';
+    timestamp: string;
+}
+
+const MOCK_MESSAGES: ChatMessage[] = [
+    {
+        id: 'msg-1', senderId: 'farmer-1', senderType: 'farmer',
+        content: 'Hello Doctor, my tomato plants have brown spots on the leaves.',
+        type: 'text', timestamp: '2026-02-12T08:00:00.000Z',
+    },
+    {
+        id: 'msg-2', senderId: 'expert-1', senderType: 'expert',
+        content: 'Hello! Can you share a photo of the affected leaves? That will help me diagnose the issue accurately.',
+        type: 'text', timestamp: '2026-02-12T08:05:00.000Z',
+    },
+    {
+        id: 'msg-3', senderId: 'farmer-1', senderType: 'farmer',
+        content: '📷 [Photo of affected tomato leaves]',
+        type: 'image', timestamp: '2026-02-12T08:10:00.000Z',
+    },
+    {
+        id: 'msg-4', senderId: 'expert-1', senderType: 'expert',
+        content: 'This looks like Early Blight (Alternaria solani). I recommend:\n\n1. Remove affected leaves immediately\n2. Apply copper-based fungicide\n3. Ensure proper plant spacing for air circulation\n4. Water at the base, avoid wetting leaves',
+        type: 'text', timestamp: '2026-02-12T08:20:00.000Z',
+    },
+    {
+        id: 'msg-5', senderId: 'farmer-1', senderType: 'farmer',
+        content: 'Thank you doctor! How often should I apply the fungicide?',
+        type: 'text', timestamp: '2026-02-12T09:00:00.000Z',
+    },
+    {
+        id: 'msg-6', senderId: 'farmer-1', senderType: 'farmer',
+        content: 'Also, will this affect my other tomato plants?',
+        type: 'text', timestamp: '2026-02-12T09:15:00.000Z',
+    },
+];
+
+const ExpertChatDetail: React.FC = () => {
+    const navigation = useNavigation<NativeStackNavigationProp<any>>();
+    const route = useRoute<any>();
+    const flatListRef = useRef<FlatList>(null);
+
+    const farmerName = route.params?.farmerName || 'Farmer';
+    const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
+    const [inputText, setInputText] = useState('');
+
+    useEffect(() => {
+        setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: false });
+        }, 100);
+    }, []);
+
+    const handleSend = () => {
+        if (!inputText.trim()) return;
+
+        const newMessage: ChatMessage = {
+            id: generateId(),
+            senderId: 'expert-1',
+            senderType: 'expert',
+            content: inputText.trim(),
+            type: 'text',
+            timestamp: new Date().toISOString(),
+        };
+
+        setMessages(prev => [...prev, newMessage]);
+        setInputText('');
+        setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+    };
+
+    const renderMessage = ({ item }: { item: ChatMessage }) => {
+        const isExpert = item.senderType === 'expert';
+
+        return (
+            <View style={[
+                styles.messageContainer,
+                isExpert ? styles.expertMessage : styles.farmerMessage,
+            ]}>
+                {!isExpert && (
+                    <View style={styles.farmerAvatar}>
+                        <Text style={{ fontSize: 14 }}>👨‍🌾</Text>
+                    </View>
+                )}
+                <View style={[
+                    styles.messageBubble,
+                    isExpert ? styles.expertBubble : styles.farmerBubble,
+                ]}>
+                    {item.type === 'image' ? (
+                        <View style={styles.imagePlaceholder}>
+                            <Ionicons name="image" size={32} color={COLORS.neutral[400]} />
+                            <Text style={styles.imagePlaceholderText}>Photo attached</Text>
+                        </View>
+                    ) : (
+                        <Text style={[
+                            styles.messageText,
+                            isExpert ? styles.expertMessageText : styles.farmerMessageText,
+                        ]}>
+                            {item.content}
+                        </Text>
+                    )}
+                    <Text style={[
+                        styles.messageTime,
+                        isExpert ? styles.expertTimeText : styles.farmerTimeText,
+                    ]}>
+                        {formatTime(item.timestamp)}
+                        {isExpert && (
+                            <Text> ✓✓</Text>
+                        )}
+                    </Text>
+                </View>
+            </View>
+        );
+    };
+
+    return (
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={0}
+        >
+            <Header
+                title={farmerName}
+                showBack
+                onBackPress={() => navigation.goBack()}
+                rightContent={
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity style={styles.headerAction}>
+                            <Ionicons name="call-outline" size={20} color={COLORS.neutral[600]} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.headerAction}>
+                            <Ionicons name="videocam-outline" size={20} color={COLORS.neutral[600]} />
+                        </TouchableOpacity>
+                    </View>
+                }
+            />
+
+            {/* Farmer Info Bar */}
+            <View style={styles.farmerInfoBar}>
+                <View style={styles.farmerInfoItem}>
+                    <Ionicons name="location-outline" size={14} color={COLORS.neutral[400]} />
+                    <Text style={styles.farmerInfoText}>Kandy</Text>
+                </View>
+                <View style={styles.farmerInfoDot} />
+                <View style={styles.farmerInfoItem}>
+                    <Ionicons name="leaf-outline" size={14} color={COLORS.neutral[400]} />
+                    <Text style={styles.farmerInfoText}>Tomato, Chili</Text>
+                </View>
+                <View style={styles.onlineIndicator}>
+                    <View style={styles.onlineDot} />
+                    <Text style={styles.onlineText}>Online</Text>
+                </View>
+            </View>
+
+            {/* Messages */}
+            <FlatList
+                ref={flatListRef}
+                data={messages}
+                renderItem={renderMessage}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.messagesList}
+                showsVerticalScrollIndicator={false}
+            />
+
+            {/* Quick Action Buttons */}
+            <View style={styles.quickActionsBar}>
+                <ScrollableQuickActions navigation={navigation} />
+            </View>
+
+            {/* Input Bar */}
+            <View style={styles.inputBar}>
+                <TouchableOpacity style={styles.attachButton}>
+                    <Ionicons name="add-circle" size={28} color={COLORS.primary[500]} />
+                </TouchableOpacity>
+                <View style={styles.inputContainer}>
+                    <TextInput
+                        style={styles.textInput}
+                        placeholder="Type your response..."
+                        placeholderTextColor={COLORS.neutral[400]}
+                        value={inputText}
+                        onChangeText={setInputText}
+                        multiline
+                        maxLength={1000}
+                    />
+                </View>
+                <TouchableOpacity
+                    style={[styles.sendButton, inputText.trim() ? styles.sendButtonActive : {}]}
+                    onPress={handleSend}
+                    disabled={!inputText.trim()}
+                >
+                    <Ionicons
+                        name="send"
+                        size={20}
+                        color={inputText.trim() ? '#ffffff' : COLORS.neutral[400]}
+                    />
+                </TouchableOpacity>
+            </View>
+        </KeyboardAvoidingView>
+    );
+};
+
+const ScrollableQuickActions: React.FC<{ navigation: any }> = ({ navigation }) => {
+    const actions = [
+        { label: 'View Diagnosis', icon: 'medical' as const, color: COLORS.error },
+        { label: 'Book Meeting', icon: 'calendar' as const, color: COLORS.info },
+        { label: 'Send Guide', icon: 'book' as const, color: COLORS.primary[600] },
+        { label: 'Prescribe', icon: 'document-text' as const, color: COLORS.secondary[600] },
+    ];
+
+    return (
+        <FlatList
+            horizontal
+            data={actions}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 12 }}
+            keyExtractor={(item) => item.label}
+            renderItem={({ item }) => (
+                <TouchableOpacity style={styles.quickActionChip} activeOpacity={0.7}>
+                    <Ionicons name={item.icon} size={14} color={item.color} />
+                    <Text style={[styles.quickActionText, { color: item.color }]}>{item.label}</Text>
+                </TouchableOpacity>
+            )}
+        />
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+    },
+    headerActions: {
+        flexDirection: 'row',
+    },
+    headerAction: {
+        padding: 6,
+        marginLeft: 4,
+    },
+    farmerInfoBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: '#ffffff',
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+    },
+    farmerInfoItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    farmerInfoText: {
+        fontSize: 12,
+        color: COLORS.neutral[500],
+        marginLeft: 4,
+    },
+    farmerInfoDot: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: COLORS.neutral[300],
+        marginHorizontal: 8,
+    },
+    onlineIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 'auto',
+    },
+    onlineDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: COLORS.success,
+        marginRight: 4,
+    },
+    onlineText: {
+        fontSize: 12,
+        color: COLORS.success,
+        fontWeight: '500',
+    },
+    messagesList: {
+        padding: 16,
+        paddingBottom: 8,
+    },
+    messageContainer: {
+        flexDirection: 'row',
+        marginBottom: 12,
+        alignItems: 'flex-end',
+    },
+    expertMessage: {
+        justifyContent: 'flex-end',
+    },
+    farmerMessage: {
+        justifyContent: 'flex-start',
+    },
+    farmerAvatar: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: COLORS.primary[100],
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 8,
+    },
+    messageBubble: {
+        maxWidth: '75%',
+        borderRadius: 16,
+        padding: 12,
+    },
+    expertBubble: {
+        backgroundColor: COLORS.primary[500],
+        borderBottomRightRadius: 4,
+        marginLeft: 'auto',
+    },
+    farmerBubble: {
+        backgroundColor: '#ffffff',
+        borderBottomLeftRadius: 4,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        ...SHADOW.sm,
+    },
+    messageText: {
+        fontSize: 14,
+        lineHeight: 20,
+    },
+    expertMessageText: {
+        color: '#ffffff',
+    },
+    farmerMessageText: {
+        color: COLORS.neutral[800],
+    },
+    messageTime: {
+        fontSize: 11,
+        marginTop: 4,
+        textAlign: 'right',
+    },
+    expertTimeText: {
+        color: 'rgba(255,255,255,0.7)',
+    },
+    farmerTimeText: {
+        color: COLORS.neutral[400],
+    },
+    imagePlaceholder: {
+        width: 180,
+        height: 120,
+        backgroundColor: COLORS.neutral[100],
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    imagePlaceholderText: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        marginTop: 4,
+    },
+    quickActionsBar: {
+        paddingVertical: 8,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+        backgroundColor: '#ffffff',
+    },
+    quickActionChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 50,
+        backgroundColor: COLORS.neutral[50],
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+        marginHorizontal: 4,
+    },
+    quickActionText: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginLeft: 4,
+    },
+    inputBar: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        backgroundColor: '#ffffff',
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+    },
+    attachButton: {
+        paddingHorizontal: 4,
+        paddingBottom: 6,
+    },
+    inputContainer: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginHorizontal: 8,
+        maxHeight: 100,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+    },
+    textInput: {
+        fontSize: 14,
+        color: COLORS.neutral[800],
+        maxHeight: 80,
+    },
+    sendButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.neutral[200],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    sendButtonActive: {
+        backgroundColor: COLORS.primary[500],
+        ...SHADOW.md,
+        shadowColor: COLORS.primary[500],
+    },
+});
+
+export default ExpertChatDetail;
