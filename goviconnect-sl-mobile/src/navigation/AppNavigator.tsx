@@ -16,6 +16,11 @@ const AppNavigator: React.FC = () => {
     const { isAuthenticated: isFarmerAuth, isInitialized: isFarmerInitialized } = useApp();
     const { isAuthenticated: isExpertAuth, isInitialized: isExpertInitialized } = useExpert();
     const { isAuthenticated: isShopAuth, isInitialized: isShopInitialized } = useShop();
+
+    // TEMPORARY: Always show RoleSelection first (revert when no longer needed)
+    const initialRoute = 'RoleSelection';
+
+    /* ORIGINAL CODE — uncomment to restore auto-login behavior:
     const [initialRoute, setInitialRoute] = useState<string | null>(null);
 
     useEffect(() => {
@@ -39,6 +44,7 @@ const AppNavigator: React.FC = () => {
             </View>
         );
     }
+    */
 
     return (
         <Stack.Navigator
