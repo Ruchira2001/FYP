@@ -130,8 +130,10 @@ const ExpertHome: React.FC = () => {
         <View style={styles.container}>
             <Header
                 showCursiveTitle
+                showLanguage
                 showNotifications
                 showChats
+                onLanguagePress={() => navigation.navigate('LanguageModal')}
                 onNotificationsPress={() => navigation.navigate('ExpertNotifications')}
                 onChatsPress={() => navigation.navigate('ExpertChatsList')}
                 notificationCount={3}

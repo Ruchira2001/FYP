@@ -31,8 +31,7 @@ const ExpertProfile: React.FC = () => {
 
 
     const handleEditProfile = () => {
-        // Navigate to edit profile or show alert for now
-        Alert.alert('Edit Profile', 'Edit profile functionality coming soon.');
+        navigation.navigate('ExpertEditProfile');
     };
 
     // Quick shortcuts - expert-specific

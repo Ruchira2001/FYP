@@ -7,7 +7,6 @@ import { COLORS } from '../utils/constants';
 
 // Screens
 import ExpertHome from '../screens/expert/home/ExpertHome';
-import ExpertChatsList from '../screens/expert/chats/ExpertChatsList';
 import DiagnosisReviews from '../screens/expert/diagnosis/DiagnosisReviews';
 import ExpertMeetings from '../screens/expert/meetings/ExpertMeetings';
 import ExpertProfile from '../screens/expert/profile/ExpertProfile';
@@ -17,7 +16,6 @@ import { Settings, HelpFAQ } from '../screens/profile';
 
 // Stack navigators for each tab
 const HomeStack = createNativeStackNavigator();
-const ChatsStack = createNativeStackNavigator();
 const DiagnosisStack = createNativeStackNavigator();
 const MeetingsStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
@@ -30,11 +28,7 @@ const HomeStackNavigator = () => (
     </HomeStack.Navigator>
 );
 
-const ChatsStackNavigator = () => (
-    <ChatsStack.Navigator screenOptions={{ headerShown: false }}>
-        <ChatsStack.Screen name="ExpertChatsListScreen" component={ExpertChatsList} />
-    </ChatsStack.Navigator>
-);
+
 
 const DiagnosisStackNavigator = () => (
     <DiagnosisStack.Navigator screenOptions={{ headerShown: false }}>
@@ -48,9 +42,12 @@ const MeetingsStackNavigator = () => (
     </MeetingsStack.Navigator>
 );
 
+import ExpertEditProfile from '../screens/expert/profile/ExpertEditProfile';
+
 const ProfileStackNavigator = () => (
     <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
         <ProfileStack.Screen name="ExpertProfileScreen" component={ExpertProfile} />
+        <ProfileStack.Screen name="ExpertEditProfile" component={ExpertEditProfile} />
         <ProfileStack.Screen name="Settings" component={Settings} />
         <ProfileStack.Screen name="HelpFAQ" component={HelpFAQ} />
     </ProfileStack.Navigator>
@@ -82,9 +79,6 @@ const ExpertTabNavigator: React.FC = () => {
                         case 'ExpertHomeTab':
                             iconName = focused ? 'home' : 'home-outline';
                             break;
-                        case 'ExpertChatsTab':
-                            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-                            break;
                         case 'ExpertDiagnosisTab':
                             iconName = focused ? 'medical' : 'medical-outline';
                             break;
@@ -100,7 +94,6 @@ const ExpertTabNavigator: React.FC = () => {
                         <View style={styles.tabIconContainer}>
                             {focused && <View style={styles.activeIndicator} />}
                             <Ionicons name={iconName} size={22} color={color} />
-                            {route.name === 'ExpertChatsTab' && <TabBadge count={5} />}
                             {route.name === 'ExpertDiagnosisTab' && <TabBadge count={2} />}
                         </View>
                     );
@@ -111,11 +104,6 @@ const ExpertTabNavigator: React.FC = () => {
                 name="ExpertHomeTab"
                 component={HomeStackNavigator}
                 options={{ tabBarLabel: 'Home' }}
-            />
-            <Tab.Screen
-                name="ExpertChatsTab"
-                component={ChatsStackNavigator}
-                options={{ tabBarLabel: 'Chats' }}
             />
             <Tab.Screen
                 name="ExpertDiagnosisTab"

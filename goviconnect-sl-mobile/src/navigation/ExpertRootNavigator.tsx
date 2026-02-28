@@ -11,6 +11,7 @@ import FarmerDirectory from '../screens/expert/farmers/FarmerDirectory';
 import FarmerRequests from '../screens/expert/requests/FarmerRequests';
 import ExpertKnowledgeBase from '../screens/expert/knowledge/ExpertKnowledgeBase';
 import DiagnosisReviews from '../screens/expert/diagnosis/DiagnosisReviews';
+import { LanguageModal } from '../screens/home';
 
 // Auth Screens
 import ExpertLogin from '../screens/expert/auth/ExpertLogin';
@@ -36,6 +37,14 @@ const MainNavigator = () => (
         <RootStack.Screen name="ExpertKnowledgeBase" component={ExpertKnowledgeBase} />
         <RootStack.Screen name="ExpertDiagnosisReviews" component={DiagnosisReviews} />
         <RootStack.Screen name="ExpertNotifications" component={FarmerRequests} />
+        <RootStack.Screen
+            name="LanguageModal"
+            component={LanguageModal}
+            options={{
+                animation: 'slide_from_bottom',
+                presentation: 'transparentModal',
+            }}
+        />
     </RootStack.Navigator>
 );
 
