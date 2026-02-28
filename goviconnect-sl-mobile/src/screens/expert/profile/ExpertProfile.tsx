@@ -73,11 +73,13 @@ const ExpertProfile: React.FC = () => {
         },
     ];
 
-    const menuItems = [
+    // Expert-specific menu items (with icon backgrounds)
+    const expertMenuItems = [
         {
             id: 'qualifications',
             icon: 'shield-outline',
             label: 'Qualifications',
+            color: COLORS.secondary[600],
             subtitle: expert?.qualifications?.length ? `${expert.qualifications.length} listed` : undefined,
             onPress: () => { },
         },
@@ -85,31 +87,44 @@ const ExpertProfile: React.FC = () => {
             id: 'availability',
             icon: 'time-outline',
             label: 'Availability Schedule',
+            color: COLORS.info,
             onPress: () => { },
         },
         {
             id: 'knowledge',
             icon: 'book-outline',
             label: 'Knowledge Base',
+            color: COLORS.primary[600],
             onPress: () => navigation.navigate('ExpertKnowledgeBase'),
         },
         {
             id: 'language',
             icon: 'language-outline',
             label: 'Language',
+            color: COLORS.primary[600],
             subtitle: i18n.language === 'en' ? 'English' : 'සිංහල',
             onPress: handleLanguageToggle,
+        },
+    ];
+
+    // Bottom menu items - matching farmer side exactly (Settings, Help & FAQ, Logout)
+    const bottomMenuItems = [
+        {
+            id: 'settings',
+            icon: 'settings-outline',
+            label: t('profile.settings'),
+            onPress: () => navigation.navigate('Settings'),
         },
         {
             id: 'help',
             icon: 'help-circle-outline',
-            label: 'Help Center',
-            onPress: () => { },
+            label: t('profile.help_faq'),
+            onPress: () => navigation.navigate('HelpFAQ'),
         },
         {
             id: 'logout',
             icon: 'log-out-outline',
-            label: 'Logout',
+            label: t('profile.logout'),
             color: COLORS.error,
             onPress: handleLogout,
         },
@@ -286,16 +301,16 @@ const ExpertProfile: React.FC = () => {
                     </View>
                 </View>
 
-                {/* Menu Items */}
+                {/* Expert-specific Menu Items */}
                 <View style={styles.menuSection}>
                     <View style={styles.menuContainer}>
-                        {menuItems.map((item, index) => (
+                        {expertMenuItems.map((item, index) => (
                             <TouchableOpacity
                                 key={item.id}
                                 onPress={item.onPress}
                                 style={[
                                     styles.menuItem,
-                                    index < menuItems.length - 1 && styles.menuItemBorder
+                                    index < expertMenuItems.length - 1 && styles.menuItemBorder
                                 ]}
                             >
                                 <View style={[styles.menuIcon, { backgroundColor: (item.color || COLORS.neutral[600]) + '15' }]}>
@@ -318,6 +333,37 @@ const ExpertProfile: React.FC = () => {
                                         <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
                                     )}
                                 </View>
+                                <Ionicons name="chevron-forward" size={20} color={COLORS.neutral[400]} />
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
+                {/* Settings, Help & FAQ, Logout - matching farmer side */}
+                <View style={styles.bottomMenuSection}>
+                    <View style={styles.bottomMenuContainer}>
+                        {bottomMenuItems.map((item, index) => (
+                            <TouchableOpacity
+                                key={item.id}
+                                onPress={item.onPress}
+                                style={[
+                                    styles.bottomMenuItem,
+                                    index < bottomMenuItems.length - 1 && styles.bottomMenuItemBorder
+                                ]}
+                            >
+                                <Ionicons
+                                    name={item.icon as any}
+                                    size={22}
+                                    color={item.color || COLORS.neutral[600]}
+                                />
+                                <Text
+                                    style={[
+                                        styles.bottomMenuLabel,
+                                        { color: item.color || COLORS.neutral[800] }
+                                    ]}
+                                >
+                                    {item.label}
+                                </Text>
                                 <Ionicons name="chevron-forward" size={20} color={COLORS.neutral[400]} />
                             </TouchableOpacity>
                         ))}
@@ -691,6 +737,33 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: COLORS.neutral[400],
         marginTop: 1,
+    },
+    // ===== Bottom Menu (Settings, Help, Logout - matching farmer side) =====
+    bottomMenuSection: {
+        paddingHorizontal: 16,
+        paddingBottom: 32,
+    },
+    bottomMenuContainer: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        overflow: 'hidden',
+    },
+    bottomMenuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+    },
+    bottomMenuItemBorder: {
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+    },
+    bottomMenuLabel: {
+        flex: 1,
+        marginLeft: 12,
+        fontSize: 16,
     },
     // ===== Version =====
     versionText: {

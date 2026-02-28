@@ -12,6 +12,9 @@ import DiagnosisReviews from '../screens/expert/diagnosis/DiagnosisReviews';
 import ExpertMeetings from '../screens/expert/meetings/ExpertMeetings';
 import ExpertProfile from '../screens/expert/profile/ExpertProfile';
 
+// Shared screens (reused from farmer side)
+import { Settings, HelpFAQ } from '../screens/profile';
+
 // Stack navigators for each tab
 const HomeStack = createNativeStackNavigator();
 const ChatsStack = createNativeStackNavigator();
@@ -48,6 +51,8 @@ const MeetingsStackNavigator = () => (
 const ProfileStackNavigator = () => (
     <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
         <ProfileStack.Screen name="ExpertProfileScreen" component={ExpertProfile} />
+        <ProfileStack.Screen name="Settings" component={Settings} />
+        <ProfileStack.Screen name="HelpFAQ" component={HelpFAQ} />
     </ProfileStack.Navigator>
 );
 
