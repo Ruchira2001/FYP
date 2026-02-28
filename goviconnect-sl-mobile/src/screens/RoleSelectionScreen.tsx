@@ -174,24 +174,18 @@ const RoleSelectionScreen: React.FC = () => {
 
     // Quick Login Handlers
     const quickLoginFarmer = async () => {
-        await loginFarmer('farmer@demo.com', 'password123');
-        navigation.navigate('FarmerApp');
+        const success = await loginFarmer('farmer@goviconnect.lk', 'farmer123');
+        if (success) navigation.navigate('FarmerApp');
     };
 
     const quickLoginExpert = async () => {
-        await loginExpert('expert@demo.com', 'password');
-        navigation.navigate('ExpertApp');
+        const success = await loginExpert('expert@goviconnect.lk', 'expert123');
+        if (success) navigation.navigate('ExpertApp');
     };
 
     const quickLoginShop = async () => {
-        await loginShop({
-            id: 'S' + Date.now(),
-            name: 'Demo Shop',
-            email: 'shop@demo.com',
-            location: 'Colombo',
-            type: 'Business',
-        });
-        navigation.navigate('ShopApp');
+        const success = await loginShop('shop@goviconnect.lk', 'shop123');
+        if (success) navigation.navigate('ShopApp');
     };
 
     return (

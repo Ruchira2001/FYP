@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { formatTime, generateId } from '../../../utils/validators';
+import { chatAPI } from '../../../services/api';
 
 interface ChatMessage {
     id: string;
@@ -19,55 +20,42 @@ interface ChatMessage {
     timestamp: string;
 }
 
-const MOCK_MESSAGES: ChatMessage[] = [
-    {
-        id: 'msg-1', senderId: 'farmer-1', senderType: 'farmer',
-        content: 'Hello Doctor, my tomato plants have brown spots on the leaves.',
-        type: 'text', timestamp: '2026-02-12T08:00:00.000Z',
-    },
-    {
-        id: 'msg-2', senderId: 'expert-1', senderType: 'expert',
-        content: 'Hello! Can you share a photo of the affected leaves? That will help me diagnose the issue accurately.',
-        type: 'text', timestamp: '2026-02-12T08:05:00.000Z',
-    },
-    {
-        id: 'msg-3', senderId: 'farmer-1', senderType: 'farmer',
-        content: '📷 [Photo of affected tomato leaves]',
-        type: 'image', timestamp: '2026-02-12T08:10:00.000Z',
-    },
-    {
-        id: 'msg-4', senderId: 'expert-1', senderType: 'expert',
-        content: 'This looks like Early Blight (Alternaria solani). I recommend:\n\n1. Remove affected leaves immediately\n2. Apply copper-based fungicide\n3. Ensure proper plant spacing for air circulation\n4. Water at the base, avoid wetting leaves',
-        type: 'text', timestamp: '2026-02-12T08:20:00.000Z',
-    },
-    {
-        id: 'msg-5', senderId: 'farmer-1', senderType: 'farmer',
-        content: 'Thank you doctor! How often should I apply the fungicide?',
-        type: 'text', timestamp: '2026-02-12T09:00:00.000Z',
-    },
-    {
-        id: 'msg-6', senderId: 'farmer-1', senderType: 'farmer',
-        content: 'Also, will this affect my other tomato plants?',
-        type: 'text', timestamp: '2026-02-12T09:15:00.000Z',
-    },
-];
-
 const ExpertChatDetail: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const route = useRoute<any>();
     const flatListRef = useRef<FlatList>(null);
 
+    const chatId = route.params?.chatId || route.params?.id;
     const farmerName = route.params?.farmerName || 'Farmer';
-    const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputText, setInputText] = useState('');
 
     useEffect(() => {
-        setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: false });
-        }, 100);
+        loadMessages();
     }, []);
 
-    const handleSend = () => {
+    const loadMessages = async () => {
+        try {
+            if (!chatId) return;
+            const res = await chatAPI.getMessages(chatId);
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setMessages(data.map((m: any) => ({
+                id: m._id || m.id,
+                senderId: m.sender?._id || m.senderId,
+                senderType: m.senderRole === 'expert' ? 'expert' : 'farmer',
+                content: m.content || '',
+                type: m.type || 'text',
+                timestamp: m.createdAt || m.timestamp,
+            })));
+            setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: false });
+            }, 100);
+        } catch (e) {
+            console.error('Failed to load expert chat messages:', e);
+        }
+    };
+
+    const handleSend = async () => {
         if (!inputText.trim()) return;
 
         const newMessage: ChatMessage = {
@@ -84,6 +72,14 @@ const ExpertChatDetail: React.FC = () => {
         setTimeout(() => {
             flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
+
+        try {
+            if (chatId) {
+                await chatAPI.sendMessage(chatId, { content: newMessage.content, type: 'text' });
+            }
+        } catch (e) {
+            console.error('Failed to send message:', e);
+        }
     };
 
     const renderMessage = ({ item }: { item: ChatMessage }) => {

@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { getRelativeTime } from '../../../utils/validators';
-import expertData from '../../../data/expertDashboard.json';
+import { expertDashboardAPI } from '../../../services/api';
 
 const REQUEST_FILTERS = ['All', 'Pending', 'In Review', 'Completed'];
 
@@ -16,7 +16,21 @@ const FarmerRequests: React.FC = () => {
     const { i18n } = useTranslation();
 
     const [activeFilter, setActiveFilter] = useState('All');
-    const [requests] = useState(expertData.farmerRequests);
+    const [requests, setRequests] = useState<any[]>([]);
+
+    React.useEffect(() => {
+        loadRequests();
+    }, []);
+
+    const loadRequests = async () => {
+        try {
+            const res = await expertDashboardAPI.getFarmerRequests();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setRequests(data);
+        } catch (e) {
+            console.error('Failed to load requests:', e);
+        }
+    };
 
     const filteredRequests = requests.filter(req => {
         if (activeFilter === 'Pending') return req.status === 'pending';

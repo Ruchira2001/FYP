@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton, InputField } from '../../components';
 import { COLORS } from '../../utils/constants';
-import { saveMeeting, Meeting } from '../../services/storage';
+import { meetingAPI } from '../../services/api';
 import { queueService } from '../../services/queueService';
 import { useConnectionStatus } from '../../services/netinfo';
 import { generateId } from '../../utils/validators';
@@ -40,27 +40,13 @@ const BookMeetingFromChat: React.FC = () => {
         setLoading(true);
 
         try {
-            // Create meeting
-            const meeting: Meeting = {
-                id: generateId(),
+            // Book meeting via API
+            await meetingAPI.bookMeeting({
                 expertId,
-                expertName,
-                topic: topic.trim(),
-                topicSi: topic.trim(), // In real app, would translate
-                dateTime: new Date(Date.now() + 86400000 * 2).toISOString(), // 2 days from now
+                dateTime: new Date(Date.now() + 86400000 * 2).toISOString(),
                 duration: 30,
-                status: 'pending',
-                notes: notes.trim() || undefined,
-                reminderSet: false,
-                source: 'chat_booking',
-            };
-
-            await saveMeeting(meeting);
-
-            // Queue if offline
-            if (!isConnected) {
-                await queueService.addToQueue('book_meeting', meeting);
-            }
+                topic: topic.trim(),
+            });
 
             setBooked(true);
         } catch (error) {

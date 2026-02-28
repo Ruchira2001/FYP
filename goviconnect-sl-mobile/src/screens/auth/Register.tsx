@@ -98,6 +98,7 @@ const Register: React.FC = () => {
             name,
             email,
             phone,
+            password,
             district,
             crops: selectedCrops,
         });

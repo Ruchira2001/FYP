@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton, InputField } from '../../../components';
 import { COLORS } from '../../../utils/constants';
 import { useExpert } from '../../../context/ExpertContext';
+import { userAPI } from '../../../services/api';
 
 const DISTRICTS = [
     'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
@@ -53,8 +54,13 @@ const ExpertEditProfile: React.FC = () => {
 
         setIsLoading(true);
         try {
-            // In a real app, this would update via API/context
-            await new Promise(resolve => setTimeout(resolve, 800));
+            await userAPI.updateExpertProfile({
+                name: name.trim(),
+                phone,
+                district,
+                specialty,
+                specializations: selectedSpecializations,
+            });
 
             Alert.alert(t('common.success'), 'Profile updated successfully', [
                 { text: 'OK', onPress: () => navigation.goBack() }

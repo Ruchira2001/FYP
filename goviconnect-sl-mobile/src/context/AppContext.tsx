@@ -2,17 +2,14 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import {
     getSettings,
     saveSettings,
-    getUser,
     saveUser,
     isOnboardingComplete,
     setOnboardingComplete,
-    isLoggedIn,
-    setAuthToken,
-    logout as logoutStorage,
     AppSettings,
     User,
     defaultSettings,
 } from '../services/storage';
+import { authAPI, saveAuthData, getAuthData, clearAuthData } from '../services/api';
 import { initI18n, setStoredLanguage } from '../i18n';
 import { initNetInfo } from '../services/netinfo';
 
@@ -20,8 +17,9 @@ interface AppContextType {
     // Auth
     isAuthenticated: boolean;
     user: User | null;
+    loginError: string | null;
     login: (email: string, password: string) => Promise<boolean>;
-    register: (userData: Partial<User>) => Promise<boolean>;
+    register: (userData: Partial<User> & { password: string }) => Promise<boolean>;
     logout: () => Promise<void>;
 
     // Onboarding
@@ -59,6 +57,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [loginError, setLoginError] = useState<string | null>(null);
 
     useEffect(() => {
         initializeApp();
@@ -73,17 +72,36 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
             initNetInfo();
 
             // Load stored data
-            const [storedSettings, storedUser, onboardingComplete, loggedIn] = await Promise.all([
+            const [storedSettings, onboardingComplete, authData] = await Promise.all([
                 getSettings(),
-                getUser(),
                 isOnboardingComplete(),
-                isLoggedIn(),
+                getAuthData(),
             ]);
 
             setSettings(storedSettings);
-            setUser(storedUser);
             setHasCompletedOnboarding(onboardingComplete);
-            setIsAuthenticated(loggedIn);
+
+            // Try to restore session using saved token
+            if (authData.token && authData.role === 'farmer') {
+                try {
+                    const res = await authAPI.getMe();
+                    const u = res.data.data;
+                    const formatted: User = {
+                        id: u._id,
+                        name: u.name,
+                        email: u.email,
+                        phone: u.phone || '',
+                        district: u.district || '',
+                        crops: u.crops || [],
+                        avatar: u.avatar,
+                    };
+                    setUser(formatted);
+                    setIsAuthenticated(true);
+                } catch {
+                    // Token expired/invalid - clear auth data
+                    await clearAuthData();
+                }
+            }
         } catch (error) {
             console.error('Error initializing app:', error);
         } finally {
@@ -93,57 +111,65 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
     const login = async (email: string, password: string): Promise<boolean> => {
         setIsLoading(true);
+        setLoginError(null);
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Mock successful login
-            const mockUser: User = {
-                id: 'user_1',
-                name: 'Saman Perera',
-                email: email,
-                phone: '0771234567',
-                district: 'Kandy',
-                crops: ['tea', 'paddy', 'tomato'],
+            const res = await authAPI.loginFarmer({ email, password });
+            const { token, user: u } = res.data;
+            const formatted: User = {
+                id: u._id,
+                name: u.name,
+                email: u.email,
+                phone: u.phone || '',
+                district: u.district || '',
+                crops: u.crops || [],
+                avatar: u.avatar,
             };
-
-            await saveUser(mockUser);
-            await setAuthToken('mock_token_' + Date.now());
-
-            setUser(mockUser);
+            await saveAuthData(token, formatted, 'farmer');
+            await saveUser(formatted);
+            setUser(formatted);
             setIsAuthenticated(true);
             return true;
-        } catch (error) {
-            console.error('Login error:', error);
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || 'Login failed. Please try again.';
+            setLoginError(msg);
+            console.error('Login error:', msg);
             return false;
         } finally {
             setIsLoading(false);
         }
     };
 
-    const register = async (userData: Partial<User>): Promise<boolean> => {
+    const register = async (userData: Partial<User> & { password: string }): Promise<boolean> => {
         setIsLoading(true);
+        setLoginError(null);
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const newUser: User = {
-                id: 'user_' + Date.now(),
+            const res = await authAPI.registerFarmer({
                 name: userData.name || '',
                 email: userData.email || '',
                 phone: userData.phone || '',
+                password: userData.password,
                 district: userData.district || '',
                 crops: userData.crops || [],
+            });
+            const { token, user: u } = res.data;
+            const formatted: User = {
+                id: u._id,
+                name: u.name,
+                email: u.email,
+                phone: u.phone || '',
+                district: u.district || '',
+                crops: u.crops || [],
+                avatar: u.avatar,
             };
-
-            await saveUser(newUser);
-            await setAuthToken('mock_token_' + Date.now());
-
-            setUser(newUser);
+            await saveAuthData(token, formatted, 'farmer');
+            await saveUser(formatted);
+            setUser(formatted);
             setIsAuthenticated(true);
             return true;
-        } catch (error) {
-            console.error('Register error:', error);
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || 'Registration failed. Please try again.';
+            setLoginError(msg);
+            console.error('Register error:', msg);
             return false;
         } finally {
             setIsLoading(false);
@@ -153,9 +179,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const logout = async (): Promise<void> => {
         setIsLoading(true);
         try {
-            await logoutStorage();
+            await clearAuthData();
             setUser(null);
             setIsAuthenticated(false);
+            setLoginError(null);
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
@@ -184,6 +211,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
             value={{
                 isAuthenticated,
                 user,
+                loginError,
                 login,
                 register,
                 logout,

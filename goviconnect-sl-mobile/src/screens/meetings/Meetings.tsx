@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,15 +7,38 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { formatDateTime } from '../../utils/validators';
-import meetingsData from '../../data/meetings.json';
+import { meetingAPI } from '../../services/api';
 
 const Meetings: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
 
-    const [upcomingSessions] = useState(meetingsData.upcomingSessions);
+    const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
 
-    const renderSession = ({ item }: { item: typeof meetingsData.upcomingSessions[0] }) => (
+    useEffect(() => {
+        loadSessions();
+    }, []);
+
+    const loadSessions = async () => {
+        try {
+            const res = await meetingAPI.getSessions();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setUpcomingSessions(data.map((s: any) => ({
+                id: s._id || s.id,
+                title: s.topic || s.title || '',
+                titleSi: s.topicSi || s.titleSi || s.topic || '',
+                expertName: s.expert?.name || s.expertName || '',
+                dateTime: s.dateTime || s.createdAt,
+                duration: s.duration || 60,
+                attendees: s.attendees?.length || 0,
+                maxAttendees: s.maxAttendees || 50,
+            })));
+        } catch (e) {
+            console.error('Failed to load sessions:', e);
+        }
+    };
+
+    const renderSession = ({ item }: { item: any }) => (
         <TouchableOpacity
             onPress={() => navigation.navigate('MeetingDetails', { meetingId: item.id })}
             style={styles.sessionCard}

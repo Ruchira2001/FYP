@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { getRelativeTime } from '../../utils/validators';
-import chatsData from '../../data/chats.json';
+import { chatAPI } from '../../services/api';
 
 const CATEGORIES = ['All', 'Unread', 'Experts', 'Groups'];
 
@@ -16,7 +16,30 @@ const ChatsList: React.FC = () => {
     const { t, i18n } = useTranslation();
 
     const [activeCategory, setActiveCategory] = useState('All');
-    const [chats] = useState(chatsData.chats);
+    const [chats, setChats] = useState<any[]>([]);
+
+    useEffect(() => {
+        loadChats();
+    }, []);
+
+    const loadChats = async () => {
+        try {
+            const res = await chatAPI.getChats();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setChats(data.map((c: any) => ({
+                id: c._id || c.id,
+                expertId: c.expert?._id || c.expertId,
+                expertName: c.expert?.name || c.expertName || 'Expert',
+                lastMessage: c.lastMessage?.content || c.lastMessage || '',
+                lastMessageSi: c.lastMessageSi || c.lastMessage?.content || '',
+                lastMessageTime: c.lastMessage?.createdAt || c.updatedAt || new Date().toISOString(),
+                unreadCount: c.unreadCount || 0,
+                online: c.online || false,
+            })));
+        } catch (e) {
+            console.error('Failed to load chats:', e);
+        }
+    };
 
     const filteredChats = chats.filter(chat => {
         if (activeCategory === 'Unread') return chat.unreadCount > 0;
@@ -29,7 +52,7 @@ const ChatsList: React.FC = () => {
         Alert.alert("New Chat", "Select a contact to start a new conversation.");
     };
 
-    const renderChat = ({ item }: { item: typeof chatsData.chats[0] }) => (
+    const renderChat = ({ item }: { item: any }) => (
         <TouchableOpacity
             onPress={() => navigation.navigate('ChatDetail', { chatId: item.id })}
             style={styles.chatCard}

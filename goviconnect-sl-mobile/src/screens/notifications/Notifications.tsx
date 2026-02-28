@@ -6,7 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip } from '../../components';
 import { COLORS, NOTIFICATION_TYPES, SHADOW } from '../../utils/constants';
-import { markNotificationRead, Notification } from '../../services/storage';
+import { Notification } from '../../services/storage';
+import { notificationAPI } from '../../services/api';
 import { getRelativeTime } from '../../utils/validators';
 
 const FILTERS = ['All', 'Unread', 'Meetings', 'Tips', 'Chats'];
@@ -92,7 +93,9 @@ const Notifications: React.FC = () => {
 
     const handleNotificationPress = async (notification: Notification) => {
         if (!notification.read) {
-            await markNotificationRead(notification.id);
+            try {
+                await notificationAPI.markAsRead(notification.id);
+            } catch (e) { /* ignore */ }
             setNotifications(prev =>
                 prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
             );
@@ -115,6 +118,7 @@ const Notifications: React.FC = () => {
     };
 
     const handleMarkAllRead = () => {
+        notificationAPI.markAllAsRead().catch(() => {});
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     };
 

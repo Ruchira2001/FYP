@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton } from '../../../components';
 import { COLORS } from '../../../utils/constants';
-import { analyzeCropImage } from '../../../services/mockApi';
+import { aiAPI } from '../../../services/api';
 import { saveDiagnosisResult, DiagnosisResult } from '../../../services/storage';
 import { queueService } from '../../../services/queueService';
 import { useConnectionStatus } from '../../../services/netinfo';

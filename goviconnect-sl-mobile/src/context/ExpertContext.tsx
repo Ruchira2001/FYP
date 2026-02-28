@@ -4,10 +4,8 @@ import {
     saveSettings,
     AppSettings,
     defaultSettings,
-    setItem,
-    getItem,
-    removeItem,
 } from '../services/storage';
+import { authAPI, saveAuthData, getAuthData, clearAuthData } from '../services/api';
 import { initI18n, setStoredLanguage } from '../i18n';
 import { initNetInfo } from '../services/netinfo';
 
@@ -33,6 +31,7 @@ interface ExpertContextType {
     isAuthenticated: boolean;
     isExpertMode: boolean;
     expert: ExpertUser | null;
+    loginError: string | null;
     login: (email: string, password: string) => Promise<boolean>;
     logout: () => Promise<void>;
 
@@ -64,12 +63,6 @@ interface ExpertProviderProps {
     children: ReactNode;
 }
 
-const EXPERT_STORAGE_KEYS = {
-    EXPERT_USER: '@goviconnect_expert_user',
-    EXPERT_AUTH_TOKEN: '@goviconnect_expert_auth_token',
-    EXPERT_ONBOARDING: '@goviconnect_expert_onboarding',
-};
-
 export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [expert, setExpert] = useState<ExpertUser | null>(null);
@@ -77,27 +70,52 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [loginError, setLoginError] = useState<string | null>(null);
 
     useEffect(() => {
         initializeApp();
     }, []);
+
+    const formatExpert = (u: any): ExpertUser => ({
+        id: u._id || u.id,
+        name: u.name || '',
+        email: u.email || '',
+        phone: u.phone || '',
+        district: u.district || '',
+        specialty: u.specialty || '',
+        specialtySi: u.specialtySi || '',
+        avatar: u.avatar,
+        rating: u.rating || 0,
+        totalConsultations: u.totalConsultations || 0,
+        farmersHelped: u.farmersHelped || 0,
+        yearsExperience: u.yearsExperience || 0,
+        qualifications: u.qualifications || [],
+        specializations: u.specializations || [],
+    });
 
     const initializeApp = async () => {
         try {
             await initI18n();
             initNetInfo();
 
-            const [storedSettings, storedExpert, onboardingComplete, token] = await Promise.all([
+            const [storedSettings, authData] = await Promise.all([
                 getSettings(),
-                getItem<ExpertUser>(EXPERT_STORAGE_KEYS.EXPERT_USER),
-                getItem<boolean>(EXPERT_STORAGE_KEYS.EXPERT_ONBOARDING),
-                getItem<string>(EXPERT_STORAGE_KEYS.EXPERT_AUTH_TOKEN),
+                getAuthData(),
             ]);
 
             setSettings(storedSettings);
-            setExpert(storedExpert);
-            setHasCompletedOnboarding(onboardingComplete === true);
-            setIsAuthenticated(!!token);
+
+            // Try to restore expert session
+            if (authData.token && authData.role === 'expert') {
+                try {
+                    const res = await authAPI.getMe();
+                    setExpert(formatExpert(res.data.data));
+                    setIsAuthenticated(true);
+                    setHasCompletedOnboarding(true);
+                } catch {
+                    await clearAuthData();
+                }
+            }
         } catch (error) {
             console.error('Error initializing expert app:', error);
         } finally {
@@ -107,33 +125,19 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
 
     const login = async (email: string, password: string): Promise<boolean> => {
         setIsLoading(true);
+        setLoginError(null);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const mockExpert: ExpertUser = {
-                id: 'expert-1',
-                name: 'Dr. Kamal Perera',
-                email: email,
-                phone: '0712345678',
-                district: 'Kandy',
-                specialty: 'Plant Pathology',
-                specialtySi: 'ශාක රෝගවේදය',
-                rating: 4.8,
-                totalConsultations: 245,
-                farmersHelped: 189,
-                yearsExperience: 20,
-                qualifications: ['PhD Plant Pathology', 'M.Sc. Agriculture', 'B.Sc. Botany'],
-                specializations: ['Vegetables', 'Fruits', 'Paddy'],
-            };
-
-            await setItem(EXPERT_STORAGE_KEYS.EXPERT_USER, mockExpert);
-            await setItem(EXPERT_STORAGE_KEYS.EXPERT_AUTH_TOKEN, 'expert_token_' + Date.now());
-
-            setExpert(mockExpert);
+            const res = await authAPI.loginExpert({ email, password });
+            const { token, user: u } = res.data;
+            const formatted = formatExpert(u);
+            await saveAuthData(token, formatted, 'expert');
+            setExpert(formatted);
             setIsAuthenticated(true);
             return true;
-        } catch (error) {
-            console.error('Expert login error:', error);
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || 'Login failed. Please try again.';
+            setLoginError(msg);
+            console.error('Expert login error:', msg);
             return false;
         } finally {
             setIsLoading(false);
@@ -143,10 +147,10 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
     const logout = async (): Promise<void> => {
         setIsLoading(true);
         try {
-            await removeItem(EXPERT_STORAGE_KEYS.EXPERT_AUTH_TOKEN);
-            await removeItem(EXPERT_STORAGE_KEYS.EXPERT_USER);
+            await clearAuthData();
             setExpert(null);
             setIsAuthenticated(false);
+            setLoginError(null);
         } catch (error) {
             console.error('Expert logout error:', error);
         } finally {
@@ -155,7 +159,6 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
     };
 
     const completeOnboarding = async (): Promise<void> => {
-        await setItem(EXPERT_STORAGE_KEYS.EXPERT_ONBOARDING, true);
         setHasCompletedOnboarding(true);
     };
 
@@ -176,6 +179,7 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
                 isAuthenticated,
                 isExpertMode: true,
                 expert,
+                loginError,
                 login,
                 logout,
                 hasCompletedOnboarding,

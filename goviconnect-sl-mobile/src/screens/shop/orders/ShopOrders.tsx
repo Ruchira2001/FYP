@@ -1,17 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
+import { shopAPI } from '../../../services/api';
 
-const ORDERS = [
-    { id: 'ORD-7829', supplier: 'Green Valley Farms', items: 'Carrots (50kg), Potatoes (100kg)', total: 15400, status: 'Pending', date: 'Today, 10:30 AM' },
-    { id: 'ORD-7828', supplier: 'Lanka Spices Ltd', items: 'Cinnamon (5kg), Pepper (2kg)', total: 12500, status: 'Processing', date: 'Yesterday' },
-    { id: 'ORD-7825', supplier: 'Hill Country Co-op', items: 'Leeks (40kg)', total: 8000, status: 'Delivered', date: '10 Feb 2024' },
-    { id: 'ORD-7821', supplier: 'Organic Roots', items: 'Tomatoes (200kg)', total: 45000, status: 'Delivered', date: '08 Feb 2024' },
-    { id: 'ORD-7818', supplier: 'Kandy Fresh', items: 'Beans (30kg)', total: 6000, status: 'Cancelled', date: '05 Feb 2024' },
-];
+interface Order {
+    id: string;
+    supplier: string;
+    items: string;
+    total: number;
+    status: string;
+    date: string;
+}
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -24,7 +26,30 @@ const getStatusColor = (status: string) => {
 };
 
 const ShopOrders: React.FC = () => {
-    const renderOrder = ({ item }: { item: typeof ORDERS[0] }) => (
+    const [orders, setOrders] = useState<Order[]>([]);
+
+    useEffect(() => {
+        loadOrders();
+    }, []);
+
+    const loadOrders = async () => {
+        try {
+            const res = await shopAPI.getOrders();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setOrders(data.map((o: any) => ({
+                id: o._id || o.id || '',
+                supplier: o.supplier?.name || o.supplier || '',
+                items: o.items?.map((i: any) => `${i.name} (${i.quantity})`).join(', ') || o.items || '',
+                total: o.total || 0,
+                status: o.status || 'Pending',
+                date: o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '',
+            })));
+        } catch (e) {
+            console.error('Failed to load orders:', e);
+        }
+    };
+
+    const renderOrder = ({ item }: { item: Order }) => (
         <TouchableOpacity style={styles.card}>
             <View style={styles.cardHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -57,7 +82,7 @@ const ShopOrders: React.FC = () => {
         <SafeAreaView style={styles.container} edges={['top']}>
             <Header title="My Orders" showNotifications />
             <FlatList
-                data={ORDERS}
+                data={orders}
                 renderItem={renderOrder}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.listContent}

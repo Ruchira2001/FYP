@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { getRelativeTime } from '../../../utils/validators';
-import expertData from '../../../data/expertDashboard.json';
+import { chatAPI } from '../../../services/api';
 
 const CATEGORIES = ['All', 'Unread', 'Active Diagnosis', 'Recent'];
 
@@ -16,7 +16,30 @@ const ExpertChatsList: React.FC = () => {
     const { t, i18n } = useTranslation();
 
     const [activeCategory, setActiveCategory] = useState('All');
-    const [chats] = useState(expertData.farmerChats);
+    const [chats, setChats] = useState<any[]>([]);
+
+    useEffect(() => {
+        loadChats();
+    }, []);
+
+    const loadChats = async () => {
+        try {
+            const res = await chatAPI.getChats();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setChats(data.map((c: any) => ({
+                id: c._id || c.id,
+                farmerId: c.farmer?._id || c.farmerId,
+                farmerName: c.farmer?.name || c.farmerName || 'Farmer',
+                lastMessage: c.lastMessage?.content || '',
+                lastMessageTime: c.lastMessage?.createdAt || c.updatedAt,
+                unreadCount: c.unreadCount || 0,
+                hasActiveDiagnosis: c.hasActiveDiagnosis || false,
+                online: false,
+            })));
+        } catch (e) {
+            console.error('Failed to load expert chats:', e);
+        }
+    };
 
     const filteredChats = chats.filter(chat => {
         if (activeCategory === 'Unread') return chat.unreadCount > 0;

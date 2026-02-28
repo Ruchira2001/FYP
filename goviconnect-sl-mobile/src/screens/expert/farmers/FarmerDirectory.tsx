@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
-import expertData from '../../../data/expertDashboard.json';
+import { expertDashboardAPI } from '../../../services/api';
 
 const DISTRICT_FILTERS = ['All', 'Kandy', 'Matale', 'Kurunegala', 'Anuradhapura', 'Nuwara Eliya'];
 
@@ -18,23 +18,34 @@ interface Farmer {
     status: string;
 }
 
-const MOCK_FARMERS: Farmer[] = [
-    { id: 'f1', name: 'Saman Perera', district: 'Kandy', crops: ['Tomato', 'Chili', 'Brinjal'], lastActive: '2026-02-12T09:30:00.000Z', status: 'active' },
-    { id: 'f2', name: 'Kumara Silva', district: 'Matale', crops: ['Paddy', 'Corn'], lastActive: '2026-02-12T08:15:00.000Z', status: 'active' },
-    { id: 'f3', name: 'Nimal Jayawardena', district: 'Kurunegala', crops: ['Chili', 'Okra', 'Eggplant'], lastActive: '2026-02-11T16:45:00.000Z', status: 'active' },
-    { id: 'f4', name: 'Sunil Bandara', district: 'Anuradhapura', crops: ['Mango', 'Papaya'], lastActive: '2026-02-11T11:20:00.000Z', status: 'inactive' },
-    { id: 'f5', name: 'Ranjith Dissanayake', district: 'Nuwara Eliya', crops: ['Carrot', 'Leek', 'Potato'], lastActive: '2026-02-10T14:00:00.000Z', status: 'active' },
-    { id: 'f6', name: 'Ajith Fernando', district: 'Kandy', crops: ['Bean', 'Cabbage'], lastActive: '2026-02-11T15:45:00.000Z', status: 'active' },
-    { id: 'f7', name: 'Lakmal Herath', district: 'Matale', crops: ['Paddy', 'Vegetables'], lastActive: '2026-02-10T09:20:00.000Z', status: 'active' },
-    { id: 'f8', name: 'Dinesh Weerasinghe', district: 'Kurunegala', crops: ['Banana', 'Coconut'], lastActive: '2026-02-09T12:10:00.000Z', status: 'inactive' },
-];
-
 const FarmerDirectory: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeDistrict, setActiveDistrict] = useState('All');
+    const [farmers, setFarmers] = useState<Farmer[]>([]);
 
-    const filteredFarmers = MOCK_FARMERS.filter(farmer => {
+    useEffect(() => {
+        loadFarmers();
+    }, []);
+
+    const loadFarmers = async () => {
+        try {
+            const res = await expertDashboardAPI.getFarmerDirectory();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setFarmers(data.map((f: any) => ({
+                id: f._id || f.id,
+                name: f.name || 'Farmer',
+                district: f.district || '',
+                crops: f.crops || [],
+                lastActive: f.lastActive || f.updatedAt || '',
+                status: f.status || 'active',
+            })));
+        } catch (e) {
+            console.error('Failed to load farmers:', e);
+        }
+    };
+
+    const filteredFarmers = farmers.filter(farmer => {
         const matchesSearch = farmer.name.toLowerCase().includes(searchQuery.toLowerCase())
             || farmer.crops.some(c => c.toLowerCase().includes(searchQuery.toLowerCase()));
         const matchesDistrict = activeDistrict === 'All' || farmer.district === activeDistrict;

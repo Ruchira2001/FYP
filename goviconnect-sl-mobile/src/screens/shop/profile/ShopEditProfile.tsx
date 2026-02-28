@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton, InputField } from '../../../components';
 import { COLORS } from '../../../utils/constants';
 import { useShop } from '../../../context/ShopContext';
+import { userAPI } from '../../../services/api';
 
 const LOCATIONS = [
     'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
@@ -36,7 +37,12 @@ const ShopEditProfile: React.FC = () => {
 
         setIsLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
+            await userAPI.updateShopProfile({
+                name: name.trim(),
+                email,
+                location,
+                type: shopType,
+            });
             Alert.alert(t('common.success'), 'Profile updated successfully', [
                 { text: 'OK', onPress: () => navigation.goBack() }
             ]);

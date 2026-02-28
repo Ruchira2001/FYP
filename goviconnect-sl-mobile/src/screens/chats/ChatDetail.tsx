@@ -18,10 +18,10 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../utils/constants';
 import { Message } from '../../services/storage';
+import { chatAPI } from '../../services/api';
 import { queueService } from '../../services/queueService';
 import { useConnectionStatus } from '../../services/netinfo';
 import { generateId, formatTime } from '../../utils/validators';
-import chatsData from '../../data/chats.json';
 
 type ParamList = {
     ChatDetail: { chatId: string };
@@ -38,13 +38,43 @@ const ChatDetail: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState('');
     const [showActions, setShowActions] = useState(false);
-
-    const chat = chatsData.chats.find(c => c.id === chatId);
-    const chatMessages = (chatsData.messages as any)[chatId] || [];
+    const [chat, setChat] = useState<any>(null);
 
     useEffect(() => {
-        setMessages(chatMessages);
+        loadChat();
     }, []);
+
+    const loadChat = async () => {
+        try {
+            const [chatsRes, msgsRes] = await Promise.all([
+                chatAPI.getChats(),
+                chatAPI.getMessages(chatId),
+            ]);
+            const chats = Array.isArray(chatsRes.data.data) ? chatsRes.data.data : [];
+            const found = chats.find((c: any) => (c._id || c.id) === chatId);
+            if (found) {
+                setChat({
+                    id: found._id || found.id,
+                    expertId: found.expert?._id || found.expertId,
+                    expertName: found.expert?.name || found.expertName || 'Expert',
+                });
+            }
+            const msgs = Array.isArray(msgsRes.data.data) ? msgsRes.data.data : [];
+            setMessages(msgs.map((m: any) => ({
+                id: m._id || m.id,
+                chatId: chatId,
+                senderId: m.sender?._id || m.senderId || '',
+                senderType: m.senderType || (m.sender?.role === 'farmer' ? 'user' : 'expert'),
+                content: m.content || '',
+                type: m.type || 'text',
+                timestamp: m.createdAt || m.timestamp,
+                synced: true,
+            })));
+            setTimeout(() => flatListRef.current?.scrollToEnd(), 200);
+        } catch (e) {
+            console.error('Failed to load chat:', e);
+        }
+    };
 
     const handleSend = async () => {
         if (!inputText.trim()) return;
@@ -63,9 +93,14 @@ const ChatDetail: React.FC = () => {
         setMessages(prev => [...prev, newMessage]);
         setInputText('');
 
-        // Queue if offline
-        if (!isConnected) {
-            await queueService.addToQueue('send_message', newMessage);
+        // Send via API
+        try {
+            await chatAPI.sendMessage(chatId, { content: inputText.trim(), type: 'text' });
+        } catch {
+            // Queue if offline
+            if (!isConnected) {
+                await queueService.addToQueue('send_message', newMessage);
+            }
         }
 
         // Scroll to bottom

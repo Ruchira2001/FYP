@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton } from '../../../components';
 import { COLORS } from '../../../utils/constants';
-import { predictCropPrice } from '../../../services/mockApi';
+import { aiAPI } from '../../../services/api';
 import { savePredictionResult, PredictionResult } from '../../../services/storage';
 import { queueService } from '../../../services/queueService';
 import { useConnectionStatus } from '../../../services/netinfo';
@@ -46,14 +46,15 @@ const PriceResult: React.FC = () => {
         setLoading(true);
         try {
             if (isConnected) {
-                const response = await predictCropPrice(
-                    params.crop,
-                    params.landSize,
-                    params.landUnit,
-                    params.district,
-                    params.season
-                );
-                setResult(response);
+                const response = await aiAPI.pricePrediction({
+                    crop: params.crop,
+                    landSize: params.landSize,
+                    landUnit: params.landUnit,
+                    district: params.district || '',
+                    season: params.season,
+                });
+                const data = response.data.data || response.data;
+                setResult(data);
             } else {
                 // Queue for later
                 await queueService.addToQueue('predict_price', params);

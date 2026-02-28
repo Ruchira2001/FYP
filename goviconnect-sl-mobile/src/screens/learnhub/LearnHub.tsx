@@ -6,9 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, Chip, CropCard, EmptyState } from '../../components';
 import { COLORS, CROP_CATEGORIES } from '../../utils/constants';
-import cropsData from '../../data/crops.json';
-import learnhubData from '../../data/learnhub.json';
-import { getSavedLearnHub, SavedLearnHubItem } from '../../services/storage';
+import { learnhubAPI, feedAPI } from '../../services/api';
 
 const LearnHub: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -16,41 +14,49 @@ const LearnHub: React.FC = () => {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
-    const [savedItems, setSavedItems] = useState<SavedLearnHubItem[]>([]);
+    const [crops, setCrops] = useState<any[]>([]);
+    const [savedIds, setSavedIds] = useState<string[]>([]);
 
     useEffect(() => {
-        loadSavedItems();
+        loadData();
     }, []);
 
-    const loadSavedItems = async () => {
-        const items = await getSavedLearnHub();
-        setSavedItems(items);
+    const loadData = async () => {
+        try {
+            const [cropsRes, savedRes] = await Promise.all([
+                feedAPI.getCrops().catch(() => ({ data: { data: [] } })),
+                learnhubAPI.getSavedGuides().catch(() => ({ data: { data: [] } })),
+            ]);
+            setCrops(Array.isArray(cropsRes.data.data) ? cropsRes.data.data : []);
+            const saved = Array.isArray(savedRes.data.data) ? savedRes.data.data : [];
+            setSavedIds(saved.map((s: any) => s._id || s.id || s.guideId));
+        } catch (e) {
+            console.error('LearnHub load error:', e);
+        }
     };
 
-    const filteredCrops = cropsData.crops.filter((crop) => {
+    const filteredCrops = crops.filter((crop: any) => {
         const matchesCategory = selectedCategory === 'all' || crop.category === selectedCategory;
         const matchesSearch = searchQuery === '' ||
-            crop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            crop.nameSi.includes(searchQuery);
+            (crop.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (crop.nameSi || '').includes(searchQuery);
         return matchesCategory && matchesSearch;
     });
 
-    const renderCropItem = ({ item }: { item: typeof cropsData.crops[0] }) => {
-        const isSaved = savedItems.some(s => s.id === item.id);
-        const isDownloaded = savedItems.some(s => s.id === item.id && s.isDownloaded);
-
+    const renderCropItem = ({ item }: { item: any }) => {
+        const isSaved = savedIds.includes(item._id || item.id);
         return (
             <View style={styles.cropCardWrapper}>
                 <CropCard
-                    id={item.id}
-                    name={item.name}
-                    nameSi={item.nameSi}
-                    category={item.category}
-                    emoji={item.icon}
-                    color={item.color}
-                    onPress={() => navigation.navigate('CropDetails', { cropId: item.id })}
+                    id={item._id || item.id}
+                    name={item.name || ''}
+                    nameSi={item.nameSi || ''}
+                    category={item.category || ''}
+                    emoji={item.icon || '🌱'}
+                    color={item.color || '#22c55e'}
+                    onPress={() => navigation.navigate('CropDetails', { cropId: item._id || item.id })}
                     isSaved={isSaved}
-                    isDownloaded={isDownloaded}
+                    isDownloaded={false}
                     locale={i18n.language}
                     size="md"
                 />

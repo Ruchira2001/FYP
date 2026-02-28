@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, Dimensions, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, ActionCard } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { useShop } from '../../../context/ShopContext';
+import { shopAPI } from '../../../services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -16,10 +17,32 @@ const ShopHome: React.FC = () => {
     const { shop } = useShop();
 
     const [refreshing, setRefreshing] = useState(false);
+    const [dashStats, setDashStats] = useState({ totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 });
+    const [popularProducts, setPopularProducts] = useState<any[]>([]);
+
+    useEffect(() => {
+        loadDashboard();
+    }, []);
+
+    const loadDashboard = async () => {
+        try {
+            const res = await shopAPI.getDashboard();
+            const data = res.data.data || res.data;
+            setDashStats({
+                totalProducts: data.totalProducts || data.stats?.totalProducts || 0,
+                inStock: data.inStock || data.stats?.inStock || 0,
+                lowStock: data.lowStock || data.stats?.lowStock || 0,
+                outOfStock: data.outOfStock || data.stats?.outOfStock || 0,
+            });
+            setPopularProducts(data.popularProducts || []);
+        } catch (e) {
+            console.error('Failed to load shop dashboard:', e);
+        }
+    };
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await loadDashboard();
         setRefreshing(false);
     };
 
@@ -34,7 +57,7 @@ const ShopHome: React.FC = () => {
         {
             id: 'products',
             label: 'Total Products',
-            value: '24',
+            value: String(dashStats.totalProducts),
             icon: 'leaf' as const,
             color: COLORS.primary[500],
             bgColor: COLORS.primary[50],
@@ -42,7 +65,7 @@ const ShopHome: React.FC = () => {
         {
             id: 'available',
             label: 'In Stock',
-            value: '18',
+            value: String(dashStats.inStock),
             icon: 'checkmark-circle' as const,
             color: COLORS.success,
             bgColor: '#dcfce7',
@@ -50,7 +73,7 @@ const ShopHome: React.FC = () => {
         {
             id: 'low-stock',
             label: 'Low Stock',
-            value: '4',
+            value: String(dashStats.lowStock),
             icon: 'warning' as const,
             color: COLORS.warning,
             bgColor: '#fef3c7',
@@ -58,7 +81,7 @@ const ShopHome: React.FC = () => {
         {
             id: 'out-of-stock',
             label: 'Out of Stock',
-            value: '2',
+            value: String(dashStats.outOfStock),
             icon: 'close-circle' as const,
             color: COLORS.error,
             bgColor: '#fee2e2',
@@ -100,13 +123,15 @@ const ShopHome: React.FC = () => {
         },
     ];
 
-    // Popular products
-    const popularProducts = [
-        { id: '1', name: 'Mancozeb 80% WP', category: 'Fungicide', emoji: '🧪', stock: 45, color: COLORS.primary[500] },
-        { id: '2', name: 'Chlorpyrifos 20 EC', category: 'Insecticide', emoji: '🐛', stock: 12, color: COLORS.warning },
-        { id: '3', name: 'Glyphosate 36 SL', category: 'Herbicide', emoji: '🌿', stock: 30, color: COLORS.success },
-        { id: '4', name: 'NPK 15-15-15', category: 'Fertilizer', emoji: '🪴', stock: 8, color: COLORS.error },
-    ];
+    // Popular products from dashboard API
+    const displayProducts = popularProducts.length > 0 ? popularProducts.map((p: any) => ({
+        id: p._id || p.id,
+        name: p.name || '',
+        category: p.category || '',
+        emoji: p.emoji || '🧪',
+        stock: p.stock || 0,
+        color: (p.stock || 0) < 10 ? COLORS.error : COLORS.success,
+    })) : [];
 
     return (
         <View style={styles.container}>
@@ -186,7 +211,7 @@ const ShopHome: React.FC = () => {
                         </TouchableOpacity>
                     </View>
 
-                    {popularProducts.map((product) => (
+                    {displayProducts.map((product) => (
                         <TouchableOpacity
                             key={product.id}
                             style={styles.productCard}

@@ -26,6 +26,7 @@ const feedRoutes = require('./routes/feed');
 const expertRoutes = require('./routes/experts');
 const shopRoutes = require('./routes/shop');
 const syncRoutes = require('./routes/sync');
+const adminRoutes = require('./routes/admin');
 
 // Initialize Express
 const app = express();
@@ -98,6 +99,7 @@ app.use('/api/feed', feedRoutes);
 app.use('/api/experts', expertRoutes);
 app.use('/api/shop', shopRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res) => {

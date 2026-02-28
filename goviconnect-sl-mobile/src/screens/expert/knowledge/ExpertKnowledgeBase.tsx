@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
+import { expertDashboardAPI } from '../../../services/api';
 
 const CATEGORIES = ['All', 'Diseases', 'Pest Control', 'Fertilizers', 'Irrigation', 'Harvest'];
 
@@ -21,52 +22,39 @@ interface GuideItem {
     icon: string;
 }
 
-const MOCK_GUIDES: GuideItem[] = [
-    {
-        id: 'g1', title: 'Identifying Early Blight in Tomatoes', category: 'Diseases',
-        description: 'A comprehensive guide on identifying and treating early blight in tomato plants with organic methods.',
-        author: 'Dr. Kamal Perera', isExpertContributed: true, likes: 156, views: 1240,
-        createdAt: '2026-02-08T15:00:00.000Z', icon: 'leaf',
-    },
-    {
-        id: 'g2', title: 'Organic Pest Control for Chili', category: 'Pest Control',
-        description: 'Natural methods to control common chili pests including white flies and aphids.',
-        author: 'Dr. Kamal Perera', isExpertContributed: true, likes: 203, views: 1890,
-        createdAt: '2026-01-25T10:30:00.000Z', icon: 'bug',
-    },
-    {
-        id: 'g3', title: 'NPK Fertilizer Guide for Paddy', category: 'Fertilizers',
-        description: 'Understanding the right NPK ratio for different paddy growth stages.',
-        author: 'Prof. Nimal Silva', isExpertContributed: false, likes: 89, views: 720,
-        createdAt: '2026-01-20T09:00:00.000Z', icon: 'flask',
-    },
-    {
-        id: 'g4', title: 'Drip Irrigation Setup Guide', category: 'Irrigation',
-        description: 'Step-by-step guide to setting up an efficient drip irrigation system for vegetable gardens.',
-        author: 'Agricultural Dept.', isExpertContributed: false, likes: 312, views: 2340,
-        createdAt: '2026-01-15T14:00:00.000Z', icon: 'water',
-    },
-    {
-        id: 'g5', title: 'Best Practices for Mango Harvesting', category: 'Harvest',
-        description: 'When and how to harvest mangoes for maximum quality and shelf life.',
-        author: 'Dr. Anura Jayasinghe', isExpertContributed: false, likes: 145, views: 980,
-        createdAt: '2026-01-10T11:30:00.000Z', icon: 'nutrition',
-    },
-    {
-        id: 'g6', title: 'Managing Rice Blast Disease', category: 'Diseases',
-        description: 'Complete guide on identifying, preventing, and treating rice blast disease in paddy cultivation.',
-        author: 'Dr. Kamal Perera', isExpertContributed: true, likes: 178, views: 1560,
-        createdAt: '2026-02-05T08:00:00.000Z', icon: 'leaf',
-    },
-];
-
 const ExpertKnowledgeBase: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('All');
     const [showMyContributions, setShowMyContributions] = useState(false);
+    const [guides, setGuides] = useState<GuideItem[]>([]);
 
-    const filteredGuides = MOCK_GUIDES.filter(guide => {
+    useEffect(() => {
+        loadGuides();
+    }, []);
+
+    const loadGuides = async () => {
+        try {
+            const res = await expertDashboardAPI.getKnowledgeBase();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setGuides(data.map((g: any) => ({
+                id: g._id || g.id,
+                title: g.title || '',
+                category: g.category || 'Diseases',
+                description: g.description || '',
+                author: g.author?.name || g.author || '',
+                isExpertContributed: g.isExpertContributed || false,
+                likes: g.likes || 0,
+                views: g.views || 0,
+                createdAt: g.createdAt || '',
+                icon: g.icon || 'leaf',
+            })));
+        } catch (e) {
+            console.error('Failed to load knowledge base:', e);
+        }
+    };
+
+    const filteredGuides = guides.filter(guide => {
         const matchesSearch = guide.title.toLowerCase().includes(searchQuery.toLowerCase())
             || guide.description.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = activeCategory === 'All' || guide.category === activeCategory;

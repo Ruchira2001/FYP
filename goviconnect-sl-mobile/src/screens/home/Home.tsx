@@ -7,9 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, ActionCard, FeedCard } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { useApp } from '../../context';
-import { getMyCrops, getNotifications, getChats } from '../../services/storage';
+import { feedAPI, notificationAPI, chatAPI } from '../../services/api';
 import cropsData from '../../data/crops.json';
-import tipsData from '../../data/tips.json';
 
 const { width } = Dimensions.get('window');
 
@@ -22,21 +21,28 @@ const Home: React.FC = () => {
     const [myCrops, setMyCrops] = useState<string[]>([]);
     const [notificationCount, setNotificationCount] = useState(0);
     const [chatUnreadCount, setChatUnreadCount] = useState(0);
+    const [feedItems, setFeedItems] = useState<any[]>([]);
 
     useEffect(() => {
         loadData();
     }, []);
 
     const loadData = async () => {
-        const [crops, notifications, chats] = await Promise.all([
-            getMyCrops(),
-            getNotifications(),
-            getChats(),
-        ]);
-
-        setMyCrops(crops);
-        setNotificationCount(notifications.filter(n => !n.read).length);
-        setChatUnreadCount(chats.reduce((sum, c) => sum + c.unreadCount, 0));
+        try {
+            const [feedRes, unreadRes, chatsRes] = await Promise.all([
+                feedAPI.getFeed().catch(() => ({ data: { data: { tips: [], crops: [] } } })),
+                notificationAPI.getUnreadCount().catch(() => ({ data: { data: { count: 0 } } })),
+                chatAPI.getChats().catch(() => ({ data: { data: [] } })),
+            ]);
+            const feed = feedRes.data.data;
+            setFeedItems(feed.tips || feed.feedItems || []);
+            setMyCrops(user?.crops || ['tea', 'paddy', 'tomato']);
+            setNotificationCount(unreadRes.data.data?.count || 0);
+            const chats = Array.isArray(chatsRes.data.data) ? chatsRes.data.data : [];
+            setChatUnreadCount(chats.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0));
+        } catch (e) {
+            console.error('Home loadData error:', e);
+        }
     };
 
     const onRefresh = async () => {
@@ -100,8 +106,8 @@ const Home: React.FC = () => {
                 onLanguagePress={() => navigation.navigate('LanguageModal')}
                 onNotificationsPress={() => navigation.navigate('Notifications')}
                 onChatsPress={() => navigation.navigate('ChatsList')}
-                notificationCount={notificationCount || 3}
-                chatUnreadCount={chatUnreadCount || 2}
+                notificationCount={notificationCount}
+                chatUnreadCount={chatUnreadCount}
             />
 
             <ScrollView
@@ -212,25 +218,25 @@ const Home: React.FC = () => {
                         {t('home.feed')}
                     </Text>
 
-                    {tipsData.feedItems.map((item) => (
+                    {feedItems.map((item: any) => (
                         <FeedCard
-                            key={item.id}
+                            key={item.id || item._id}
                             type={item.type as any}
-                            title={i18n.language === 'si' ? item.titleSi : item.title}
-                            content={i18n.language === 'si' ? item.contentSi : item.content}
-                            timestamp={item.timestamp}
+                            title={i18n.language === 'si' ? (item.titleSi || item.title) : item.title}
+                            content={i18n.language === 'si' ? (item.contentSi || item.content) : item.content}
+                            timestamp={item.timestamp || item.createdAt}
                             image={item.image || undefined}
                             progress={item.progress}
                             onPress={() => {
-                                if (item.type === 'guide' && item.guideId) {
+                                if (item.type === 'guide' && (item.guideId || item._id)) {
                                     navigation.navigate('LearnHubTab', {
                                         screen: 'CropDetails',
-                                        params: { cropId: item.guideId }
+                                        params: { cropId: item.guideId || item._id }
                                     });
-                                } else if (item.type === 'meeting' && item.meetingId) {
+                                } else if (item.type === 'meeting' && (item.meetingId || item._id)) {
                                     navigation.navigate('MeetingsTab', {
                                         screen: 'MeetingDetails',
-                                        params: { meetingId: item.meetingId }
+                                        params: { meetingId: item.meetingId || item._id }
                                     });
                                 }
                             }}

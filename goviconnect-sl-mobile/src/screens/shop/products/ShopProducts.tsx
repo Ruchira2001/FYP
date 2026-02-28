@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, Chip } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
+import { shopAPI } from '../../../services/api';
 
 const CATEGORIES = ['All', 'Fungicides', 'Insecticides', 'Herbicides', 'Fertilizers', 'Bio Products'];
 
@@ -27,88 +28,44 @@ export interface Product {
     activeIngredient: string;
 }
 
-const PRODUCTS: Product[] = [
-    {
-        id: '1', name: 'Mancozeb 80% WP', nameSi: 'මැන්කොසෙබ් 80% WP',
-        category: 'Fungicides', description: 'Broad-spectrum contact fungicide for control of many fungal diseases in a wide range of crops.',
-        targetDisease: 'Leaf Blight, Downy Mildew, Late Blight',
-        targetCrops: ['Tomato', 'Potato', 'Paddy', 'Vegetables'],
-        dosage: '2.5g per liter of water', price: 450, unit: '500g pack',
-        emoji: '🧪', stock: 45, availability: 'in_stock',
-        manufacturer: 'CIC Agri Business', activeIngredient: 'Mancozeb',
-    },
-    {
-        id: '2', name: 'Chlorpyrifos 20 EC', nameSi: 'ක්ලෝපිරිෆෝස් 20 EC',
-        category: 'Insecticides', description: 'Organophosphorus insecticide effective against sucking and chewing insects.',
-        targetDisease: 'Thrips, Aphids, Stem Borer, Leaf Miner',
-        targetCrops: ['Paddy', 'Chili', 'Vegetables', 'Fruits'],
-        dosage: '2ml per liter of water', price: 680, unit: '500ml bottle',
-        emoji: '🐛', stock: 12, availability: 'low_stock',
-        manufacturer: 'Hayleys Agriculture', activeIngredient: 'Chlorpyrifos',
-    },
-    {
-        id: '3', name: 'Glyphosate 36 SL', nameSi: 'ග්ලයිෆොසේට් 36 SL',
-        category: 'Herbicides', description: 'Non-selective systemic herbicide for weed control in plantation crops and non-crop areas.',
-        targetDisease: 'Broadleaf Weeds, Grasses',
-        targetCrops: ['Tea', 'Rubber', 'Coconut'],
-        dosage: '10ml per liter of water', price: 750, unit: '1L bottle',
-        emoji: '🌿', stock: 30, availability: 'in_stock',
-        manufacturer: 'Lanka Phosphate', activeIngredient: 'Glyphosate',
-    },
-    {
-        id: '4', name: 'NPK 15-15-15', nameSi: 'NPK 15-15-15',
-        category: 'Fertilizers', description: 'Balanced compound fertilizer for general crop nutrition and healthy growth.',
-        targetDisease: 'Nutrient Deficiency',
-        targetCrops: ['All Crops'],
-        dosage: '200g per plant (basal application)', price: 3200, unit: '50kg bag',
-        emoji: '🪴', stock: 8, availability: 'low_stock',
-        manufacturer: 'CIC Agri Business', activeIngredient: 'Nitrogen, Phosphorus, Potassium',
-    },
-    {
-        id: '5', name: 'Carbendazim 50% WP', nameSi: 'කාබෙන්ඩසිම් 50% WP',
-        category: 'Fungicides', description: 'Systemic fungicide for controlling a wide range of fungal diseases.',
-        targetDisease: 'Powdery Mildew, Anthracnose, Scab',
-        targetCrops: ['Mango', 'Chili', 'Paddy', 'Beans'],
-        dosage: '1g per liter of water', price: 520, unit: '250g pack',
-        emoji: '🔬', stock: 22, availability: 'in_stock',
-        manufacturer: 'Hayleys Agriculture', activeIngredient: 'Carbendazim',
-    },
-    {
-        id: '6', name: 'Imidacloprid 17.8 SL', nameSi: 'ඉමිඩැක්ලෝපිරිඩ් 17.8 SL',
-        category: 'Insecticides', description: 'Neonicotinoid systemic insecticide for sucking pest control.',
-        targetDisease: 'Brown Plant Hopper, Whitefly, Aphids',
-        targetCrops: ['Paddy', 'Cotton', 'Vegetables'],
-        dosage: '0.5ml per liter of water', price: 890, unit: '250ml bottle',
-        emoji: '🦗', stock: 0, availability: 'out_of_stock',
-        manufacturer: 'CIC Agri Business', activeIngredient: 'Imidacloprid',
-    },
-    {
-        id: '7', name: 'Trichoderma Viride', nameSi: 'ට්‍රයිකොඩර්මා විරිඩේ',
-        category: 'Bio Products', description: 'Biological fungicide containing Trichoderma viride for environmentally friendly disease management.',
-        targetDisease: 'Root Rot, Wilt, Damping Off',
-        targetCrops: ['Vegetables', 'Fruits', 'Nursery Plants'],
-        dosage: '5g per liter of water (soil drench)', price: 380, unit: '100g pack',
-        emoji: '🌱', stock: 35, availability: 'in_stock',
-        manufacturer: 'Dept. of Agriculture', activeIngredient: 'Trichoderma viride',
-    },
-    {
-        id: '8', name: 'Urea 46%', nameSi: 'යූරියා 46%',
-        category: 'Fertilizers', description: 'High nitrogen fertilizer for promoting vegetative growth in crops.',
-        targetDisease: 'Nitrogen Deficiency',
-        targetCrops: ['Paddy', 'Vegetables', 'Tea'],
-        dosage: '150g per plant (top dressing)', price: 2800, unit: '50kg bag',
-        emoji: '💧', stock: 15, availability: 'in_stock',
-        manufacturer: 'Lanka Phosphate', activeIngredient: 'Nitrogen (46%)',
-    },
-];
-
 const ShopProducts: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
     const [activeFilter, setActiveFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const [products, setProducts] = useState<Product[]>([]);
 
-    const filteredProducts = PRODUCTS.filter(p => {
+    useEffect(() => {
+        loadProducts();
+    }, []);
+
+    const loadProducts = async () => {
+        try {
+            const res = await shopAPI.getProducts();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setProducts(data.map((p: any) => ({
+                id: p._id || p.id,
+                name: p.name || '',
+                nameSi: p.nameSi || '',
+                category: p.category || '',
+                description: p.description || '',
+                targetDisease: p.targetDisease || '',
+                targetCrops: p.targetCrops || [],
+                dosage: p.dosage || '',
+                price: p.price || 0,
+                unit: p.unit || '',
+                emoji: p.emoji || '🧪',
+                stock: p.stock || 0,
+                availability: p.availability || (p.stock > 10 ? 'in_stock' : p.stock > 0 ? 'low_stock' : 'out_of_stock'),
+                manufacturer: p.manufacturer || '',
+                activeIngredient: p.activeIngredient || '',
+            })));
+        } catch (e) {
+            console.error('Failed to load products:', e);
+        }
+    };
+
+    const filteredProducts = products.filter(p => {
         const matchesCategory = activeFilter === 'All' || p.category === activeFilter;
         const matchesSearch = !searchQuery ||
             p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -429,5 +386,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export { PRODUCTS };
 export default ShopProducts;

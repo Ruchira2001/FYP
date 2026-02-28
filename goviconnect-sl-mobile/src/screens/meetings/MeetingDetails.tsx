@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Alert, StyleSheet } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { formatDate, formatTime } from '../../utils/validators';
-import meetingsData from '../../data/meetings.json';
+import { meetingAPI } from '../../services/api';
 
 type ParamList = {
     MeetingDetails: { meetingId: string };
@@ -20,8 +20,46 @@ const MeetingDetails: React.FC = () => {
     const { t, i18n } = useTranslation();
 
     const [reminderSet, setReminderSet] = useState(false);
+    const [meeting, setMeeting] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-    const meeting = meetingsData.upcomingSessions.find(m => m.id === meetingId);
+    useEffect(() => {
+        loadMeeting();
+    }, []);
+
+    const loadMeeting = async () => {
+        try {
+            const res = await meetingAPI.getSessionById(meetingId);
+            const m = res.data.data;
+            setMeeting({
+                id: m._id || m.id,
+                title: m.topic || m.title || '',
+                titleSi: m.topicSi || m.titleSi || m.topic || '',
+                expertName: m.expert?.name || m.expertName || '',
+                expertSpecialty: m.expert?.specialty || '',
+                dateTime: m.dateTime || m.createdAt,
+                duration: m.duration || 60,
+                description: m.description || '',
+                descriptionSi: m.descriptionSi || m.description || '',
+                attendees: m.attendees?.length || 0,
+                maxAttendees: m.maxAttendees || 50,
+                meetingLink: m.meetingLink,
+            });
+        } catch (e) {
+            console.error('Failed to load meeting:', e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <Header title={t('meetings.meeting_details')} showBack onBackPress={() => navigation.goBack()} />
+                <View style={styles.errorContainer}><Text>Loading...</Text></View>
+            </View>
+        );
+    }
 
     if (!meeting) {
         return (

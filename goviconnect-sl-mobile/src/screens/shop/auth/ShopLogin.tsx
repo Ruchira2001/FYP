@@ -26,17 +26,10 @@ const ShopLogin: React.FC = () => {
 
         setLoading(true);
         try {
-            // Mock login success
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            await login({
-                id: 'S' + Math.floor(Math.random() * 1000),
-                name: 'Colombo Shop',
-                email: email,
-                location: 'Colombo',
-                type: 'Business'
-            });
-
+            const success = await login(email, password);
+            if (!success) {
+                Alert.alert('Error', 'Invalid email or password');
+            }
             // Navigation is handled by auth state change in navigator
         } catch (error) {
             Alert.alert('Error', 'Login failed. Please try again.');

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -6,10 +6,30 @@ import { useShop } from '../../../context/ShopContext';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { Header } from '../../../components';
+import { shopAPI } from '../../../services/api';
 
 const ShopProfile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { logout, shop } = useShop();
+    const [profileStats, setProfileStats] = useState({ products: 0, orders: 0, rating: 0 });
+
+    useEffect(() => {
+        loadStats();
+    }, []);
+
+    const loadStats = async () => {
+        try {
+            const res = await shopAPI.getDashboard();
+            const data = res.data.data || res.data;
+            setProfileStats({
+                products: data.totalProducts || data.stats?.totalProducts || 0,
+                orders: data.totalOrders || data.stats?.totalOrders || 0,
+                rating: data.rating || data.stats?.rating || 0,
+            });
+        } catch (e) {
+            console.error('Failed to load profile stats:', e);
+        }
+    };
 
     // Quick shortcuts
     const shortcuts = [
@@ -62,17 +82,17 @@ const ShopProfile: React.FC = () => {
                     {/* Stats Row */}
                     <View style={styles.statsRow}>
                         <View style={styles.statItem}>
-                            <Text style={styles.statValue}>24</Text>
+                            <Text style={styles.statValue}>{profileStats.products}</Text>
                             <Text style={styles.statLabel}>Products</Text>
                         </View>
                         <View style={styles.statDivider} />
                         <View style={styles.statItem}>
-                            <Text style={styles.statValue}>156</Text>
+                            <Text style={styles.statValue}>{profileStats.orders}</Text>
                             <Text style={styles.statLabel}>Orders</Text>
                         </View>
                         <View style={styles.statDivider} />
                         <View style={styles.statItem}>
-                            <Text style={styles.statValue}>4.8</Text>
+                            <Text style={styles.statValue}>{profileStats.rating || '-'}</Text>
                             <Text style={styles.statLabel}>Rating</Text>
                         </View>
                     </View>

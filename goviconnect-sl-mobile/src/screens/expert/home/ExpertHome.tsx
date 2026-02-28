@@ -8,7 +8,7 @@ import { Header, ActionCard } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { useExpert } from '../../../context/ExpertContext';
 import { getRelativeTime } from '../../../utils/validators';
-import expertData from '../../../data/expertDashboard.json';
+import { expertDashboardAPI } from '../../../services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -18,12 +18,27 @@ const ExpertHome: React.FC = () => {
     const { expert } = useExpert();
 
     const [refreshing, setRefreshing] = useState(false);
-    const [stats] = useState(expertData.dashboardStats);
-    const [recentActivity] = useState(expertData.recentActivity);
+    const [stats, setStats] = useState<any>({});
+    const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+    useEffect(() => {
+        loadDashboard();
+    }, []);
+
+    const loadDashboard = async () => {
+        try {
+            const res = await expertDashboardAPI.getDashboard();
+            const data = res.data.data || res.data;
+            setStats(data.stats || data.dashboardStats || {});
+            setRecentActivity(data.recentActivity || []);
+        } catch (e) {
+            console.error('Failed to load expert dashboard:', e);
+        }
+    };
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await loadDashboard();
         setRefreshing(false);
     };
 

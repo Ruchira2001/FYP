@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip, PrimaryButton } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { formatDate, formatTime, getRelativeTime } from '../../../utils/validators';
-import expertData from '../../../data/expertDashboard.json';
+import { expertDashboardAPI } from '../../../services/api';
 
 const MEETING_FILTERS = ['All', 'Upcoming', 'Personal', 'Group', 'Completed'];
 
@@ -16,7 +16,7 @@ const ExpertMeetings: React.FC = () => {
     const { i18n } = useTranslation();
 
     const [activeFilter, setActiveFilter] = useState('All');
-    const [meetings, setMeetings] = useState(expertData.expertMeetings);
+    const [meetings, setMeetings] = useState<any[]>([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newMeeting, setNewMeeting] = useState({
         title: '',
@@ -24,6 +24,32 @@ const ExpertMeetings: React.FC = () => {
         type: 'group' as 'group' | 'personal',
         duration: '60',
     });
+
+    useEffect(() => {
+        loadMeetings();
+    }, []);
+
+    const loadMeetings = async () => {
+        try {
+            const res = await expertDashboardAPI.getExpertMeetings();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setMeetings(data.map((m: any) => ({
+                id: m._id || m.id,
+                sessionTitle: m.sessionTitle || m.title || '',
+                description: m.description || '',
+                type: m.type || 'group',
+                status: m.status || 'upcoming',
+                dateTime: m.dateTime || m.date || '',
+                duration: m.duration || 60,
+                farmerName: m.farmer?.name || m.farmerName || '',
+                attendees: m.attendees || 0,
+                maxAttendees: m.maxAttendees || 20,
+                meetingLink: m.meetingLink || '',
+            })));
+        } catch (e) {
+            console.error('Failed to load expert meetings:', e);
+        }
+    };
 
     const filteredMeetings = meetings.filter(meeting => {
         if (activeFilter === 'Upcoming') return meeting.status === 'upcoming';
@@ -42,17 +68,29 @@ const ExpertMeetings: React.FC = () => {
         return { label: 'Group Session', icon: 'people' as const, color: COLORS.primary[600], bgColor: COLORS.primary[50] };
     };
 
-    const handleCreateMeeting = () => {
+    const handleCreateMeeting = async () => {
         if (!newMeeting.title.trim()) {
             Alert.alert('Error', 'Please enter a meeting title.');
             return;
         }
-        Alert.alert('Success', 'Meeting session created successfully!');
-        setShowCreateModal(false);
-        setNewMeeting({ title: '', description: '', type: 'group', duration: '60' });
+        try {
+            await expertDashboardAPI.createMeeting({
+                title: newMeeting.title,
+                description: newMeeting.description,
+                type: newMeeting.type,
+                duration: parseInt(newMeeting.duration),
+            });
+            Alert.alert('Success', 'Meeting session created successfully!');
+            setShowCreateModal(false);
+            setNewMeeting({ title: '', description: '', type: 'group', duration: '60' });
+            loadMeetings();
+        } catch (e) {
+            console.error('Failed to create meeting:', e);
+            Alert.alert('Error', 'Failed to create meeting.');
+        }
     };
 
-    const renderMeetingCard = (meeting: typeof expertData.expertMeetings[0]) => {
+    const renderMeetingCard = (meeting: any) => {
         const typeConfig = getMeetingTypeConfig(meeting.type);
         const isUpcoming = meeting.status === 'upcoming';
 

@@ -6,13 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton, Chip } from '../../components';
 import { COLORS } from '../../utils/constants';
-import {
-    saveLearnHubItem,
-    removeLearnHubItem,
-    getSavedLearnHub,
-    SavedLearnHubItem,
-} from '../../services/storage';
-import learnhubData from '../../data/learnhub.json';
+import { learnhubAPI } from '../../services/api';
 import cropsData from '../../data/crops.json';
 
 type ParamList = {
@@ -30,51 +24,45 @@ const CropDetails: React.FC = () => {
     const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [isSaved, setIsSaved] = useState(false);
     const [isDownloaded, setIsDownloaded] = useState(false);
+    const [guide, setGuide] = useState<any>(null);
 
-    const guide = learnhubData.guides.find(g => g.cropId === cropId);
     const crop = cropsData.crops.find(c => c.id === cropId);
 
     useEffect(() => {
-        checkSavedStatus();
+        loadGuide();
     }, []);
 
-    const checkSavedStatus = async () => {
-        const saved = await getSavedLearnHub();
-        const item = saved.find(s => s.id === cropId);
-        if (item) {
-            setIsSaved(true);
-            setIsDownloaded(item.isDownloaded);
+    const loadGuide = async () => {
+        try {
+            const res = await learnhubAPI.getGuideById(cropId);
+            setGuide(res.data.data);
+        } catch (e) {
+            console.error('Failed to load guide:', e);
         }
+        // Check saved status
+        try {
+            const savedRes = await learnhubAPI.getSavedGuides();
+            const saved = Array.isArray(savedRes.data.data) ? savedRes.data.data : [];
+            setIsSaved(saved.some((s: any) => (s._id || s.guideId) === cropId));
+        } catch {}
     };
 
     const handleSave = async () => {
-        if (isSaved) {
-            await removeLearnHubItem(cropId);
-            setIsSaved(false);
-            setIsDownloaded(false);
-        } else {
-            const item: SavedLearnHubItem = {
-                id: cropId,
-                title: guide?.title || crop?.name || '',
-                titleSi: guide?.titleSi || crop?.nameSi || '',
-                category: crop?.category || '',
-                savedAt: new Date().toISOString(),
-                isDownloaded: false,
-            };
-            await saveLearnHubItem(item);
-            setIsSaved(true);
+        try {
+            if (isSaved) {
+                await learnhubAPI.unsaveGuide(cropId);
+                setIsSaved(false);
+            } else {
+                await learnhubAPI.saveGuide(cropId);
+                setIsSaved(true);
+            }
+        } catch (e) {
+            console.error('Save toggle error:', e);
         }
     };
 
     const handleDownload = async () => {
-        // Simulate download
         setIsDownloaded(!isDownloaded);
-        const saved = await getSavedLearnHub();
-        const item = saved.find(s => s.id === cropId);
-        if (item) {
-            item.isDownloaded = !isDownloaded;
-            await saveLearnHubItem(item);
-        }
     };
 
     const tabs: { id: Tab; labelKey: string }[] = [

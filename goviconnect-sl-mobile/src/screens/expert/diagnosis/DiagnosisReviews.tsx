@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip, PrimaryButton } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { getRelativeTime } from '../../../utils/validators';
-import expertData from '../../../data/expertDashboard.json';
+import { expertDashboardAPI } from '../../../services/api';
 
 const STATUS_FILTERS = ['All', 'Pending', 'Verified', 'Corrected'];
 
@@ -16,11 +16,25 @@ const DiagnosisReviews: React.FC = () => {
     const { t, i18n } = useTranslation();
 
     const [activeFilter, setActiveFilter] = useState('All');
-    const [reviews, setReviews] = useState(expertData.diagnosisReviews);
-    const [selectedReview, setSelectedReview] = useState<typeof expertData.diagnosisReviews[0] | null>(null);
+    const [reviews, setReviews] = useState<any[]>([]);
+    const [selectedReview, setSelectedReview] = useState<any>(null);
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [reviewNotes, setReviewNotes] = useState('');
     const [reviewAction, setReviewAction] = useState<'verify' | 'correct'>('verify');
+
+    React.useEffect(() => {
+        loadReviews();
+    }, []);
+
+    const loadReviews = async () => {
+        try {
+            const res = await expertDashboardAPI.getDiagnosisReviews();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setReviews(data);
+        } catch (e) {
+            console.error('Failed to load reviews:', e);
+        }
+    };
 
     const filteredReviews = reviews.filter(review => {
         if (activeFilter === 'Pending') return review.status === 'pending_review';

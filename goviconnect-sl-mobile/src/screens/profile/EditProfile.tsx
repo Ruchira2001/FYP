@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton, InputField, Chip } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { useApp } from '../../context';
-import { saveUser, saveMyCrops, User } from '../../services/storage';
+import { userAPI } from '../../services/api';
 import cropsData from '../../data/crops.json';
 
 const DISTRICTS = [
@@ -54,16 +54,12 @@ const EditProfile: React.FC = () => {
 
         setIsLoading(true);
         try {
-            const updatedUser: User = {
-                ...user!,
+            await userAPI.updateFarmerProfile({
                 name: name.trim(),
                 phone: phone.trim(),
                 district: district,
                 crops: selectedCrops,
-            };
-
-            await saveUser(updatedUser);
-            await saveMyCrops(selectedCrops);
+            });
 
             Alert.alert(t('common.success'), 'Profile updated successfully', [
                 { text: 'OK', onPress: () => navigation.goBack() }

@@ -12,7 +12,7 @@ import { validateEmail } from '../../utils/validators';
 const Login: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t } = useTranslation();
-    const { login, isLoading } = useApp();
+    const { login, isLoading, loginError } = useApp();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -74,6 +74,13 @@ const Login: React.FC = () => {
                             {t('auth.login_subtitle')}
                         </Text>
                     </View>
+
+                    {/* Login Error */}
+                    {loginError && (
+                        <View style={{ backgroundColor: '#fee2e2', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                            <Text style={{ color: '#dc2626', fontSize: 14, textAlign: 'center' }}>{loginError}</Text>
+                        </View>
+                    )}
 
                     {/* Form */}
                     <View style={styles.form}>

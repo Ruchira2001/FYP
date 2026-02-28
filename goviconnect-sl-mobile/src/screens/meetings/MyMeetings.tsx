@@ -6,9 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip } from '../../components';
 import { COLORS, MEETING_STATUSES } from '../../utils/constants';
-import { getMyMeetings, Meeting } from '../../services/storage';
+import { Meeting } from '../../services/storage';
+import { meetingAPI } from '../../services/api';
 import { formatDateTime } from '../../utils/validators';
-import meetingsData from '../../data/meetings.json';
 
 type FilterType = 'all' | 'pending' | 'confirmed' | 'completed';
 
@@ -24,14 +24,27 @@ const MyMeetings: React.FC = () => {
     }, []);
 
     const loadMeetings = async () => {
-        const storedMeetings = await getMyMeetings();
-        // Combine with mock data
-        const mockMeetings: Meeting[] = meetingsData.myMeetings.map(m => ({
-            ...m,
-            status: m.status as Meeting['status'],
-            source: m.source as Meeting['source'],
-        }));
-        setMeetings([...mockMeetings, ...storedMeetings]);
+        try {
+            const res = await meetingAPI.getMyMeetings();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setMeetings(data.map((m: any) => ({
+                id: m._id || m.id,
+                expertId: m.expert?._id || m.expertId || '',
+                expertName: m.expert?.name || m.expertName || '',
+                expertAvatar: m.expert?.avatar,
+                topic: m.topic || '',
+                topicSi: m.topicSi || m.topic || '',
+                dateTime: m.dateTime || m.createdAt,
+                duration: m.duration || 30,
+                status: m.status || 'pending',
+                notes: m.notes,
+                meetingLink: m.meetingLink,
+                reminderSet: m.reminderSet || false,
+                source: m.source || 'scheduled',
+            })));
+        } catch (e) {
+            console.error('Failed to load my meetings:', e);
+        }
     };
 
     const filteredMeetings = meetings.filter(m =>

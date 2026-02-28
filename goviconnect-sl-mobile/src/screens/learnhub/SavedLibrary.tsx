@@ -4,45 +4,45 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Header, CropCard, EmptyState } from '../../components';
-import { getSavedLearnHub, SavedLearnHubItem } from '../../services/storage';
-import cropsData from '../../data/crops.json';
+import { learnhubAPI } from '../../services/api';
 import { COLORS } from '../../utils/constants';
 
 const SavedLibrary: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
-    const [savedItems, setSavedItems] = useState<SavedLearnHubItem[]>([]);
+    const [savedItems, setSavedItems] = useState<any[]>([]);
 
     useEffect(() => {
         loadSavedItems();
     }, []);
 
     const loadSavedItems = async () => {
-        const items = await getSavedLearnHub();
-        setSavedItems(items);
+        try {
+            const res = await learnhubAPI.getSavedGuides();
+            const items = Array.isArray(res.data.data) ? res.data.data : [];
+            setSavedItems(items);
+        } catch (e) {
+            console.error('Failed to load saved items:', e);
+        }
     };
 
-    const renderItem = ({ item }: { item: SavedLearnHubItem }) => {
-        const crop = cropsData.crops.find(c => c.id === item.id);
-
-        return (
-            <View style={styles.itemContainer}>
-                <CropCard
-                    id={item.id}
-                    name={item.title}
-                    nameSi={item.titleSi}
-                    category={item.category}
-                    emoji={crop?.icon || '🌱'}
-                    color={crop?.color}
-                    onPress={() => navigation.navigate('CropDetails', { cropId: item.id })}
-                    isSaved={true}
-                    isDownloaded={item.isDownloaded}
-                    locale={i18n.language}
-                    size="lg"
-                />
-            </View>
-        );
-    };
+    const renderItem = ({ item }: { item: any }) => (
+        <View style={styles.itemContainer}>
+            <CropCard
+                id={item._id || item.id}
+                name={item.title || item.name || ''}
+                nameSi={item.titleSi || item.nameSi || ''}
+                category={item.category || ''}
+                emoji={item.icon || '🌱'}
+                color={item.color}
+                onPress={() => navigation.navigate('CropDetails', { cropId: item._id || item.id })}
+                isSaved={true}
+                isDownloaded={false}
+                locale={i18n.language}
+                size="lg"
+            />
+        </View>
+    );
 
     return (
         <View style={styles.container}>

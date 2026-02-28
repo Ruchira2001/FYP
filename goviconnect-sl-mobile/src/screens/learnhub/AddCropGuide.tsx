@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton, InputField, EmptyState, Chip } from '../../components';
 import { COLORS } from '../../utils/constants';
+import { learnhubAPI } from '../../services/api';
 
 // Type definitions for the form
 type GuideForm = {
@@ -25,49 +26,42 @@ type GuideForm = {
     submittedAt: string;
 };
 
-// Mock initial history data
-const INITIAL_HISTORY: GuideForm[] = [
-    {
-        id: '1',
-        name: 'Organic Tomato',
-        scientificName: 'Solanum lycopersicum',
-        category: 'Vegetable',
-        description: 'Guide for growing organic tomatoes in home gardens.',
-        climate: 'Warm',
-        soil: 'Loamy',
-        season: 'Yala',
-        diseases: 'Blight',
-        treatments: 'Neem oil',
-        practices: 'Staking',
-        videoLink: '',
-        status: 'approved',
-        submittedAt: '2023-10-15',
-    },
-    {
-        id: '2',
-        name: 'Red Chili',
-        scientificName: 'Capsicum annuum',
-        category: 'Spice',
-        description: 'High yield chili cultivation guide.',
-        climate: 'Hot',
-        soil: 'Sandy Loam',
-        season: 'Maha',
-        diseases: 'Leaf curl',
-        treatments: 'Remove infected leaves',
-        practices: 'Mulching',
-        videoLink: '',
-        status: 'pending',
-        submittedAt: '2023-11-02',
-    }
-];
-
 const AddCropGuide: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t } = useTranslation();
 
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
-    const [history, setHistory] = useState<GuideForm[]>(INITIAL_HISTORY);
+    const [history, setHistory] = useState<GuideForm[]>([]);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        loadGuideHistory();
+    }, []);
+
+    const loadGuideHistory = async () => {
+        try {
+            const res = await learnhubAPI.getUserGuides();
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setHistory(data.map((g: any) => ({
+                id: g._id || g.id,
+                name: g.name || '',
+                scientificName: g.scientificName || '',
+                category: g.category || '',
+                description: g.description || '',
+                climate: g.climate || '',
+                soil: g.soil || '',
+                season: g.season || '',
+                diseases: g.diseases || '',
+                treatments: g.treatments || '',
+                practices: g.practices || '',
+                videoLink: g.videoLink || '',
+                status: g.status || 'pending',
+                submittedAt: g.submittedAt || g.createdAt || '',
+            })));
+        } catch (e) {
+            console.error('Failed to load guide history:', e);
+        }
+    };
 
     // Form State
     const [formData, setFormData] = useState<GuideForm>({
@@ -138,29 +132,24 @@ const AddCropGuide: React.FC = () => {
         }
 
         setLoading(true);
-
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
-
+        try {
             if (formData.id) {
                 // Update existing
-                setHistory(prev => prev.map(item => item.id === formData.id ? { ...formData } : item));
+                await learnhubAPI.updateUserGuide(formData.id, formData);
                 Alert.alert(t('common.success'), 'Guide updated successfully.');
             } else {
                 // Add new
-                const newGuide: GuideForm = {
-                    ...formData,
-                    id: Date.now().toString(),
-                    submittedAt: new Date().toISOString().split('T')[0],
-                    status: 'pending'
-                };
-                setHistory([newGuide, ...history]);
+                await learnhubAPI.submitUserGuide(formData);
                 Alert.alert(t('common.success'), 'New guide submitted successfully.');
             }
-
+            await loadGuideHistory();
             setViewMode('list');
-        }, 1500);
+        } catch (error) {
+            console.error('Failed to submit guide:', error);
+            Alert.alert(t('common.error'), 'Failed to submit guide.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const renderHistoryItem = ({ item }: { item: GuideForm }) => (
