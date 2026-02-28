@@ -34,6 +34,6 @@ router.delete('/products/:id', deleteProduct);
 // Orders
 router.get('/orders', getOrders);
 router.post('/orders', createOrder);
-router.put('/orders/:id/status', updateOrderStatus);
+router.put('/orders/:id', updateOrderStatus);
 
 module.exports = router;

@@ -18,8 +18,8 @@ router.get('/guides/:id', protect, getGuideById);
 
 // Saved guides
 router.get('/saved', protect, authorize('farmer'), getSavedGuides);
-router.post('/saved/:id', protect, authorize('farmer'), saveGuide);
-router.delete('/saved/:id', protect, authorize('farmer'), unsaveGuide);
+router.post('/guides/:id/save', protect, authorize('farmer'), saveGuide);
+router.delete('/guides/:id/save', protect, authorize('farmer'), unsaveGuide);
 
 // User-submitted guides
 router.get('/user-guides', protect, authorize('farmer'), getUserGuides);

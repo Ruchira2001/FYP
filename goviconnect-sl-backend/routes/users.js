@@ -12,8 +12,16 @@ const {
 } = require('../controllers/userController');
 
 // Farmer profile
-router.put('/me', protect, authorize('farmer'), updateFarmerProfile);
-router.put('/me/avatar', protect, authorize('farmer'), uploadAvatar, updateFarmerAvatar);
+router.put('/farmer/profile', protect, authorize('farmer'), updateFarmerProfile);
+router.put('/farmer/avatar', protect, authorize('farmer'), uploadAvatar, updateFarmerAvatar);
+
+// Expert profile
+router.put('/expert/profile', protect, authorize('expert'), updateExpertProfile);
+router.put('/expert/avatar', protect, authorize('expert'), uploadAvatar, updateExpertAvatar);
+
+// Shop profile
+router.put('/shop/profile', protect, authorize('shop'), updateShopProfile);
+router.put('/shop/avatar', protect, authorize('shop'), uploadAvatar, updateShopAvatar);
 
 // Push token (all roles)
 router.put('/push-token', protect, updatePushToken);

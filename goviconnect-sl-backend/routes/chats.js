@@ -15,6 +15,6 @@ router.post('/', protect, createChat);
 router.get('/:chatId/messages', protect, getMessages);
 router.post('/:chatId/messages', protect, sendMessage);
 router.put('/:chatId/read', protect, markChatRead);
-router.post('/:chatId/image', protect, uploadChatImage, sendImageMessage);
+router.post('/:chatId/messages/image', protect, uploadChatImage, sendImageMessage);
 
 module.exports = router;

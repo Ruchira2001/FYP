@@ -17,9 +17,12 @@ router.get('/sessions/:id', protect, getSessionById);
 router.post('/sessions/:id/register', protect, authorize('farmer'), registerForSession);
 
 // Personal meetings
-router.get('/my', protect, getMyMeetings);
-router.post('/', protect, authorize('farmer'), bookMeeting);
+router.get('/my-meetings', protect, getMyMeetings);
+router.post('/book', protect, authorize('farmer'), bookMeeting);
 router.put('/:id/reminder', protect, toggleReminder);
-router.get('/:id/join', protect, joinMeeting);
+router.post('/:id/join', protect, joinMeeting);
+
+// Expert availability
+router.get('/availability/:expertId', protect, getExpertAvailability);
 
 module.exports = router;
