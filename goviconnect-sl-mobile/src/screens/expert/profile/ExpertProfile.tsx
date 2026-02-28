@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -11,10 +11,7 @@ import { useExpert } from '../../../context/ExpertContext';
 const ExpertProfile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
-    const { expert, logout, settings, updateSettings, changeLanguage } = useExpert();
-
-    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-    const [availableForChat, setAvailableForChat] = useState(true);
+    const { expert, logout } = useExpert();
 
     const handleLogout = () => {
         Alert.alert(
@@ -31,10 +28,7 @@ const ExpertProfile: React.FC = () => {
         );
     };
 
-    const handleLanguageToggle = async () => {
-        const newLang = i18n.language === 'en' ? 'si' : 'en';
-        await changeLanguage(newLang);
-    };
+
 
     const handleEditProfile = () => {
         // Navigate to edit profile or show alert for now
@@ -51,11 +45,11 @@ const ExpertProfile: React.FC = () => {
             onPress: () => navigation.navigate('ExpertDiagnosisReviews'),
         },
         {
-            id: 'chats',
-            icon: 'chatbubbles',
-            label: 'Chat History',
+            id: 'knowledge',
+            icon: 'book',
+            label: 'Knowledge Base',
             color: COLORS.primary[500],
-            onPress: () => navigation.navigate('ExpertChatsList'),
+            onPress: () => navigation.navigate('ExpertKnowledgeBase'),
         },
         {
             id: 'meetings',
@@ -73,39 +67,7 @@ const ExpertProfile: React.FC = () => {
         },
     ];
 
-    // Expert-specific menu items (with icon backgrounds)
-    const expertMenuItems = [
-        {
-            id: 'qualifications',
-            icon: 'shield-outline',
-            label: 'Qualifications',
-            color: COLORS.secondary[600],
-            subtitle: expert?.qualifications?.length ? `${expert.qualifications.length} listed` : undefined,
-            onPress: () => { },
-        },
-        {
-            id: 'availability',
-            icon: 'time-outline',
-            label: 'Availability Schedule',
-            color: COLORS.info,
-            onPress: () => { },
-        },
-        {
-            id: 'knowledge',
-            icon: 'book-outline',
-            label: 'Knowledge Base',
-            color: COLORS.primary[600],
-            onPress: () => navigation.navigate('ExpertKnowledgeBase'),
-        },
-        {
-            id: 'language',
-            icon: 'language-outline',
-            label: 'Language',
-            color: COLORS.primary[600],
-            subtitle: i18n.language === 'en' ? 'English' : 'සිංහල',
-            onPress: handleLanguageToggle,
-        },
-    ];
+
 
     // Bottom menu items - matching farmer side exactly (Settings, Help & FAQ, Logout)
     const bottomMenuItems = [
@@ -242,39 +204,6 @@ const ExpertProfile: React.FC = () => {
                     </View>
                 </View>
 
-                {/* Quick Toggles */}
-                <View style={styles.togglesCard}>
-                    <View style={styles.toggleRow}>
-                        <View style={styles.toggleInfo}>
-                            <View style={[styles.toggleIconWrap, { backgroundColor: COLORS.primary[50] }]}>
-                                <Ionicons name="notifications-outline" size={18} color={COLORS.primary[600]} />
-                            </View>
-                            <Text style={styles.toggleLabel}>Push Notifications</Text>
-                        </View>
-                        <Switch
-                            value={notificationsEnabled}
-                            onValueChange={setNotificationsEnabled}
-                            trackColor={{ false: COLORS.neutral[200], true: COLORS.primary[200] }}
-                            thumbColor={notificationsEnabled ? COLORS.primary[500] : COLORS.neutral[400]}
-                        />
-                    </View>
-                    <View style={styles.toggleDivider} />
-                    <View style={styles.toggleRow}>
-                        <View style={styles.toggleInfo}>
-                            <View style={[styles.toggleIconWrap, { backgroundColor: '#dcfce7' }]}>
-                                <Ionicons name="chatbubble-outline" size={18} color={COLORS.success} />
-                            </View>
-                            <Text style={styles.toggleLabel}>Available for Chat</Text>
-                        </View>
-                        <Switch
-                            value={availableForChat}
-                            onValueChange={setAvailableForChat}
-                            trackColor={{ false: COLORS.neutral[200], true: COLORS.primary[200] }}
-                            thumbColor={availableForChat ? COLORS.primary[500] : COLORS.neutral[400]}
-                        />
-                    </View>
-                </View>
-
                 {/* Quick Shortcuts */}
                 <View style={styles.shortcutsSection}>
                     <Text style={styles.sectionTitle}>Quick Access</Text>
@@ -296,44 +225,6 @@ const ExpertProfile: React.FC = () => {
                                 <Text style={styles.shortcutLabel} numberOfLines={2}>
                                     {item.label}
                                 </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-
-                {/* Expert-specific Menu Items */}
-                <View style={styles.menuSection}>
-                    <View style={styles.menuContainer}>
-                        {expertMenuItems.map((item, index) => (
-                            <TouchableOpacity
-                                key={item.id}
-                                onPress={item.onPress}
-                                style={[
-                                    styles.menuItem,
-                                    index < expertMenuItems.length - 1 && styles.menuItemBorder
-                                ]}
-                            >
-                                <View style={[styles.menuIcon, { backgroundColor: (item.color || COLORS.neutral[600]) + '15' }]}>
-                                    <Ionicons
-                                        name={item.icon as any}
-                                        size={20}
-                                        color={item.color || COLORS.neutral[600]}
-                                    />
-                                </View>
-                                <View style={styles.menuItemContent}>
-                                    <Text
-                                        style={[
-                                            styles.menuLabel,
-                                            { color: item.color || COLORS.neutral[800] }
-                                        ]}
-                                    >
-                                        {item.label}
-                                    </Text>
-                                    {item.subtitle && (
-                                        <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-                                    )}
-                                </View>
-                                <Ionicons name="chevron-forward" size={20} color={COLORS.neutral[400]} />
                             </TouchableOpacity>
                         ))}
                     </View>
