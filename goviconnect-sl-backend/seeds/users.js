@@ -1,4 +1,3 @@
-const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Expert = require('../models/Expert');
 const Shop = require('../models/Shop');
@@ -12,14 +11,12 @@ const seedUsers = async () => {
     await Shop.deleteMany({});
     await Meeting.deleteMany({});
 
-    const salt = await bcrypt.genSalt(10);
-
     // --------- Demo Farmer ---------
     const farmer = await User.create({
       name: 'Nimal Perera',
       email: 'farmer@goviconnect.lk',
       phone: '0771234567',
-      password: await bcrypt.hash('farmer123', salt),
+      password: 'farmer123',
       district: 'Kandy',
       crops: ['tea', 'tomato', 'chili'],
       settings: {
@@ -33,7 +30,7 @@ const seedUsers = async () => {
       name: 'Kumari Silva',
       email: 'kumari@goviconnect.lk',
       phone: '0779876543',
-      password: await bcrypt.hash('farmer123', salt),
+      password: 'farmer123',
       district: 'Matara',
       crops: ['paddy', 'coconut'],
       settings: {
@@ -47,7 +44,7 @@ const seedUsers = async () => {
       name: 'Kamal Fernando',
       email: 'kamal@goviconnect.lk',
       phone: '0712345678',
-      password: await bcrypt.hash('farmer123', salt),
+      password: 'farmer123',
       district: 'Galle',
       crops: ['cinnamon', 'pepper', 'tea'],
       settings: {
@@ -64,7 +61,7 @@ const seedUsers = async () => {
       name: 'Dr. Kamal Perera',
       email: 'expert@goviconnect.lk',
       phone: '0771111111',
-      password: await bcrypt.hash('expert123', salt),
+      password: 'expert123',
       district: 'Colombo',
       specialty: 'Crop Disease Specialist',
       specialtySi: 'බෝග රෝග විශේෂඥ',
@@ -91,7 +88,7 @@ const seedUsers = async () => {
       name: 'Prof. Anura Bandara',
       email: 'anura@goviconnect.lk',
       phone: '0772222222',
-      password: await bcrypt.hash('expert123', salt),
+      password: 'expert123',
       district: 'Kandy',
       specialty: 'Tea & Spice Cultivation Expert',
       specialtySi: 'තේ සහ කුළුබඩු වගා විශේෂඥ',
@@ -116,7 +113,7 @@ const seedUsers = async () => {
       name: 'Dr. Samanthi Jayawardena',
       email: 'samanthi@goviconnect.lk',
       phone: '0773333333',
-      password: await bcrypt.hash('expert123', salt),
+      password: 'expert123',
       district: 'Matara',
       specialty: 'Organic Farming Specialist',
       specialtySi: 'කාබනික ගොවිතැන් විශේෂඥ',
@@ -144,7 +141,7 @@ const seedUsers = async () => {
       name: 'Govi Agri Supplies',
       email: 'shop@goviconnect.lk',
       phone: '0774444444',
-      password: await bcrypt.hash('shop123', salt),
+      password: 'shop123',
       district: 'Colombo',
       location: 'No. 45, Main Street, Colombo 07',
       type: 'Business',
@@ -169,7 +166,7 @@ const seedUsers = async () => {
         topicSi: 'ආරම්භකයින් සඳහා කාබනික ගොවිතැන් ක්‍රම',
         dateTime: nextWeek,
         duration: 90,
-        status: 'upcoming',
+        status: 'confirmed',
         meetingLink: 'https://meet.google.com/abc-defg-hij',
         maxAttendees: 50,
         registeredUsers: [farmer._id],
@@ -181,7 +178,7 @@ const seedUsers = async () => {
         topicSi: 'තේ වගාව: උසස් කප්පාදු ක්‍රම',
         dateTime: new Date(nextWeek.getTime() + 3 * 24 * 60 * 60 * 1000),
         duration: 60,
-        status: 'upcoming',
+        status: 'confirmed',
         meetingLink: 'https://meet.google.com/klm-nopq-rst',
         maxAttendees: 30,
         registeredUsers: [],
@@ -194,7 +191,7 @@ const seedUsers = async () => {
         topicSi: 'තක්කාලි රෝග උපදේශනය',
         dateTime: new Date(nextWeek.getTime() + 1 * 24 * 60 * 60 * 1000),
         duration: 30,
-        status: 'upcoming',
+        status: 'confirmed',
         meetingLink: 'https://meet.google.com/uvw-xyz-123',
       },
       {
@@ -204,7 +201,7 @@ const seedUsers = async () => {
         topicSi: 'එළවළු වත්තවල පළිබෝධ කළමනාකරණය',
         dateTime: nextMonth,
         duration: 120,
-        status: 'upcoming',
+        status: 'pending',
         meetingLink: 'https://meet.google.com/456-789-abc',
         maxAttendees: 100,
         registeredUsers: [farmer._id, farmer2._id],
