@@ -60,7 +60,7 @@ const LearnHub: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Header title={t('learnhub.title')} />
+            <Header title={t('learnhub.title')} showBack onBackPress={() => navigation.goBack()} />
 
             {/* Search Bar */}
             <View style={styles.searchContainer}>

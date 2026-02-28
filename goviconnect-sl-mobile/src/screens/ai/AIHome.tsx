@@ -12,7 +12,7 @@ const AIHome: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Header title={t('ai.title')} />
+            <Header title={t('ai.title')} showBack onBackPress={() => navigation.goBack()} />
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* AI Crop Doctor */}

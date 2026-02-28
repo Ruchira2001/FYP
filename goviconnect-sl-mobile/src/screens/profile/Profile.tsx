@@ -98,7 +98,7 @@ const Profile: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Header title={t('profile.title')} />
+            <Header title={t('profile.title')} showBack onBackPress={() => navigation.goBack()} />
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Profile Card */}

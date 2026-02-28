@@ -61,7 +61,7 @@ const Meetings: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Header title={t('meetings.title')} />
+            <Header title={t('meetings.title')} showBack onBackPress={() => navigation.goBack()} />
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* My Meetings Quick Access */}
