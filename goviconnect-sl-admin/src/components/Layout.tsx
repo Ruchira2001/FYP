@@ -46,7 +46,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-2">
+        <nav className="flex-1 overflow-y-auto py-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {NAV.map((item) => (
             <NavLink
               key={item.path}
