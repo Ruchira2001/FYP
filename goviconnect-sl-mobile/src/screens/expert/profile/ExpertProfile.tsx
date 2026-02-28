@@ -36,123 +36,127 @@ const ExpertProfile: React.FC = () => {
         await changeLanguage(newLang);
     };
 
+    const handleEditProfile = () => {
+        // Navigate to edit profile or show alert for now
+        Alert.alert('Edit Profile', 'Edit profile functionality coming soon.');
+    };
+
+    // Quick shortcuts - expert-specific
+    const shortcuts = [
+        {
+            id: 'diagnosis',
+            icon: 'medical',
+            label: 'Diagnosis Reviews',
+            color: COLORS.error,
+            onPress: () => navigation.navigate('ExpertDiagnosisReviews'),
+        },
+        {
+            id: 'chats',
+            icon: 'chatbubbles',
+            label: 'Chat History',
+            color: COLORS.primary[500],
+            onPress: () => navigation.navigate('ExpertChatsList'),
+        },
+        {
+            id: 'meetings',
+            icon: 'calendar',
+            label: 'Meeting History',
+            color: COLORS.info,
+            onPress: () => navigation.navigate('ExpertMeetingsTab'),
+        },
+        {
+            id: 'farmers',
+            icon: 'people',
+            label: 'Farmer Directory',
+            color: COLORS.secondary[500],
+            onPress: () => navigation.navigate('ExpertFarmerDirectory'),
+        },
+    ];
+
     const menuItems = [
         {
-            section: 'Account',
-            items: [
-                {
-                    icon: 'person-outline' as const,
-                    label: 'Edit Profile',
-                    color: COLORS.primary[600],
-                    onPress: () => { },
-                },
-                {
-                    icon: 'shield-outline' as const,
-                    label: 'Qualifications',
-                    color: COLORS.secondary[600],
-                    subtitle: expert?.qualifications?.length ? `${expert.qualifications.length} listed` : undefined,
-                    onPress: () => { },
-                },
-                {
-                    icon: 'time-outline' as const,
-                    label: 'Availability Schedule',
-                    color: COLORS.info,
-                    onPress: () => { },
-                },
-            ],
+            id: 'qualifications',
+            icon: 'shield-outline',
+            label: 'Qualifications',
+            subtitle: expert?.qualifications?.length ? `${expert.qualifications.length} listed` : undefined,
+            onPress: () => { },
         },
         {
-            section: 'Preferences',
-            items: [
-                {
-                    icon: 'language-outline' as const,
-                    label: 'Language',
-                    color: COLORS.primary[600],
-                    subtitle: i18n.language === 'en' ? 'English' : 'සිංහල',
-                    onPress: handleLanguageToggle,
-                },
-            ],
+            id: 'availability',
+            icon: 'time-outline',
+            label: 'Availability Schedule',
+            onPress: () => { },
         },
         {
-            section: 'History',
-            items: [
-                {
-                    icon: 'medical-outline' as const,
-                    label: 'Diagnosis History',
-                    color: COLORS.error,
-                    onPress: () => navigation.navigate('ExpertDiagnosisReviews'),
-                },
-                {
-                    icon: 'chatbubbles-outline' as const,
-                    label: 'Chat History',
-                    color: COLORS.primary[500],
-                    onPress: () => navigation.navigate('ExpertChatsList'),
-                },
-                {
-                    icon: 'calendar-outline' as const,
-                    label: 'Meeting History',
-                    color: COLORS.info,
-                    onPress: () => navigation.navigate('ExpertMeetingsTab'),
-                },
-            ],
+            id: 'knowledge',
+            icon: 'book-outline',
+            label: 'Knowledge Base',
+            onPress: () => navigation.navigate('ExpertKnowledgeBase'),
         },
         {
-            section: 'Support',
-            items: [
-                {
-                    icon: 'help-circle-outline' as const,
-                    label: 'Help Center',
-                    color: COLORS.neutral[600],
-                    onPress: () => { },
-                },
-                {
-                    icon: 'document-text-outline' as const,
-                    label: 'Terms & Conditions',
-                    color: COLORS.neutral[600],
-                    onPress: () => { },
-                },
-                {
-                    icon: 'information-circle-outline' as const,
-                    label: 'About GoviConnect',
-                    color: COLORS.neutral[600],
-                    onPress: () => { },
-                },
-            ],
+            id: 'language',
+            icon: 'language-outline',
+            label: 'Language',
+            subtitle: i18n.language === 'en' ? 'English' : 'සිංහල',
+            onPress: handleLanguageToggle,
+        },
+        {
+            id: 'help',
+            icon: 'help-circle-outline',
+            label: 'Help Center',
+            onPress: () => { },
+        },
+        {
+            id: 'logout',
+            icon: 'log-out-outline',
+            label: 'Logout',
+            color: COLORS.error,
+            onPress: handleLogout,
         },
     ];
 
     return (
         <View style={styles.container}>
-            <Header
-                showCursiveTitle
-                showLanguage
-                onLanguagePress={handleLanguageToggle}
-            />
+            <Header title="My Profile" showBack onBackPress={() => navigation.goBack()} />
 
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Profile Card */}
                 <View style={styles.profileCard}>
-                    <View style={styles.avatarSection}>
-                        <View style={styles.avatar}>
-                            <Text style={{ fontSize: 36 }}>👨‍⚕️</Text>
+                    <View style={styles.profileHeader}>
+                        <View style={styles.avatarContainer}>
+                            <Text style={styles.avatarText}>👨‍⚕️</Text>
+                            <View style={styles.verifiedBadge}>
+                                <Ionicons name="shield-checkmark" size={10} color="#ffffff" />
+                            </View>
                         </View>
-                        <View style={styles.expertVerifiedBadge}>
-                            <Ionicons name="shield-checkmark" size={12} color="#ffffff" />
+                        <View style={styles.userInfo}>
+                            <Text style={styles.userName}>
+                                {expert?.name || 'Dr. Kamal Perera'}
+                            </Text>
+                            <Text style={styles.userSpecialty}>
+                                {expert?.specialty || 'Plant Pathology'}
+                            </Text>
+                            <View style={styles.locationRow}>
+                                <Ionicons name="location" size={13} color={COLORS.neutral[400]} />
+                                <Text style={styles.locationText}>
+                                    {expert?.district || 'Kandy'}
+                                </Text>
+                            </View>
                         </View>
+                        <TouchableOpacity
+                            onPress={handleEditProfile}
+                            style={styles.editButton}
+                        >
+                            <Ionicons name="pencil" size={18} color={COLORS.neutral[600]} />
+                        </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.name}>{expert?.name || 'Dr. Kamal Perera'}</Text>
-                    <Text style={styles.specialty}>{expert?.specialty || 'Plant Pathology'}</Text>
-
-                    <View style={styles.locationRow}>
-                        <Ionicons name="location" size={14} color={COLORS.neutral[400]} />
-                        <Text style={styles.locationText}>{expert?.district || 'Kandy'}</Text>
-                    </View>
-
-                    {/* Rating */}
-                    <View style={styles.ratingRow}>
-                        <Ionicons name="star" size={18} color="#f59e0b" />
-                        <Text style={styles.ratingText}>{expert?.rating || 4.8}</Text>
+                    {/* Rating Row */}
+                    <View style={styles.ratingSection}>
+                        <View style={styles.ratingPill}>
+                            <Ionicons name="star" size={14} color="#f59e0b" />
+                            <Text style={styles.ratingValue}>{expert?.rating || 4.8}</Text>
+                        </View>
                         <Text style={styles.ratingSubtext}>
                             • {expert?.totalConsultations || 245} consultations
                         </Text>
@@ -175,18 +179,51 @@ const ExpertProfile: React.FC = () => {
                             <Text style={styles.statLabel}>Years</Text>
                         </View>
                     </View>
+
+                    {/* Specializations */}
+                    {(expert?.specializations || ['Vegetables', 'Fruits', 'Paddy']).length > 0 && (
+                        <View style={styles.specializationsSection}>
+                            <Text style={styles.sectionLabel}>SPECIALIZATIONS</Text>
+                            <View style={styles.chipsList}>
+                                {(expert?.specializations || ['Vegetables', 'Fruits', 'Paddy']).map((spec, idx) => (
+                                    <View key={idx} style={styles.specBadge}>
+                                        <Ionicons name="leaf" size={12} color={COLORS.primary[600]} />
+                                        <Text style={styles.specBadgeText}>{spec}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Qualifications */}
+                    {(expert?.qualifications || ['PhD Plant Pathology', 'M.Sc. Agriculture', 'B.Sc. Botany']).length > 0 && (
+                        <View style={styles.qualificationsSection}>
+                            <Text style={styles.sectionLabel}>QUALIFICATIONS</Text>
+                            <View style={styles.qualificationsList}>
+                                {(expert?.qualifications || ['PhD Plant Pathology', 'M.Sc. Agriculture', 'B.Sc. Botany']).map((qual, idx) => (
+                                    <View key={idx} style={styles.qualificationItem}>
+                                        <Ionicons name="school" size={14} color={COLORS.secondary[600]} />
+                                        <Text style={styles.qualificationText}>{qual}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    )}
                 </View>
 
-                {/* Specializations */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Specializations</Text>
-                    <View style={styles.specializationChips}>
-                        {(expert?.specializations || ['Vegetables', 'Fruits', 'Paddy']).map((spec, idx) => (
-                            <View key={idx} style={styles.specChip}>
-                                <Ionicons name="leaf" size={14} color={COLORS.primary[600]} />
-                                <Text style={styles.specChipText}>{spec}</Text>
-                            </View>
-                        ))}
+                {/* Availability Banner */}
+                <View style={styles.availabilityCard}>
+                    <View style={styles.availabilityContent}>
+                        <View style={styles.availabilityIconContainer}>
+                            <Ionicons name="pulse" size={24} color="#ffffff" />
+                        </View>
+                        <View style={styles.availabilityTextInfo}>
+                            <Text style={styles.availabilityTitle}>Expert Dashboard</Text>
+                            <Text style={styles.availabilitySubtitle}>
+                                Manage requests & consultations
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={24} color="#ffffff" />
                     </View>
                 </View>
 
@@ -194,7 +231,9 @@ const ExpertProfile: React.FC = () => {
                 <View style={styles.togglesCard}>
                     <View style={styles.toggleRow}>
                         <View style={styles.toggleInfo}>
-                            <Ionicons name="notifications-outline" size={20} color={COLORS.neutral[600]} />
+                            <View style={[styles.toggleIconWrap, { backgroundColor: COLORS.primary[50] }]}>
+                                <Ionicons name="notifications-outline" size={18} color={COLORS.primary[600]} />
+                            </View>
                             <Text style={styles.toggleLabel}>Push Notifications</Text>
                         </View>
                         <Switch
@@ -207,7 +246,9 @@ const ExpertProfile: React.FC = () => {
                     <View style={styles.toggleDivider} />
                     <View style={styles.toggleRow}>
                         <View style={styles.toggleInfo}>
-                            <Ionicons name="chatbubble-outline" size={20} color={COLORS.neutral[600]} />
+                            <View style={[styles.toggleIconWrap, { backgroundColor: '#dcfce7' }]}>
+                                <Ionicons name="chatbubble-outline" size={18} color={COLORS.success} />
+                            </View>
                             <Text style={styles.toggleLabel}>Available for Chat</Text>
                         </View>
                         <Switch
@@ -219,46 +260,68 @@ const ExpertProfile: React.FC = () => {
                     </View>
                 </View>
 
-                {/* Menu Sections */}
-                {menuItems.map((section) => (
-                    <View key={section.section} style={styles.menuSection}>
-                        <Text style={styles.menuSectionTitle}>{section.section}</Text>
-                        <View style={styles.menuCard}>
-                            {section.items.map((item, idx) => (
-                                <TouchableOpacity
-                                    key={item.label}
+                {/* Quick Shortcuts */}
+                <View style={styles.shortcutsSection}>
+                    <Text style={styles.sectionTitle}>Quick Access</Text>
+                    <View style={styles.shortcutsGrid}>
+                        {shortcuts.map((item) => (
+                            <TouchableOpacity
+                                key={item.id}
+                                onPress={item.onPress}
+                                style={styles.shortcutCard}
+                            >
+                                <View
                                     style={[
-                                        styles.menuItem,
-                                        idx < section.items.length - 1 && styles.menuItemBorder,
+                                        styles.shortcutIconContainer,
+                                        { backgroundColor: item.color + '20' }
                                     ]}
-                                    onPress={item.onPress}
-                                    activeOpacity={0.6}
                                 >
-                                    <View style={[styles.menuIcon, { backgroundColor: item.color + '15' }]}>
-                                        <Ionicons name={item.icon} size={20} color={item.color} />
-                                    </View>
-                                    <View style={styles.menuItemContent}>
-                                        <Text style={styles.menuItemLabel}>{item.label}</Text>
-                                        {item.subtitle && (
-                                            <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
-                                        )}
-                                    </View>
-                                    <Ionicons name="chevron-forward" size={18} color={COLORS.neutral[300]} />
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                                    <Ionicons name={item.icon as any} size={20} color={item.color} />
+                                </View>
+                                <Text style={styles.shortcutLabel} numberOfLines={2}>
+                                    {item.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
                     </View>
-                ))}
+                </View>
 
-                {/* Logout Button */}
-                <View style={styles.logoutSection}>
-                    <PrimaryButton
-                        title="Logout"
-                        variant="outline"
-                        icon="log-out-outline"
-                        onPress={handleLogout}
-                        fullWidth
-                    />
+                {/* Menu Items */}
+                <View style={styles.menuSection}>
+                    <View style={styles.menuContainer}>
+                        {menuItems.map((item, index) => (
+                            <TouchableOpacity
+                                key={item.id}
+                                onPress={item.onPress}
+                                style={[
+                                    styles.menuItem,
+                                    index < menuItems.length - 1 && styles.menuItemBorder
+                                ]}
+                            >
+                                <View style={[styles.menuIcon, { backgroundColor: (item.color || COLORS.neutral[600]) + '15' }]}>
+                                    <Ionicons
+                                        name={item.icon as any}
+                                        size={20}
+                                        color={item.color || COLORS.neutral[600]}
+                                    />
+                                </View>
+                                <View style={styles.menuItemContent}>
+                                    <Text
+                                        style={[
+                                            styles.menuLabel,
+                                            { color: item.color || COLORS.neutral[800] }
+                                        ]}
+                                    >
+                                        {item.label}
+                                    </Text>
+                                    {item.subtitle && (
+                                        <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+                                    )}
+                                </View>
+                                <Ionicons name="chevron-forward" size={20} color={COLORS.neutral[400]} />
+                            </TouchableOpacity>
+                        ))}
+                    </View>
                 </View>
 
                 {/* Version */}
@@ -275,53 +338,63 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.neutral[50],
     },
-    scrollView: {
+    content: {
         flex: 1,
     },
+    // ===== Profile Card =====
     profileCard: {
-        backgroundColor: '#ffffff',
         marginHorizontal: 16,
-        marginTop: 12,
-        borderRadius: 20,
-        padding: 24,
-        alignItems: 'center',
+        marginTop: 16,
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        padding: 20,
         borderWidth: 1,
         borderColor: COLORS.neutral[100],
-        ...SHADOW.md,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
-    avatarSection: {
-        position: 'relative',
-        marginBottom: 12,
+    profileHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
-    avatar: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: COLORS.primary[50],
+    avatarContainer: {
+        width: 64,
+        height: 64,
+        backgroundColor: COLORS.primary[100],
+        borderRadius: 32,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 3,
-        borderColor: COLORS.primary[200],
+        marginRight: 16,
+        position: 'relative',
     },
-    expertVerifiedBadge: {
+    avatarText: {
+        fontSize: 30,
+    },
+    verifiedBadge: {
         position: 'absolute',
-        bottom: 0,
+        bottom: -2,
         right: -2,
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
         backgroundColor: COLORS.primary[500],
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 2,
         borderColor: '#ffffff',
     },
-    name: {
-        fontSize: 22,
+    userInfo: {
+        flex: 1,
+    },
+    userName: {
+        fontSize: 20,
         fontWeight: 'bold',
         color: COLORS.neutral[800],
     },
-    specialty: {
+    userSpecialty: {
         fontSize: 14,
         color: COLORS.primary[600],
         fontWeight: '500',
@@ -337,32 +410,46 @@ const styles = StyleSheet.create({
         color: COLORS.neutral[400],
         marginLeft: 4,
     },
-    ratingRow: {
+    editButton: {
+        width: 40,
+        height: 40,
+        backgroundColor: COLORS.neutral[100],
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    // ===== Rating =====
+    ratingSection: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: 12,
+    },
+    ratingPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#fef3c7',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
         borderRadius: 50,
     },
-    ratingText: {
-        fontSize: 15,
+    ratingValue: {
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#92400e',
         marginLeft: 4,
     },
     ratingSubtext: {
         fontSize: 12,
-        color: '#92400e',
-        marginLeft: 4,
+        color: COLORS.neutral[500],
+        marginLeft: 8,
     },
+    // ===== Stats =====
     statsGrid: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        marginTop: 20,
+        marginTop: 16,
         paddingTop: 16,
         borderTopWidth: 1,
         borderTopColor: COLORS.neutral[100],
@@ -386,93 +473,200 @@ const styles = StyleSheet.create({
         height: 32,
         backgroundColor: COLORS.neutral[200],
     },
-    section: {
-        paddingHorizontal: 16,
-        paddingTop: 20,
+    // ===== Specializations =====
+    specializationsSection: {
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
     },
-    sectionTitle: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: COLORS.neutral[700],
-        marginBottom: 10,
+    sectionLabel: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        textTransform: 'uppercase',
+        marginBottom: 8,
+        letterSpacing: 0.5,
     },
-    specializationChips: {
+    chipsList: {
         flexDirection: 'row',
         flexWrap: 'wrap',
     },
-    specChip: {
+    specBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: COLORS.primary[50],
+        borderRadius: 9999,
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 50,
         marginRight: 8,
-        marginBottom: 4,
+        marginBottom: 8,
         borderWidth: 1,
         borderColor: COLORS.primary[200],
     },
-    specChipText: {
+    specBadgeText: {
         fontSize: 13,
         color: COLORS.primary[700],
         fontWeight: '500',
         marginLeft: 6,
     },
+    // ===== Qualifications =====
+    qualificationsSection: {
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+    },
+    qualificationsList: {},
+    qualificationItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    qualificationText: {
+        fontSize: 14,
+        color: COLORS.neutral[700],
+        marginLeft: 8,
+    },
+    // ===== Availability Banner =====
+    availabilityCard: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        backgroundColor: COLORS.primary[600],
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: COLORS.primary[600],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    availabilityContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    availabilityIconContainer: {
+        width: 48,
+        height: 48,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    availabilityTextInfo: {
+        flex: 1,
+    },
+    availabilityTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#ffffff',
+    },
+    availabilitySubtitle: {
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.9)',
+        marginTop: 2,
+    },
+    // ===== Quick Toggles =====
     togglesCard: {
         backgroundColor: '#ffffff',
         marginHorizontal: 16,
         marginTop: 16,
-        borderRadius: 16,
-        padding: 4,
-        borderWidth: 1,
-        borderColor: COLORS.neutral[100],
-        ...SHADOW.sm,
-    },
-    toggleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 14,
-    },
-    toggleInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    toggleLabel: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: COLORS.neutral[700],
-        marginLeft: 10,
-    },
-    toggleDivider: {
-        height: 1,
-        backgroundColor: COLORS.neutral[100],
-        marginHorizontal: 14,
-    },
-    menuSection: {
-        paddingHorizontal: 16,
-        paddingTop: 20,
-    },
-    menuSectionTitle: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: COLORS.neutral[400],
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-        marginBottom: 8,
-    },
-    menuCard: {
-        backgroundColor: '#ffffff',
         borderRadius: 16,
         borderWidth: 1,
         borderColor: COLORS.neutral[100],
         overflow: 'hidden',
         ...SHADOW.sm,
     },
+    toggleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+    },
+    toggleInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    toggleIconWrap: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    toggleLabel: {
+        fontSize: 15,
+        fontWeight: '500',
+        color: COLORS.neutral[700],
+    },
+    toggleDivider: {
+        height: 1,
+        backgroundColor: COLORS.neutral[100],
+        marginHorizontal: 16,
+    },
+    // ===== Shortcuts =====
+    shortcutsSection: {
+        paddingHorizontal: 16,
+        paddingTop: 20,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        marginBottom: 12,
+    },
+    shortcutsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    shortcutCard: {
+        width: '48%',
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
+    },
+    shortcutIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
+    shortcutLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: COLORS.neutral[700],
+    },
+    // ===== Menu =====
+    menuSection: {
+        paddingHorizontal: 16,
+        paddingTop: 4,
+        paddingBottom: 8,
+    },
+    menuContainer: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        overflow: 'hidden',
+    },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
     },
     menuItemBorder: {
         borderBottomWidth: 1,
@@ -489,20 +683,16 @@ const styles = StyleSheet.create({
     menuItemContent: {
         flex: 1,
     },
-    menuItemLabel: {
-        fontSize: 14,
+    menuLabel: {
+        fontSize: 15,
         fontWeight: '500',
-        color: COLORS.neutral[800],
     },
-    menuItemSubtitle: {
+    menuSubtitle: {
         fontSize: 12,
         color: COLORS.neutral[400],
         marginTop: 1,
     },
-    logoutSection: {
-        paddingHorizontal: 16,
-        paddingTop: 24,
-    },
+    // ===== Version =====
     versionText: {
         textAlign: 'center',
         fontSize: 12,
