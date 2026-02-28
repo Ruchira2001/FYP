@@ -100,8 +100,8 @@ const Home: React.FC = () => {
                 onLanguagePress={() => navigation.navigate('LanguageModal')}
                 onNotificationsPress={() => navigation.navigate('Notifications')}
                 onChatsPress={() => navigation.navigate('ChatsList')}
-                notificationCount={notificationCount}
-                chatUnreadCount={chatUnreadCount}
+                notificationCount={notificationCount || 3}
+                chatUnreadCount={chatUnreadCount || 2}
             />
 
             <ScrollView

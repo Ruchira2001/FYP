@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { COLORS } from '../utils/constants';
 
@@ -69,38 +70,14 @@ const ProfileStackNavigator = () => (
     </ProfileStack.Navigator>
 );
 
-// Tab Bar Icon Component
-interface TabIconProps {
-    route: string;
-    focused: boolean;
-    color: string;
-    size: number;
-}
-
-const TabIcon: React.FC<TabIconProps> = ({ route, focused, color, size }) => {
-    let iconName: keyof typeof Ionicons.glyphMap;
-
-    switch (route) {
-        case 'HomeTab':
-            iconName = focused ? 'home' : 'home-outline';
-            break;
-        case 'LearnHubTab':
-            iconName = focused ? 'book' : 'book-outline';
-            break;
-        case 'AITab':
-            iconName = focused ? 'sparkles' : 'sparkles-outline';
-            break;
-        case 'MeetingsTab':
-            iconName = focused ? 'calendar' : 'calendar-outline';
-            break;
-        case 'ProfileTab':
-            iconName = focused ? 'person' : 'person-outline';
-            break;
-        default:
-            iconName = 'ellipse';
-    }
-
-    return <Ionicons name={iconName} size={size} color={color} />;
+// Badge component for tab icons (matching expert side)
+const TabBadge: React.FC<{ count: number }> = ({ count }) => {
+    if (count <= 0) return null;
+    return (
+        <View style={styles.badge}>
+            <Text style={styles.badgeText}>{count > 9 ? '9+' : count}</Text>
+        </View>
+    );
 };
 
 // Main Tab Navigator
@@ -110,30 +87,43 @@ const TabNavigator: React.FC = () => {
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
-                tabBarIcon: ({ focused, color, size }) => (
-                    <TabIcon route={route.name} focused={focused} color={color} size={size} />
-                ),
+                headerShown: false,
                 tabBarActiveTintColor: COLORS.primary[600],
                 tabBarInactiveTintColor: COLORS.neutral[400],
-                tabBarStyle: {
-                    backgroundColor: '#ffffff',
-                    borderTopWidth: 1,
-                    borderTopColor: COLORS.neutral[100],
-                    paddingBottom: 8,
-                    paddingTop: 8,
-                    height: 65,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: -4 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 8,
-                    elevation: 10,
+                tabBarStyle: styles.tabBar,
+                tabBarLabelStyle: styles.tabBarLabel,
+                tabBarIcon: ({ focused, color, size }) => {
+                    let iconName: keyof typeof Ionicons.glyphMap = 'home';
+
+                    switch (route.name) {
+                        case 'HomeTab':
+                            iconName = focused ? 'home' : 'home-outline';
+                            break;
+                        case 'LearnHubTab':
+                            iconName = focused ? 'book' : 'book-outline';
+                            break;
+                        case 'AITab':
+                            iconName = focused ? 'sparkles' : 'sparkles-outline';
+                            break;
+                        case 'MeetingsTab':
+                            iconName = focused ? 'calendar' : 'calendar-outline';
+                            break;
+                        case 'ProfileTab':
+                            iconName = focused ? 'person' : 'person-outline';
+                            break;
+                        default:
+                            iconName = 'ellipse';
+                    }
+
+                    return (
+                        <View style={styles.tabIconContainer}>
+                            {focused && <View style={styles.activeIndicator} />}
+                            <Ionicons name={iconName} size={22} color={color} />
+                            {route.name === 'AITab' && <TabBadge count={3} />}
+                            {route.name === 'MeetingsTab' && <TabBadge count={1} />}
+                        </View>
+                    );
                 },
-                tabBarLabelStyle: {
-                    fontSize: 11,
-                    fontWeight: '500',
-                    marginTop: 2,
-                },
-                headerShown: false,
             })}
         >
             <Tab.Screen
@@ -165,4 +155,56 @@ const TabNavigator: React.FC = () => {
     );
 };
 
+const styles = StyleSheet.create({
+    tabBar: {
+        height: 60,
+        paddingBottom: 6,
+        paddingTop: 6,
+        backgroundColor: '#ffffff',
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+    },
+    tabBarLabel: {
+        fontSize: 11,
+        fontWeight: '500',
+    },
+    tabIconContainer: {
+        position: 'relative',
+        alignItems: 'center',
+    },
+    activeIndicator: {
+        position: 'absolute',
+        top: -10,
+        width: 20,
+        height: 3,
+        borderRadius: 2,
+        backgroundColor: COLORS.primary[600],
+    },
+    badge: {
+        position: 'absolute',
+        top: -4,
+        right: -10,
+        backgroundColor: COLORS.error,
+        minWidth: 16,
+        height: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 3,
+        borderWidth: 1.5,
+        borderColor: '#ffffff',
+    },
+    badgeText: {
+        color: '#ffffff',
+        fontSize: 9,
+        fontWeight: 'bold',
+    },
+});
+
 export default TabNavigator;
+
