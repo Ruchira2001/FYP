@@ -82,9 +82,11 @@ const Header: React.FC<HeaderProps> = ({
 
                     {showCursiveTitle ? (
                         <View style={styles.logoContainer}>
-                            <Ionicons name="leaf" size={24} color={COLORS.primary[600]} style={{ marginRight: 6 }} />
-                            <Text style={styles.cursiveTitle}>
-                                {t('common.app_name')}
+                            <View style={styles.logoIconBadge}>
+                                <Ionicons name="leaf" size={16} color="#ffffff" />
+                            </View>
+                            <Text style={styles.logoText}>
+                                Govi<Text style={styles.logoTextAccent}>Connect</Text>
                             </Text>
                         </View>
                     ) : (
@@ -195,10 +197,23 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    cursiveTitle: {
-        fontSize: 26,
+    logoIconBadge: {
+        width: 30,
+        height: 30,
+        borderRadius: 8,
+        backgroundColor: COLORS.primary[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 8,
+    },
+    logoText: {
+        fontSize: 22,
+        fontWeight: '800',
+        color: COLORS.neutral[800],
+        letterSpacing: -0.3,
+    },
+    logoTextAccent: {
         color: COLORS.primary[600],
-        fontFamily: 'IrishGrover_400Regular',
     },
     title: {
         fontSize: 18,
