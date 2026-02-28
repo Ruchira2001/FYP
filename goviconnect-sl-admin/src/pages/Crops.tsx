@@ -15,7 +15,7 @@ interface Crop {
   createdAt: string;
 }
 
-const EMPTY = { name: '', nameSi: '', category: '', icon: '', color: '' };
+const EMPTY = { cropId: '', name: '', nameSi: '', category: '', icon: '', color: '' };
 
 export default function Crops() {
   const [items, setItems] = useState<Crop[]>([]);
@@ -49,7 +49,7 @@ export default function Crops() {
 
   const openEdit = (item: Crop) => {
     setEditId(item._id);
-    setForm({ name: item.name, nameSi: item.nameSi || '', category: item.category || '', icon: item.icon || '', color: item.color || '' });
+    setForm({ cropId: item.cropId || '', name: item.name, nameSi: item.nameSi || '', category: item.category || '', icon: item.icon || '', color: item.color || '' });
     setModalOpen(true);
   };
 
@@ -107,10 +107,10 @@ export default function Crops() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editId ? 'Edit Crop' : 'Add Crop'}>
         <div className="space-y-3">
-          {(['name', 'nameSi', 'category', 'icon', 'color'] as const).map((field) => (
+          {(['cropId', 'name', 'nameSi', 'category', 'icon', 'color'] as const).map((field) => (
             <div key={field}>
               <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                {field === 'nameSi' ? 'Sinhala Name' : field}
+                {field === 'nameSi' ? 'Sinhala Name' : field === 'cropId' ? 'Crop ID' : field}
               </label>
               <input
                 type="text"

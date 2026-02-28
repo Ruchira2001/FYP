@@ -43,7 +43,7 @@ exports.login = async (req, res) => {
       success: true,
       data: {
         token,
-        admin: { id: admin._id, name: admin.name, email: admin.email, role: admin.role, avatar: admin.avatar },
+        admin: { _id: admin._id, name: admin.name, email: admin.email, role: admin.role, avatar: admin.avatar },
       },
     });
   } catch (err) {
@@ -300,8 +300,13 @@ exports.deleteShop = async (req, res) => {
 // --- Crops ---
 exports.getCrops = async (req, res) => {
   try {
-    const crops = await Crop.find().sort({ name: 1 });
-    res.json({ success: true, data: crops });
+    const { page = 1, limit = 20 } = req.query;
+    const crops = await Crop.find()
+      .sort({ name: 1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+    const total = await Crop.countDocuments();
+    res.json({ success: true, data: crops, total, pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -338,8 +343,13 @@ exports.deleteCrop = async (req, res) => {
 // --- Guides ---
 exports.getGuides = async (req, res) => {
   try {
-    const guides = await CropGuide.find().sort({ createdAt: -1 });
-    res.json({ success: true, data: guides });
+    const { page = 1, limit = 20 } = req.query;
+    const guides = await CropGuide.find()
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+    const total = await CropGuide.countDocuments();
+    res.json({ success: true, data: guides, total, pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -376,8 +386,13 @@ exports.deleteGuide = async (req, res) => {
 // --- Tips ---
 exports.getTips = async (req, res) => {
   try {
-    const tips = await Tip.find().sort({ createdAt: -1 });
-    res.json({ success: true, data: tips });
+    const { page = 1, limit = 20 } = req.query;
+    const tips = await Tip.find()
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+    const total = await Tip.countDocuments();
+    res.json({ success: true, data: tips, total, pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -554,8 +569,14 @@ exports.broadcastNotification = async (req, res) => {
 
 exports.getProducts = async (req, res) => {
   try {
-    const products = await Product.find().populate('shopId', 'name').sort({ createdAt: -1 });
-    res.json({ success: true, data: products });
+    const { page = 1, limit = 20 } = req.query;
+    const products = await Product.find()
+      .populate('shopId', 'name')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+    const total = await Product.countDocuments();
+    res.json({ success: true, data: products, total, pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -584,15 +605,18 @@ exports.getOrders = async (req, res) => {
 
 exports.getUserGuides = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, page = 1, limit = 20 } = req.query;
     const filter = {};
     if (status) filter.status = status;
 
     const guides = await UserCropGuide.find(filter)
       .populate('userId', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
 
-    res.json({ success: true, data: guides });
+    const total = await UserCropGuide.countDocuments(filter);
+    res.json({ success: true, data: guides, total, pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

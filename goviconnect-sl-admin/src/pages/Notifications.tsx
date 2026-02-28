@@ -70,7 +70,7 @@ export default function Notifications() {
     },
     { key: 'type', label: 'Type' },
     {
-      key: 'isRead',
+      key: 'read',
       label: 'Read',
       render: (n: NotifItem) => (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${n.read ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>

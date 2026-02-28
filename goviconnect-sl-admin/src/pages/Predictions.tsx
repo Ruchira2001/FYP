@@ -12,7 +12,7 @@ interface Prediction {
   season: string;
   priceLow: number;
   priceHigh: number;
-  expectedYield: number;
+  expectedYield: string;
   createdAt: string;
 }
 

@@ -97,5 +97,8 @@ userSchema.methods.getResetPasswordToken = function () {
   return resetToken;
 };
 
-module.exports = mongoose.model('User', userSchema);
+const UserModel = mongoose.model('User', userSchema);
+
+module.exports = UserModel;
+module.exports.SL_DISTRICTS = SL_DISTRICTS;
 module.exports.SL_DISTRICTS = SL_DISTRICTS;
