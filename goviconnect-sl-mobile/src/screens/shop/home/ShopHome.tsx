@@ -1,339 +1,365 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, ScrollView, StatusBar } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, Dimensions, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useShop } from '../../../context/ShopContext';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Header, ActionCard } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
-import cropsData from '../../../data/crops.json';
+import { useShop } from '../../../context/ShopContext';
 
-const CATEGORIES = ['All', 'Vegetables', 'Fruits', 'Spices', 'Bulk Deals', 'Organic'];
+const { width } = Dimensions.get('window');
 
 const ShopHome: React.FC = () => {
-    const navigation = useNavigation();
-    const { logout } = useShop();
-    const [selectedCategory, setSelectedCategory] = useState('All');
-    const [searchQuery, setSearchQuery] = useState('');
+    const navigation = useNavigation<NativeStackNavigationProp<any>>();
+    const { t, i18n } = useTranslation();
+    const { shop } = useShop();
 
-    // Generate mock listings from crops data
-    const listings = cropsData.crops.slice(0, 10).map((crop, index) => ({
-        id: `listing-${index}`,
-        crop,
-        price: Math.floor(Math.random() * 200) + 50,
-        quantity: Math.floor(Math.random() * 500) + 100, // Higher quantities for wholesale
-        farmer: ['Green Valley Farms', 'Hill Country Co-op', 'Lanka Spices Ltd', 'Organic Roots'][index % 4], // Business names
-        location: ['Kandy', 'Nuwara Eliya', 'Dambulla', 'Colombo'][index % 4],
-        rating: (4 + Math.random()).toFixed(1),
-        minOrder: Math.floor(Math.random() * 20) + 5, // Min order logic
-    }));
+    const [refreshing, setRefreshing] = useState(false);
 
-    const renderHeader = () => (
-        <View style={styles.header}>
-            <View style={styles.headerTop}>
-                <View>
-                    <Text style={styles.greeting}>Good Morning,</Text>
-                    <Text style={styles.username}>Colombo Shop</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <TouchableOpacity style={styles.notificationBtn}>
-                        <Ionicons name="notifications-outline" size={24} color={COLORS.neutral[800]} />
-                        <View style={styles.notificationBadge} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.notificationBtn, { marginLeft: 8 }]} onPress={logout}>
-                        <Ionicons name="log-out-outline" size={24} color={COLORS.error} />
-                    </TouchableOpacity>
-                </View>
-            </View>
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setRefreshing(false);
+    };
 
-            <View style={styles.searchContainer}>
-                <Ionicons name="search" size={20} color={COLORS.neutral[400]} style={styles.searchIcon} />
-                <TextInput
-                    placeholder="Search wholesale produce..."
-                    placeholderTextColor={COLORS.neutral[400]}
-                    style={styles.searchInput}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                />
-                <TouchableOpacity style={styles.filterBtn}>
-                    <Ionicons name="options-outline" size={20} color="#ffffff" />
-                </TouchableOpacity>
-            </View>
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good Morning';
+        if (hour < 17) return 'Good Afternoon';
+        return 'Good Evening';
+    };
+
+    const statCards = [
+        {
+            id: 'products',
+            label: 'Total Products',
+            value: '24',
+            icon: 'leaf' as const,
+            color: COLORS.primary[500],
+            bgColor: COLORS.primary[50],
+        },
+        {
+            id: 'available',
+            label: 'In Stock',
+            value: '18',
+            icon: 'checkmark-circle' as const,
+            color: COLORS.success,
+            bgColor: '#dcfce7',
+        },
+        {
+            id: 'low-stock',
+            label: 'Low Stock',
+            value: '4',
+            icon: 'warning' as const,
+            color: COLORS.warning,
+            bgColor: '#fef3c7',
+        },
+        {
+            id: 'out-of-stock',
+            label: 'Out of Stock',
+            value: '2',
+            icon: 'close-circle' as const,
+            color: COLORS.error,
+            bgColor: '#fee2e2',
+        },
+    ];
+
+    const quickActions = [
+        {
+            id: 'browse-products',
+            title: 'Browse Products',
+            icon: 'leaf' as const,
+            iconColor: COLORS.primary[600],
+            iconBgColor: COLORS.primary[50],
+            onPress: () => navigation.navigate('ProductsTab'),
+        },
+        {
+            id: 'add-product',
+            title: 'Add New Product',
+            icon: 'add-circle' as const,
+            iconColor: COLORS.success,
+            iconBgColor: '#dcfce7',
+            onPress: () => Alert.alert('Add Product', 'Add new product feature coming soon.'),
+        },
+        {
+            id: 'low-stock',
+            title: 'Low Stock Alerts',
+            icon: 'warning' as const,
+            iconColor: COLORS.warning,
+            iconBgColor: '#fef3c7',
+            onPress: () => navigation.navigate('ProductsTab'),
+        },
+        {
+            id: 'manage-stock',
+            title: 'Manage Stock',
+            icon: 'cube' as const,
+            iconColor: COLORS.info,
+            iconBgColor: '#dbeafe',
+            onPress: () => navigation.navigate('ProductsTab'),
+        },
+    ];
+
+    // Popular products
+    const popularProducts = [
+        { id: '1', name: 'Mancozeb 80% WP', category: 'Fungicide', emoji: '🧪', stock: 45, color: COLORS.primary[500] },
+        { id: '2', name: 'Chlorpyrifos 20 EC', category: 'Insecticide', emoji: '🐛', stock: 12, color: COLORS.warning },
+        { id: '3', name: 'Glyphosate 36 SL', category: 'Herbicide', emoji: '🌿', stock: 30, color: COLORS.success },
+        { id: '4', name: 'NPK 15-15-15', category: 'Fertilizer', emoji: '🪴', stock: 8, color: COLORS.error },
+    ];
+
+    return (
+        <View style={styles.container}>
+            {/* Header - matching farmer/expert side */}
+            <Header
+                showCursiveTitle
+                showLanguage
+                showNotifications
+                onLanguagePress={() => navigation.navigate('LanguageModal')}
+                onNotificationsPress={() => navigation.navigate('ShopNotifications')}
+                notificationCount={2}
+            />
 
             <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoriesContainer}
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[COLORS.primary[500]]}
+                        tintColor={COLORS.primary[500]}
+                    />
+                }
             >
-                {CATEGORIES.map((cat, index) => (
-                    <TouchableOpacity
-                        key={index}
-                        style={[
-                            styles.categoryChip,
-                            selectedCategory === cat && styles.categoryChipActive
-                        ]}
-                        onPress={() => setSelectedCategory(cat)}
-                    >
-                        <Text style={[
-                            styles.categoryText,
-                            selectedCategory === cat && styles.categoryTextActive
-                        ]}>
-                            {cat}
+                {/* Greeting */}
+                <View style={styles.greetingContainer}>
+                    <Text style={styles.greetingText}>
+                        {getGreeting()},{' '}
+                        <Text style={styles.greetingName}>
+                            {shop?.name || 'Shop Owner'}
                         </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
-        </View>
-    );
-
-    const renderListing = ({ item }: { item: typeof listings[0] }) => (
-        <TouchableOpacity style={styles.card} activeOpacity={0.9}>
-            <View style={[styles.imagePlaceholder, { backgroundColor: item.crop.color + '20' }]}>
-                <Text style={styles.cardIcon}>{item.crop.icon}</Text>
-                <View style={styles.priceTag}>
-                    <Text style={styles.priceText}>Rs. {item.price}/kg</Text>
+                        ! 🏪
+                    </Text>
                 </View>
-            </View>
 
-            <View style={styles.cardContent}>
-                <View style={styles.cardHeader}>
-                    <Text style={styles.cropName} numberOfLines={1}>{item.crop.name}</Text>
-                    <View style={styles.ratingContainer}>
-                        <Ionicons name="star" size={12} color="#fbbf24" />
-                        <Text style={styles.ratingText}>{item.rating}</Text>
+                {/* Stats Cards */}
+                <View style={styles.statsSection}>
+                    <View style={styles.statsGrid}>
+                        {statCards.map((stat) => (
+                            <View key={stat.id} style={styles.statCard}>
+                                <View style={[styles.statIconContainer, { backgroundColor: stat.bgColor }]}>
+                                    <Ionicons name={stat.icon} size={20} color={stat.color} />
+                                </View>
+                                <Text style={styles.statValue}>{stat.value}</Text>
+                                <Text style={styles.statLabel}>{stat.label}</Text>
+                            </View>
+                        ))}
                     </View>
                 </View>
 
-                <Text style={styles.farmerName} numberOfLines={1}>Supplier: {item.farmer}</Text>
-
-                <View style={styles.locationRow}>
-                    <Text style={styles.stockText} numberOfLines={1}>Min: {item.minOrder}kg • Stock: {item.quantity}kg</Text>
+                {/* Quick Actions */}
+                <View style={styles.sectionContainer}>
+                    <Text style={styles.sectionTitle}>Quick Actions</Text>
+                    <View style={styles.quickActionsGrid}>
+                        {quickActions.map((action) => (
+                            <View key={action.id} style={styles.actionCardWrapper}>
+                                <ActionCard
+                                    title={action.title}
+                                    icon={action.icon}
+                                    iconColor={action.iconColor}
+                                    iconBgColor={action.iconBgColor}
+                                    onPress={action.onPress}
+                                    size="sm"
+                                />
+                            </View>
+                        ))}
+                    </View>
                 </View>
 
-                <View style={[styles.locationRow, { marginTop: 4 }]}>
-                    <Ionicons name="location-outline" size={12} color={COLORS.neutral[400]} />
-                    <Text style={styles.locationText}>{item.location}</Text>
+                {/* Popular Products */}
+                <View style={styles.sectionContainer}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Popular Products</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('ProductsTab')}>
+                            <Text style={styles.seeAllLink}>See All</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {popularProducts.map((product) => (
+                        <TouchableOpacity
+                            key={product.id}
+                            style={styles.productCard}
+                            activeOpacity={0.7}
+                            onPress={() => navigation.navigate('ProductsTab', {
+                                screen: 'ShopProductDetail',
+                                params: { productId: product.id }
+                            })}
+                        >
+                            <View style={[styles.productIcon, { backgroundColor: product.color + '15' }]}>
+                                <Text style={styles.productEmoji}>{product.emoji}</Text>
+                            </View>
+                            <View style={styles.productInfo}>
+                                <Text style={styles.productName}>{product.name}</Text>
+                                <Text style={styles.productCategory}>{product.category}</Text>
+                            </View>
+                            <View style={styles.productStock}>
+                                <Text style={[
+                                    styles.stockText,
+                                    { color: product.stock < 10 ? COLORS.error : COLORS.success }
+                                ]}>
+                                    {product.stock} units
+                                </Text>
+                                <Text style={styles.stockLabel}>in stock</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={COLORS.neutral[400]} />
+                        </TouchableOpacity>
+                    ))}
                 </View>
-            </View>
 
-            <TouchableOpacity style={styles.addBtn}>
-                <Ionicons name="cart-outline" size={20} color="#ffffff" />
-            </TouchableOpacity>
-        </TouchableOpacity>
-    );
-
-    return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-            <FlatList
-                data={listings}
-                renderItem={renderListing}
-                keyExtractor={item => item.id}
-                numColumns={2}
-                columnWrapperStyle={styles.columnWrapper}
-                contentContainerStyle={styles.listContent}
-                ListHeaderComponent={renderHeader}
-                showsVerticalScrollIndicator={false}
-            />
-        </SafeAreaView>
+                <View style={{ height: 24 }} />
+            </ScrollView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fafafa',
+        backgroundColor: COLORS.neutral[50],
     },
-    header: {
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        backgroundColor: '#ffffff',
-        paddingBottom: 20,
-        marginBottom: 10,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        ...SHADOW.sm,
-    },
-    headerTop: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    greeting: {
-        fontSize: 14,
-        color: COLORS.neutral[500],
-    },
-    username: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: COLORS.neutral[800],
-    },
-    notificationBtn: {
-        padding: 8,
-        position: 'relative',
-    },
-    notificationBadge: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: COLORS.error,
-    },
-    searchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    searchInput: {
+    scrollView: {
         flex: 1,
-        height: 48,
-        backgroundColor: COLORS.neutral[50],
-        borderRadius: 12,
-        paddingHorizontal: 40,
-        fontSize: 15,
-        color: COLORS.neutral[800],
-        borderWidth: 1,
-        borderColor: COLORS.neutral[200],
     },
-    searchIcon: {
-        position: 'absolute',
-        left: 12,
-        zIndex: 1,
-    },
-    filterBtn: {
-        width: 48,
-        height: 48,
-        backgroundColor: COLORS.info,
-        borderRadius: 12,
-        marginLeft: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...SHADOW.sm,
-    },
-    categoriesContainer: {
-        paddingRight: 20,
-    },
-    categoryChip: {
+    greetingContainer: {
         paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        backgroundColor: COLORS.neutral[50],
-        marginRight: 8,
-        borderWidth: 1,
-        borderColor: COLORS.neutral[200],
+        paddingTop: 16,
+        paddingBottom: 8,
     },
-    categoryChipActive: {
-        backgroundColor: COLORS.info,
-        borderColor: COLORS.info,
-    },
-    categoryText: {
-        fontSize: 13,
-        fontWeight: '600',
+    greetingText: {
+        fontSize: 18,
         color: COLORS.neutral[500],
     },
-    categoryTextActive: {
-        color: '#ffffff',
+    greetingName: {
+        color: COLORS.neutral[800],
+        fontWeight: '600',
     },
-    listContent: {
-        paddingHorizontal: 12,
-        paddingBottom: 20,
+    // ===== Stats =====
+    statsSection: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
     },
-    columnWrapper: {
+    statsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
-        paddingHorizontal: 8,
     },
-    card: {
+    statCard: {
         width: '48%',
         backgroundColor: '#ffffff',
         borderRadius: 16,
-        marginBottom: 16,
-        ...SHADOW.md,
-        overflow: 'hidden',
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        ...SHADOW.sm,
     },
-    imagePlaceholder: {
-        height: 120,
-        width: '100%',
+    statIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        position: 'relative',
+        marginBottom: 12,
     },
-    cardIcon: {
-        fontSize: 48,
-    },
-    priceTag: {
-        position: 'absolute',
-        bottom: 8,
-        right: 8,
-        backgroundColor: 'rgba(255,255,255,0.9)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    priceText: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: COLORS.neutral[900],
-    },
-    cardContent: {
-        padding: 12,
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 4,
-    },
-    cropName: {
-        fontSize: 15,
+    statValue: {
+        fontSize: 24,
         fontWeight: 'bold',
         color: COLORS.neutral[800],
-        flex: 1,
-        marginRight: 4,
     },
-    ratingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    ratingText: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: COLORS.neutral[600],
-        marginLeft: 2,
-    },
-    farmerName: {
+    statLabel: {
         fontSize: 12,
         color: COLORS.neutral[500],
-        marginBottom: 6,
+        marginTop: 2,
     },
-    locationRow: {
+    // ===== Quick Actions =====
+    sectionContainer: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        marginBottom: 12,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    seeAllLink: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: COLORS.primary[600],
+    },
+    quickActionsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    actionCardWrapper: {
+        width: '48%',
+        marginBottom: 12,
+    },
+    // ===== Popular Products =====
+    productCard: {
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#ffffff',
+        borderRadius: 14,
+        padding: 14,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        ...SHADOW.sm,
     },
-    locationText: {
-        fontSize: 11,
-        color: COLORS.neutral[400],
-        marginLeft: 2,
-        marginRight: 6,
-    },
-    stockText: {
-        fontSize: 11,
-        color: COLORS.success,
-        fontWeight: '500',
-    },
-    addBtn: {
-        position: 'absolute',
-        bottom: 12,
-        right: 12,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: COLORS.info, // Branding
+    productIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        ...SHADOW.sm,
+        marginRight: 14,
+    },
+    productEmoji: {
+        fontSize: 24,
+    },
+    productInfo: {
+        flex: 1,
+    },
+    productName: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    productCategory: {
+        fontSize: 13,
+        color: COLORS.neutral[500],
+        marginTop: 2,
+    },
+    productStock: {
+        alignItems: 'flex-end',
+        marginRight: 8,
+    },
+    stockText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    stockLabel: {
+        fontSize: 11,
+        color: COLORS.neutral[400],
     },
 });
 
