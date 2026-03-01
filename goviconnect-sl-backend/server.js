@@ -6,8 +6,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
 
-// Load env vars
-dotenv.config();
+// Load env vars (always resolve .env relative to this file, not CWD)
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const connectDB = require('./config/db');
 const { initSocket } = require('./config/socket');
