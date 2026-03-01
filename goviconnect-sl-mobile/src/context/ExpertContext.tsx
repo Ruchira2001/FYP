@@ -109,7 +109,7 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
             if (authData.token && authData.role === 'expert') {
                 try {
                     const res = await authAPI.getMe();
-                    setExpert(formatExpert(res.data.data));
+                    setExpert(formatExpert(res.data.user));
                     setIsAuthenticated(true);
                     setHasCompletedOnboarding(true);
                 } catch {

@@ -48,7 +48,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (authData.token && authData.role === 'shop') {
                 try {
                     const res = await authAPI.getMe();
-                    setShop(formatShop(res.data.data));
+                    setShop(formatShop(res.data.user));
                     setIsAuthenticated(true);
                 } catch {
                     await clearAuthData();

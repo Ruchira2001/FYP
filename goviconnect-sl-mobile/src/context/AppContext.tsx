@@ -85,7 +85,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
             if (authData.token && authData.role === 'farmer') {
                 try {
                     const res = await authAPI.getMe();
-                    const u = res.data.data;
+                    const u = res.data.user;
                     const formatted: User = {
                         id: u._id,
                         name: u.name,
