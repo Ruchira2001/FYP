@@ -133,7 +133,7 @@ const ShopProducts: React.FC = () => {
                 {/* Footer */}
                 <View style={styles.cardFooter}>
                     <View>
-                        <Text style={styles.priceText}>Rs. {item.price.toLocaleString()}</Text>
+                        <Text style={styles.priceText}>Rs. {(item.price ?? 0).toLocaleString()}</Text>
                         <Text style={styles.unitText}>{item.unit}</Text>
                     </View>
                     <View style={styles.stockInfo}>

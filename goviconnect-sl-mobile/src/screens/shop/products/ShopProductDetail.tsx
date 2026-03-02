@@ -66,7 +66,7 @@ const ShopProductDetail: React.FC = () => {
                     <View style={styles.priceRow}>
                         <View>
                             <Text style={styles.priceLabel}>Price</Text>
-                            <Text style={styles.priceValue}>Rs. {product.price.toLocaleString()}</Text>
+                            <Text style={styles.priceValue}>Rs. {(product.price ?? 0).toLocaleString()}</Text>
                             <Text style={styles.priceUnit}>per {product.unit}</Text>
                         </View>
                         <View style={styles.stockSection}>

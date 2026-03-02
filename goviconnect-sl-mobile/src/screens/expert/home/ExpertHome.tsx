@@ -53,7 +53,7 @@ const ExpertHome: React.FC = () => {
         {
             id: 'consultations',
             label: 'Today\'s Consults',
-            value: stats.todayConsultations.toString(),
+            value: String(stats.todayConsultations ?? 0),
             icon: 'chatbubbles' as const,
             color: COLORS.primary[500],
             bgColor: COLORS.primary[50],
@@ -61,7 +61,7 @@ const ExpertHome: React.FC = () => {
         {
             id: 'reviews',
             label: 'Pending Reviews',
-            value: stats.pendingReviews.toString(),
+            value: String(stats.pendingReviews ?? 0),
             icon: 'eye' as const,
             color: COLORS.warning,
             bgColor: '#fef3c7',
@@ -69,7 +69,7 @@ const ExpertHome: React.FC = () => {
         {
             id: 'meetings',
             label: 'Upcoming Meetings',
-            value: stats.upcomingMeetings.toString(),
+            value: String(stats.upcomingMeetings ?? 0),
             icon: 'calendar' as const,
             color: COLORS.info,
             bgColor: '#dbeafe',
@@ -77,7 +77,7 @@ const ExpertHome: React.FC = () => {
         {
             id: 'messages',
             label: 'Unread Messages',
-            value: stats.unreadMessages.toString(),
+            value: String(stats.unreadMessages ?? 0),
             icon: 'mail' as const,
             color: COLORS.secondary[500],
             bgColor: COLORS.secondary[50],

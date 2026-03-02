@@ -72,7 +72,7 @@ const ShopOrders: React.FC = () => {
                 <Text style={styles.itemsText} numberOfLines={2}>{item.items}</Text>
                 <View style={styles.footerRow}>
                     <Text style={styles.dateText}>{item.date}</Text>
-                    <Text style={styles.totalText}>Rs. {item.total.toLocaleString()}</Text>
+                    <Text style={styles.totalText}>Rs. {(item.total ?? 0).toLocaleString()}</Text>
                 </View>
             </View>
         </TouchableOpacity>
