@@ -118,7 +118,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           )}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-2 py-2 text-sm text-green-100 hover:bg-green-700/50 rounded transition-colors"
+            className="w-full flex items-center gap-3 px-2 py-2 text-sm text-red-300 hover:bg-red-600/30 hover:text-red-100 rounded transition-colors"
           >
             <LogOut size={18} className="flex-shrink-0" />
             {sidebarOpen && <span>Logout</span>}
