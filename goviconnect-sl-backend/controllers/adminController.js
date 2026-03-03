@@ -71,6 +71,7 @@ exports.getDashboard = async (req, res) => {
       diagnosesCount, predictionsCount, ordersCount,
       productsCount, requestsCount, notificationsCount,
       userGuidesCount,
+      activeFarmers, activeExperts, activeShops,
     ] = await Promise.all([
       User.countDocuments(),
       Expert.countDocuments(),
@@ -88,6 +89,9 @@ exports.getDashboard = async (req, res) => {
       FarmerRequest.countDocuments(),
       Notification.countDocuments(),
       UserCropGuide.countDocuments(),
+      User.countDocuments({ isActive: true }),
+      Expert.countDocuments({ isActive: true }),
+      Shop.countDocuments({ isActive: true }),
     ]);
 
     // Recent activity - last 7 days
@@ -140,6 +144,9 @@ exports.getDashboard = async (req, res) => {
           requests: requestsCount,
           notifications: notificationsCount,
           userGuides: userGuidesCount,
+          activeFarmers,
+          activeExperts,
+          activeShops,
         },
         recentActivity: { recentUsers, recentExperts, recentDiagnoses, recentMeetings },
         monthlyData,
@@ -184,7 +191,10 @@ exports.getFarmerById = async (req, res) => {
 
 exports.updateFarmer = async (req, res) => {
   try {
-    const farmer = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).select('-password');
+    const allowed = ['name', 'email', 'phone', 'district', 'isActive'];
+    const updates = {};
+    allowed.forEach((key) => { if (req.body[key] !== undefined) updates[key] = req.body[key]; });
+    const farmer = await User.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true }).select('-password');
     if (!farmer) return res.status(404).json({ success: false, message: 'Farmer not found' });
     res.json({ success: true, data: farmer });
   } catch (err) {
@@ -236,7 +246,10 @@ exports.getExpertById = async (req, res) => {
 
 exports.updateExpert = async (req, res) => {
   try {
-    const expert = await Expert.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).select('-password');
+    const allowed = ['name', 'email', 'phone', 'district', 'specialty', 'specialtySi', 'yearsExperience', 'qualifications', 'specializations', 'bio', 'bioSi', 'languages', 'isActive'];
+    const updates = {};
+    allowed.forEach((key) => { if (req.body[key] !== undefined) updates[key] = req.body[key]; });
+    const expert = await Expert.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true }).select('-password');
     if (!expert) return res.status(404).json({ success: false, message: 'Expert not found' });
     res.json({ success: true, data: expert });
   } catch (err) {
@@ -275,9 +288,22 @@ exports.getShops = async (req, res) => {
   }
 };
 
+exports.getShopById = async (req, res) => {
+  try {
+    const shop = await Shop.findById(req.params.id).select('-password');
+    if (!shop) return res.status(404).json({ success: false, message: 'Shop not found' });
+    res.json({ success: true, data: shop });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 exports.updateShop = async (req, res) => {
   try {
-    const shop = await Shop.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).select('-password');
+    const allowed = ['name', 'email', 'phone', 'location', 'type', 'isActive'];
+    const updates = {};
+    allowed.forEach((key) => { if (req.body[key] !== undefined) updates[key] = req.body[key]; });
+    const shop = await Shop.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true }).select('-password');
     if (!shop) return res.status(404).json({ success: false, message: 'Shop not found' });
     res.json({ success: true, data: shop });
   } catch (err) {
@@ -323,7 +349,7 @@ exports.createCrop = async (req, res) => {
 
 exports.updateCrop = async (req, res) => {
   try {
-    const crop = await Crop.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const crop = await Crop.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!crop) return res.status(404).json({ success: false, message: 'Crop not found' });
     res.json({ success: true, data: crop });
   } catch (err) {
@@ -366,7 +392,7 @@ exports.createGuide = async (req, res) => {
 
 exports.updateGuide = async (req, res) => {
   try {
-    const guide = await CropGuide.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const guide = await CropGuide.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!guide) return res.status(404).json({ success: false, message: 'Guide not found' });
     res.json({ success: true, data: guide });
   } catch (err) {
@@ -409,7 +435,7 @@ exports.createTip = async (req, res) => {
 
 exports.updateTip = async (req, res) => {
   try {
-    const tip = await Tip.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const tip = await Tip.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!tip) return res.status(404).json({ success: false, message: 'Tip not found' });
     res.json({ success: true, data: tip });
   } catch (err) {

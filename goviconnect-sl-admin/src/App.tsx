@@ -9,12 +9,7 @@ import Shops from './pages/Shops';
 import Crops from './pages/Crops';
 import Guides from './pages/Guides';
 import Tips from './pages/Tips';
-import Meetings from './pages/Meetings';
-import Diagnoses from './pages/Diagnoses';
-import Predictions from './pages/Predictions';
 import Notifications from './pages/Notifications';
-import Products from './pages/Products';
-import Orders from './pages/Orders';
 import UserGuides from './pages/UserGuides';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -41,12 +36,7 @@ export default function App() {
                 <Route path="/crops" element={<Crops />} />
                 <Route path="/guides" element={<Guides />} />
                 <Route path="/tips" element={<Tips />} />
-                <Route path="/meetings" element={<Meetings />} />
-                <Route path="/diagnoses" element={<Diagnoses />} />
-                <Route path="/predictions" element={<Predictions />} />
                 <Route path="/notifications" element={<Notifications />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/orders" element={<Orders />} />
                 <Route path="/user-guides" element={<UserGuides />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

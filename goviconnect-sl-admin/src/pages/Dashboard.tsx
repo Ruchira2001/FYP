@@ -2,6 +2,16 @@ import { useEffect, useState } from 'react';
 import { getDashboard } from '../services/api';
 import StatCard from '../components/StatCard';
 import {
+  Users,
+  GraduationCap,
+  Store,
+  Sprout,
+  BookOpen,
+  Lightbulb,
+  ClipboardCheck,
+  UserCheck,
+} from 'lucide-react';
+import {
   BarChart,
   Bar,
   XAxis,
@@ -26,7 +36,7 @@ interface DashData {
   monthlyData: { month: string; farmers: number; experts: number; shops: number }[];
 }
 
-const PIE_COLORS = ['#16a34a', '#2563eb', '#9333ea', '#ea580c', '#dc2626', '#ca8a04'];
+const PIE_COLORS = ['#16a34a', '#2563eb', '#9333ea'];
 
 export default function Dashboard() {
   const [data, setData] = useState<DashData | null>(null);
@@ -63,16 +73,47 @@ export default function Dashboard() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
 
-      {/* Stats Grid */}
+      {/* User Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard title="Total Farmers" value={stats.farmers || 0} icon={<Users size={22} />} color="green" />
+        <StatCard title="Total Experts" value={stats.experts || 0} icon={<GraduationCap size={22} />} color="blue" />
+        <StatCard title="Total Shops" value={stats.shops || 0} icon={<Store size={22} />} color="purple" />
+      </div>
+
+      {/* Active vs Total */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Active Users</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-3 bg-green-50 rounded-lg">
+            <p className="text-2xl font-bold text-green-600">
+              {stats.activeFarmers ?? stats.farmers ?? 0}
+              <span className="text-sm font-normal text-gray-400">/{stats.farmers || 0}</span>
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Active Farmers</p>
+          </div>
+          <div className="text-center p-3 bg-blue-50 rounded-lg">
+            <p className="text-2xl font-bold text-blue-600">
+              {stats.activeExperts ?? stats.experts ?? 0}
+              <span className="text-sm font-normal text-gray-400">/{stats.experts || 0}</span>
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Active Experts</p>
+          </div>
+          <div className="text-center p-3 bg-purple-50 rounded-lg">
+            <p className="text-2xl font-bold text-purple-600">
+              {stats.activeShops ?? stats.shops ?? 0}
+              <span className="text-sm font-normal text-gray-400">/{stats.shops || 0}</span>
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Active Shops</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Farmers" value={stats.farmers || 0} icon="🌾" color="green" />
-        <StatCard title="Experts" value={stats.experts || 0} icon="🎓" color="blue" />
-        <StatCard title="Shops" value={stats.shops || 0} icon="🏪" color="purple" />
-        <StatCard title="Crops" value={stats.crops || 0} icon="🌿" color="orange" />
-        <StatCard title="Guides" value={stats.guides || 0} icon="📖" color="cyan" />
-        <StatCard title="Meetings" value={stats.meetings || 0} icon="📅" color="yellow" />
-        <StatCard title="Diagnoses" value={stats.diagnoses || 0} icon="🔬" color="red" />
-        <StatCard title="Products" value={stats.products || 0} icon="📦" color="pink" />
+        <StatCard title="Crops" value={stats.crops || 0} icon={<Sprout size={22} />} color="orange" />
+        <StatCard title="Guides" value={stats.guides || 0} icon={<BookOpen size={22} />} color="cyan" />
+        <StatCard title="Tips" value={stats.tips || 0} icon={<Lightbulb size={22} />} color="yellow" />
+        <StatCard title="User Guides" value={stats.userGuides || 0} icon={<ClipboardCheck size={22} />} color="pink" />
       </div>
 
       {/* Recent Activity */}
@@ -89,7 +130,7 @@ export default function Dashboard() {
           </div>
           <div className="text-center p-3 bg-purple-50 rounded-lg">
             <p className="text-2xl font-bold text-purple-600">{recentActivity.recentMeetings}</p>
-            <p className="text-xs text-gray-500 mt-1">New Meetings</p>
+            <p className="text-xs text-gray-500 mt-1">Meetings</p>
           </div>
           <div className="text-center p-3 bg-red-50 rounded-lg">
             <p className="text-2xl font-bold text-red-600">{recentActivity.recentDiagnoses}</p>

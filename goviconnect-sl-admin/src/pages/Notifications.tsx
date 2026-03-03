@@ -3,6 +3,7 @@ import { getNotifications, broadcastNotification } from '../services/api';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import Modal from '../components/Modal';
+import { Megaphone } from 'lucide-react';
 
 interface NotifItem {
   _id: string;
@@ -89,8 +90,8 @@ export default function Notifications() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Notifications</h1>
-        <button onClick={() => setModalOpen(true)} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
-          📢 Broadcast
+        <button onClick={() => setModalOpen(true)} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-2">
+          <Megaphone size={16} /> Broadcast
         </button>
       </div>
 

@@ -70,6 +70,10 @@ const userSchema = new mongoose.Schema(
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
@@ -100,5 +104,4 @@ userSchema.methods.getResetPasswordToken = function () {
 const UserModel = mongoose.model('User', userSchema);
 
 module.exports = UserModel;
-module.exports.SL_DISTRICTS = SL_DISTRICTS;
 module.exports.SL_DISTRICTS = SL_DISTRICTS;

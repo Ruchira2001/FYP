@@ -1,22 +1,56 @@
 import { ReactNode, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  LayoutDashboard,
+  Users,
+  GraduationCap,
+  Store,
+  Sprout,
+  BookOpen,
+  Lightbulb,
+  ClipboardCheck,
+  Bell,
+  LogOut,
+  type LucideIcon,
+} from 'lucide-react';
 
-const NAV = [
-  { label: 'Dashboard', path: '/', icon: '📊' },
-  { label: 'Farmers', path: '/farmers', icon: '🌾' },
-  { label: 'Experts', path: '/experts', icon: '🎓' },
-  { label: 'Shops', path: '/shops', icon: '🏪' },
-  { label: 'Crops', path: '/crops', icon: '🌿' },
-  { label: 'Guides', path: '/guides', icon: '📖' },
-  { label: 'Tips', path: '/tips', icon: '💡' },
-  { label: 'Meetings', path: '/meetings', icon: '📅' },
-  { label: 'Diagnoses', path: '/diagnoses', icon: '🔬' },
-  { label: 'Predictions', path: '/predictions', icon: '📈' },
-  { label: 'Notifications', path: '/notifications', icon: '🔔' },
-  { label: 'Products', path: '/products', icon: '📦' },
-  { label: 'Orders', path: '/orders', icon: '🛒' },
-  { label: 'User Guides', path: '/user-guides', icon: '✅' },
+interface NavItem {
+  label: string;
+  path: string;
+  icon: LucideIcon;
+}
+
+const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  {
+    label: 'Overview',
+    items: [
+      { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: 'User Management',
+    items: [
+      { label: 'Farmers', path: '/farmers', icon: Users },
+      { label: 'Experts', path: '/experts', icon: GraduationCap },
+      { label: 'Shops', path: '/shops', icon: Store },
+    ],
+  },
+  {
+    label: 'Content Management',
+    items: [
+      { label: 'Crops', path: '/crops', icon: Sprout },
+      { label: 'Guides', path: '/guides', icon: BookOpen },
+      { label: 'Tips', path: '/tips', icon: Lightbulb },
+    ],
+  },
+  {
+    label: 'Moderation',
+    items: [
+      { label: 'User Guides', path: '/user-guides', icon: ClipboardCheck },
+      { label: 'Notifications', path: '/notifications', icon: Bell },
+    ],
+  },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -47,22 +81,32 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {NAV.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === '/'}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                  isActive
-                    ? 'bg-green-700 text-white font-medium'
-                    : 'text-green-100 hover:bg-green-700/50'
-                }`
-              }
-            >
-              <span className="text-lg flex-shrink-0">{item.icon}</span>
-              {sidebarOpen && <span>{item.label}</span>}
-            </NavLink>
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label}>
+              {sidebarOpen && (
+                <div className="px-4 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-green-400">
+                  {group.label}
+                </div>
+              )}
+              {!sidebarOpen && <div className="border-t border-green-700 my-1" />}
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path === '/'}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-green-700 text-white font-medium'
+                        : 'text-green-100 hover:bg-green-700/50'
+                    }`
+                  }
+                >
+                  <item.icon size={18} className="flex-shrink-0" />
+                  {sidebarOpen && <span>{item.label}</span>}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 
@@ -76,7 +120,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-2 py-2 text-sm text-green-100 hover:bg-green-700/50 rounded transition-colors"
           >
-            <span className="text-lg">🚪</span>
+            <LogOut size={18} className="flex-shrink-0" />
             {sidebarOpen && <span>Logout</span>}
           </button>
         </div>

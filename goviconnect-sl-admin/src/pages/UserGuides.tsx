@@ -3,6 +3,7 @@ import { getUserGuides, approveUserGuide, rejectUserGuide } from '../services/ap
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import Modal from '../components/Modal';
+import { Eye, Check, XCircle } from 'lucide-react';
 
 interface UGuide {
   _id: string;
@@ -117,15 +118,15 @@ export default function UserGuides() {
         loading={loading}
         actions={(item) => (
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setViewItem(item)} className="px-3 py-1 text-xs bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100">View</button>
+            <button onClick={() => setViewItem(item)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100"><Eye size={12} /> View</button>
             {item.status === 'pending' && (
               <>
-                <button onClick={() => handleApprove(item._id)} className="px-3 py-1 text-xs bg-green-50 text-green-600 rounded-lg hover:bg-green-100">Approve</button>
+                <button onClick={() => handleApprove(item._id)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><Check size={12} /> Approve</button>
                 <button
                   onClick={() => { setRejectItem(item); setReason(''); }}
-                  className="px-3 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                  className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
                 >
-                  Reject
+                  <XCircle size={12} /> Reject
                 </button>
               </>
             )}

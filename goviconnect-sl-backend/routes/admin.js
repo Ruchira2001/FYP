@@ -52,6 +52,7 @@ router.delete('/experts/:id', admin.deleteExpert);
 
 // ── Shops ──
 router.get('/shops', admin.getShops);
+router.get('/shops/:id', admin.getShopById);
 router.put('/shops/:id', admin.updateShop);
 router.delete('/shops/:id', admin.deleteShop);
 

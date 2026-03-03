@@ -85,18 +85,9 @@ export const updateTip = (id: string, data: Record<string, unknown>) =>
   api.put(`/tips/${id}`, data);
 export const deleteTip = (id: string) => api.delete(`/tips/${id}`);
 
-// Meetings
-export const getMeetings = (params?: Record<string, string | number>) =>
-  api.get('/meetings', { params });
-export const updateMeeting = (id: string, data: Record<string, unknown>) =>
-  api.put(`/meetings/${id}`, data);
-export const deleteMeeting = (id: string) => api.delete(`/meetings/${id}`);
+// Meetings — removed (not needed for admin)
 
-// AI
-export const getDiagnoses = (params?: Record<string, string | number>) =>
-  api.get('/diagnoses', { params });
-export const getPredictions = (params?: Record<string, string | number>) =>
-  api.get('/predictions', { params });
+// AI — removed (read-only, not needed for admin)
 
 // Notifications
 export const getNotifications = (params?: Record<string, string | number>) =>
@@ -107,13 +98,9 @@ export const broadcastNotification = (data: {
   targetRole: string;
 }) => api.post('/notifications/broadcast', data);
 
-// Products
-export const getProducts = (params?: Record<string, string | number>) =>
-  api.get('/products', { params });
+// Products — removed (read-only, not needed for admin)
 
-// Orders
-export const getOrders = (params?: Record<string, string | number>) =>
-  api.get('/orders', { params });
+// Orders — removed (read-only, not needed for admin)
 
 // User Guides
 export const getUserGuides = (params?: Record<string, string | number>) =>
