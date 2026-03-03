@@ -5,41 +5,32 @@ interface Props {
   value: string | number;
   icon: ReactNode;
   color?: string;
-  trend?: string;
+  subtitle?: string;
 }
 
-const bgMap: Record<string, string> = {
-  green: 'bg-green-50 border-green-200',
-  blue: 'bg-blue-50 border-blue-200',
-  purple: 'bg-purple-50 border-purple-200',
-  orange: 'bg-orange-50 border-orange-200',
-  red: 'bg-red-50 border-red-200',
-  yellow: 'bg-yellow-50 border-yellow-200',
-  cyan: 'bg-cyan-50 border-cyan-200',
-  pink: 'bg-pink-50 border-pink-200',
+const accentMap: Record<string, string> = {
+  green: 'text-emerald-600 bg-emerald-50',
+  blue: 'text-blue-600 bg-blue-50',
+  purple: 'text-violet-600 bg-violet-50',
+  orange: 'text-amber-600 bg-amber-50',
+  red: 'text-rose-600 bg-rose-50',
+  yellow: 'text-yellow-600 bg-yellow-50',
+  cyan: 'text-teal-600 bg-teal-50',
+  pink: 'text-pink-600 bg-pink-50',
 };
 
-const iconBgMap: Record<string, string> = {
-  green: 'bg-green-100 text-green-600',
-  blue: 'bg-blue-100 text-blue-600',
-  purple: 'bg-purple-100 text-purple-600',
-  orange: 'bg-orange-100 text-orange-600',
-  red: 'bg-red-100 text-red-600',
-  yellow: 'bg-yellow-100 text-yellow-600',
-  cyan: 'bg-cyan-100 text-cyan-600',
-  pink: 'bg-pink-100 text-pink-600',
-};
+export default function StatCard({ title, value, icon, color = 'green', subtitle }: Props) {
+  const accent = accentMap[color] || accentMap.green;
 
-export default function StatCard({ title, value, icon, color = 'green', trend }: Props) {
   return (
-    <div className={`rounded-xl border p-5 ${bgMap[color] || bgMap.green}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-800 mt-1">{value}</p>
-          {trend && <p className="text-xs mt-1 text-gray-400">{trend}</p>}
+    <div className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <p className="text-[13px] font-medium text-gray-400 tracking-wide">{title}</p>
+          <p className="text-[28px] font-semibold text-gray-800 leading-tight">{value}</p>
+          {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
         </div>
-        <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${iconBgMap[color] || iconBgMap.green}`}>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${accent}`}>
           {icon}
         </div>
       </div>
