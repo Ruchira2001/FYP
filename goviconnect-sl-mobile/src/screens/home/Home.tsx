@@ -31,13 +31,14 @@ const Home: React.FC = () => {
         try {
             const [feedRes, unreadRes, chatsRes] = await Promise.all([
                 feedAPI.getFeed().catch(() => ({ data: { data: { tips: [], crops: [] } } })),
-                notificationAPI.getUnreadCount().catch(() => ({ data: { data: { count: 0 } } })),
+                notificationAPI.getUnreadCount().catch(() => ({ data: { count: 0 } })),
                 chatAPI.getChats().catch(() => ({ data: { data: [] } })),
             ]);
             const feed = feedRes.data.data;
-            setFeedItems(feed.tips || feed.feedItems || []);
+            const feedArray = Array.isArray(feed) ? feed : (feed?.tips || feed?.feedItems || []);
+            setFeedItems(feedArray);
             setMyCrops(user?.crops || ['tea', 'paddy', 'tomato']);
-            setNotificationCount(unreadRes.data.data?.count || 0);
+            setNotificationCount(unreadRes.data?.count || unreadRes.data?.data?.count || 0);
             const chats = Array.isArray(chatsRes.data.data) ? chatsRes.data.data : [];
             setChatUnreadCount(chats.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0));
         } catch (e) {

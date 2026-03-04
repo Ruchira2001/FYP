@@ -13,11 +13,11 @@ import NetInfo from '@react-native-community/netinfo';
 // For local development with iOS simulator: http://localhost:5000
 // For physical device on same WiFi: http://<your-local-ip>:5000
 const BASE_URL = __DEV__
-  ? 'http://192.168.8.109:5000/api'   // Physical device on same WiFi
+  ? 'http://10.164.84.233:5000/api'   // Physical device on same WiFi
   : 'https://your-production-url.com/api';
 
 const SOCKET_URL = __DEV__
-  ? 'http://192.168.8.109:5000'
+  ? 'http://10.164.84.233:5000'
   : 'https://your-production-url.com';
 
 // ─── Storage Keys ────────────────────────────────────────────

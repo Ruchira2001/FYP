@@ -9,17 +9,19 @@ const { seedCrops } = require('./crops');
 const { seedTips } = require('./tips');
 const { seedLearnHub } = require('./learnhub');
 const { seedUsers } = require('./users');
+const { seedSampleData } = require('./sampleData');
 
 const runSeeds = async () => {
   try {
     await connectDB();
     console.log('\n🌱 Starting database seeding...\n');
 
-    // Seed in order (users first, then reference data)
+    // Seed in order (base data first, then users, then sample data that references users)
     await seedCrops();
     await seedTips();
     await seedLearnHub();
     await seedUsers();
+    await seedSampleData();
 
     console.log('\n✅ All seeds completed successfully!\n');
     process.exit(0);

@@ -106,7 +106,7 @@ const CropDetails: React.FC = () => {
 
     const renderDiseases = () => (
         <View style={styles.tabContent}>
-            {guide?.diseases.map((disease, index) => (
+            {guide?.diseases?.map((disease, index) => (
                 <View
                     key={index}
                     style={styles.card}
@@ -139,12 +139,12 @@ const CropDetails: React.FC = () => {
 
     const renderTreatment = () => (
         <View style={styles.tabContent}>
-            {guide?.treatments.map((treatment, index) => (
+            {guide?.treatments?.map((treatment, index) => (
                 <View key={index} style={styles.treatmentContainer}>
                     <Text style={[styles.cardTitle, { marginBottom: 8 }]}>
                         {treatment.disease}
                     </Text>
-                    {(i18n.language === 'si' ? treatment.methodsSi : treatment.methods).map((method, mIndex) => (
+                    {(i18n.language === 'si' ? treatment.methodsSi : treatment.methods)?.map((method, mIndex) => (
                         <View key={mIndex} style={styles.methodRow}>
                             <Ionicons name="checkmark-circle" size={18} color={COLORS.success} style={{ marginTop: 2 }} />
                             <Text style={styles.methodText}>{method}</Text>
@@ -157,7 +157,7 @@ const CropDetails: React.FC = () => {
 
     const renderPractices = () => (
         <View style={styles.tabContent}>
-            {guide?.bestPractices.map((practice, index) => (
+            {guide?.bestPractices?.map((practice, index) => (
                 <View
                     key={index}
                     style={styles.practiceCard}
@@ -179,7 +179,7 @@ const CropDetails: React.FC = () => {
                 Videos and images related to {crop?.name} cultivation.
             </Text>
 
-            {guide?.media.videos.map((video, index) => (
+            {guide?.media?.videos?.map((video, index) => (
                 <TouchableOpacity
                     key={index}
                     style={styles.videoPlaceholder}
@@ -190,7 +190,7 @@ const CropDetails: React.FC = () => {
             ))}
 
             <View style={styles.imageGrid}>
-                {guide?.media.images.map((image, index) => (
+                {guide?.media?.images?.map((image, index) => (
                     <View key={index} style={styles.imageWrapper}>
                         <View style={styles.imagePlaceholder}>
                             <Ionicons name="image" size={24} color={COLORS.neutral[400]} />
