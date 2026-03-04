@@ -6,6 +6,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../../../utils/constants';
+import { authAPI, saveAuthData } from '../../../services/api';
 import { useShop } from '../../../context/ShopContext';
 
 const { width } = Dimensions.get('window');
@@ -14,31 +15,56 @@ const SHOP_COLOR = '#2563eb';
 const SHOP_LIGHT = '#dbeafe';
 const SHOP_BG = '#eff6ff';
 
-const ShopLogin: React.FC = () => {
+const ShopRegister: React.FC = () => {
     const navigation = useNavigation<any>();
     const { login } = useShop();
 
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [location, setLocation] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleLogin = async () => {
-        if (!email.trim() || !password.trim()) {
-            setError('Please fill in all fields');
+    const handleRegister = async () => {
+        // Validation
+        if (!name.trim() || !email.trim() || !password.trim()) {
+            setError('Please fill in all required fields');
+            return;
+        }
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+        }
+        if (password !== confirmPassword) {
+            setError('Passwords do not match');
             return;
         }
 
         setError('');
         setLoading(true);
         try {
-            const success = await login(email, password);
-            if (!success) {
-                setError('Invalid email or password. Please try again.');
+            const res = await authAPI.registerShop({
+                name: name.trim(),
+                email: email.trim(),
+                phone: phone.trim(),
+                password,
+                location: location.trim(),
+            });
+
+            const { token, user } = res.data;
+            if (token) {
+                // Auto-login after registration
+                await saveAuthData(token, user, 'shop');
+                // Login via context to update state
+                await login(email.trim(), password);
             }
-        } catch (err) {
-            setError('Login failed. Please try again.');
+        } catch (err: any) {
+            const msg = err?.response?.data?.message || 'Registration failed. Please try again.';
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -59,23 +85,19 @@ const ShopLogin: React.FC = () => {
                     <View style={styles.logoContainer}>
                         <View style={styles.logoOuter}>
                             <View style={styles.logoInner}>
-                                <Ionicons name="storefront" size={40} color={SHOP_COLOR} />
+                                <Ionicons name="storefront" size={36} color={SHOP_COLOR} />
                             </View>
                         </View>
                     </View>
 
                     <Text style={styles.appTitle}>GoviConnect</Text>
-                    <Text style={styles.appSubtitle}>Shop Portal</Text>
-                    <View style={styles.roleBadge}>
-                        <Ionicons name="cart" size={16} color={SHOP_COLOR} />
-                        <Text style={styles.roleBadgeText}>Shop Owner Access</Text>
-                    </View>
+                    <Text style={styles.appSubtitle}>Register Your Shop</Text>
                 </View>
 
-                {/* Login Form Card */}
+                {/* Register Form Card */}
                 <View style={styles.formCard}>
-                    <Text style={styles.formTitle}>Welcome Back</Text>
-                    <Text style={styles.formSubtitle}>Sign in to your shop account</Text>
+                    <Text style={styles.formTitle}>Create Account</Text>
+                    <Text style={styles.formSubtitle}>Set up your shop owner account</Text>
 
                     {error ? (
                         <View style={styles.errorContainer}>
@@ -84,14 +106,30 @@ const ShopLogin: React.FC = () => {
                         </View>
                     ) : null}
 
-                    {/* Email Field */}
+                    {/* Shop Name */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Email</Text>
+                        <Text style={styles.inputLabel}>Shop Name *</Text>
+                        <View style={styles.inputContainer}>
+                            <Ionicons name="storefront-outline" size={20} color={COLORS.neutral[400]} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Your shop name"
+                                placeholderTextColor={COLORS.neutral[400]}
+                                value={name}
+                                onChangeText={setName}
+                                autoCapitalize="words"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Email */}
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Email *</Text>
                         <View style={styles.inputContainer}>
                             <Ionicons name="mail-outline" size={20} color={COLORS.neutral[400]} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="shop@goviconnect.lk"
+                                placeholder="shop@example.com"
                                 placeholderTextColor={COLORS.neutral[400]}
                                 value={email}
                                 onChangeText={setEmail}
@@ -102,14 +140,46 @@ const ShopLogin: React.FC = () => {
                         </View>
                     </View>
 
-                    {/* Password Field */}
+                    {/* Phone */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Password</Text>
+                        <Text style={styles.inputLabel}>Phone</Text>
+                        <View style={styles.inputContainer}>
+                            <Ionicons name="call-outline" size={20} color={COLORS.neutral[400]} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="077 123 4567"
+                                placeholderTextColor={COLORS.neutral[400]}
+                                value={phone}
+                                onChangeText={setPhone}
+                                keyboardType="phone-pad"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Location */}
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Location</Text>
+                        <View style={styles.inputContainer}>
+                            <Ionicons name="location-outline" size={20} color={COLORS.neutral[400]} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Colombo"
+                                placeholderTextColor={COLORS.neutral[400]}
+                                value={location}
+                                onChangeText={setLocation}
+                                autoCapitalize="words"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Password */}
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Password *</Text>
                         <View style={styles.inputContainer}>
                             <Ionicons name="lock-closed-outline" size={20} color={COLORS.neutral[400]} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Enter your password"
+                                placeholder="Min 6 characters"
                                 placeholderTextColor={COLORS.neutral[400]}
                                 value={password}
                                 onChangeText={setPassword}
@@ -125,15 +195,26 @@ const ShopLogin: React.FC = () => {
                         </View>
                     </View>
 
-                    {/* Forgot Password */}
-                    <TouchableOpacity style={styles.forgotButton}>
-                        <Text style={styles.forgotText}>Forgot Password?</Text>
-                    </TouchableOpacity>
+                    {/* Confirm Password */}
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Confirm Password *</Text>
+                        <View style={styles.inputContainer}>
+                            <Ionicons name="lock-closed-outline" size={20} color={COLORS.neutral[400]} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Re-enter password"
+                                placeholderTextColor={COLORS.neutral[400]}
+                                value={confirmPassword}
+                                onChangeText={setConfirmPassword}
+                                secureTextEntry={!showPassword}
+                            />
+                        </View>
+                    </View>
 
-                    {/* Login Button */}
+                    {/* Register Button */}
                     <TouchableOpacity
-                        style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-                        onPress={handleLogin}
+                        style={[styles.registerButton, loading && styles.registerButtonDisabled]}
+                        onPress={handleRegister}
                         disabled={loading}
                         activeOpacity={0.8}
                     >
@@ -141,47 +222,25 @@ const ShopLogin: React.FC = () => {
                             <ActivityIndicator color="#ffffff" size="small" />
                         ) : (
                             <>
-                                <Text style={styles.loginButtonText}>Sign In</Text>
+                                <Text style={styles.registerButtonText}>Create Account</Text>
                                 <Ionicons name="arrow-forward" size={18} color="#ffffff" />
                             </>
                         )}
                     </TouchableOpacity>
 
-                    {/* Register Link */}
-                    <View style={styles.registerContainer}>
-                        <Text style={styles.registerText}>Don't have an account? </Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('ShopRegister')}>
-                            <Text style={styles.registerLink}>Register Shop</Text>
+                    {/* Login Link */}
+                    <View style={styles.loginContainer}>
+                        <Text style={styles.loginText}>Already have an account? </Text>
+                        <TouchableOpacity onPress={() => navigation.goBack()}>
+                            <Text style={styles.loginLink}>Sign In</Text>
                         </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Info Section */}
-                <View style={styles.infoSection}>
-                    <View style={styles.infoItem}>
-                        <View style={[styles.infoIcon, { backgroundColor: SHOP_BG }]}>
-                            <Ionicons name="leaf" size={18} color={SHOP_COLOR} />
-                        </View>
-                        <Text style={styles.infoText}>Source produce</Text>
-                    </View>
-                    <View style={styles.infoItem}>
-                        <View style={[styles.infoIcon, { backgroundColor: SHOP_LIGHT }]}>
-                            <Ionicons name="receipt" size={18} color={SHOP_COLOR} />
-                        </View>
-                        <Text style={styles.infoText}>Manage orders</Text>
-                    </View>
-                    <View style={styles.infoItem}>
-                        <View style={[styles.infoIcon, { backgroundColor: COLORS.secondary[50] }]}>
-                            <Ionicons name="stats-chart" size={18} color={COLORS.secondary[500]} />
-                        </View>
-                        <Text style={styles.infoText}>Track sales</Text>
                     </View>
                 </View>
 
                 {/* Footer */}
                 <Text style={styles.footerText}>
-                    Connect with local farmers directly.{'\n'}
-                    Fresh produce for your shop.
+                    By creating an account, you agree to our{'\n'}
+                    Terms of Service and Privacy Policy.
                 </Text>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -199,24 +258,24 @@ const styles = StyleSheet.create({
     },
     brandingSection: {
         alignItems: 'center',
-        paddingTop: 80,
-        paddingBottom: 32,
+        paddingTop: 60,
+        paddingBottom: 24,
     },
     logoContainer: {
-        marginBottom: 16,
+        marginBottom: 12,
     },
     logoOuter: {
-        width: 88,
-        height: 88,
-        borderRadius: 44,
+        width: 76,
+        height: 76,
+        borderRadius: 38,
         backgroundColor: SHOP_LIGHT,
         alignItems: 'center',
         justifyContent: 'center',
     },
     logoInner: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         backgroundColor: SHOP_BG,
         alignItems: 'center',
         justifyContent: 'center',
@@ -224,33 +283,16 @@ const styles = StyleSheet.create({
         borderColor: '#93c5fd',
     },
     appTitle: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: 'bold',
         color: SHOP_COLOR,
         fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
     },
     appSubtitle: {
-        fontSize: 16,
+        fontSize: 14,
         color: COLORS.neutral[400],
         marginTop: 2,
         fontWeight: '500',
-    },
-    roleBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 12,
-        backgroundColor: SHOP_BG,
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 50,
-        borderWidth: 1,
-        borderColor: '#93c5fd',
-    },
-    roleBadgeText: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: SHOP_COLOR,
-        marginLeft: 6,
     },
     formCard: {
         backgroundColor: '#ffffff',
@@ -287,7 +329,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     inputGroup: {
-        marginBottom: 16,
+        marginBottom: 14,
     },
     inputLabel: {
         fontSize: 14,
@@ -311,78 +353,47 @@ const styles = StyleSheet.create({
         color: COLORS.neutral[800],
         marginLeft: 8,
     },
-    forgotButton: {
-        alignSelf: 'flex-end',
-        marginBottom: 20,
-    },
-    forgotText: {
-        fontSize: 13,
-        color: SHOP_COLOR,
-        fontWeight: '500',
-    },
-    loginButton: {
+    registerButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: SHOP_COLOR,
         borderRadius: 12,
         paddingVertical: 14,
+        marginTop: 8,
         ...SHADOW.md,
         shadowColor: SHOP_COLOR,
     },
-    loginButtonDisabled: {
+    registerButtonDisabled: {
         opacity: 0.7,
     },
-    loginButtonText: {
+    registerButtonText: {
         fontSize: 16,
         fontWeight: '600',
         color: '#ffffff',
         marginRight: 8,
     },
-    registerContainer: {
+    loginContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         marginTop: 20,
     },
-    registerText: {
+    loginText: {
         fontSize: 14,
         color: COLORS.neutral[500],
     },
-    registerLink: {
+    loginLink: {
         fontSize: 14,
         color: SHOP_COLOR,
         fontWeight: '600',
-    },
-    infoSection: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        paddingHorizontal: 20,
-        paddingTop: 28,
-    },
-    infoItem: {
-        alignItems: 'center',
-    },
-    infoIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 6,
-    },
-    infoText: {
-        fontSize: 11,
-        color: COLORS.neutral[500],
-        fontWeight: '500',
-        textAlign: 'center',
     },
     footerText: {
         textAlign: 'center',
         fontSize: 12,
         color: COLORS.neutral[300],
-        marginTop: 28,
+        marginTop: 24,
         lineHeight: 18,
     },
 });
 
-export default ShopLogin;
+export default ShopRegister;

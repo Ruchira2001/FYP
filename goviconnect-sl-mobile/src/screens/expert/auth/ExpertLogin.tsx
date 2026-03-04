@@ -157,7 +157,7 @@ const ExpertLogin: React.FC = () => {
                 {/* Footer */}
                 <Text style={styles.footerText}>
                     For authorized agricultural experts only.{'\n'}
-                    Contact admin@goviconnect.lk for access.
+                    Contact admin@goviconnect.lk for account access.
                 </Text>
             </ScrollView>
         </KeyboardAvoidingView>

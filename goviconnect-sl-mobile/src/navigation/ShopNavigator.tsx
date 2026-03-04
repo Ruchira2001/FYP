@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/constants';
 import { useShop } from '../context/ShopContext';
-import { ShopLogin, ShopHome, ShopProfile } from '../screens/shop';
+import { ShopLogin, ShopRegister, ShopHome, ShopProfile } from '../screens/shop';
 import ShopProducts from '../screens/shop/products/ShopProducts';
 import ShopProductDetail from '../screens/shop/products/ShopProductDetail';
 import ShopEditProfile from '../screens/shop/profile/ShopEditProfile';
@@ -114,7 +114,10 @@ const ShopNavigator: React.FC = () => {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             {!isAuthenticated ? (
-                <Stack.Screen name="ShopLogin" component={ShopLogin} />
+                <>
+                    <Stack.Screen name="ShopLogin" component={ShopLogin} />
+                    <Stack.Screen name="ShopRegister" component={ShopRegister} />
+                </>
             ) : (
                 <>
                     <Stack.Screen name="ShopTabs" component={ShopTabs} />
