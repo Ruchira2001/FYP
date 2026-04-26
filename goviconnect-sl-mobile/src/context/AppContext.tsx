@@ -143,14 +143,18 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         setIsLoading(true);
         setLoginError(null);
         try {
-            const res = await authAPI.registerFarmer({
+            const payload: any = {
                 name: userData.name || '',
                 email: userData.email || '',
                 phone: userData.phone || '',
                 password: userData.password,
-                district: userData.district || '',
                 crops: userData.crops || [],
-            });
+            };
+            // Only include district if the user selected one (avoids Mongoose enum error on empty string)
+            if (userData.district) {
+                payload.district = userData.district;
+            }
+            const res = await authAPI.registerFarmer(payload);
             const { token, user: u } = res.data;
             const formatted: User = {
                 id: u._id,
@@ -167,9 +171,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
             setIsAuthenticated(true);
             return true;
         } catch (error: any) {
-            const msg = error?.response?.data?.message || 'Registration failed. Please try again.';
+            let msg = 'Registration failed. Please try again.';
+            if (error?.response?.data?.message) {
+                msg = error.response.data.message;
+            } else if (!error?.response) {
+                msg = 'Cannot connect to server. Check your network and try again.';
+            }
             setLoginError(msg);
-            console.error('Register error:', msg);
+            console.error('Register error:', error?.response?.data || error?.message);
             return false;
         } finally {
             setIsLoading(false);

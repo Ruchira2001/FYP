@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, StatusBar, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Modal, FlatList } from 'react-native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -10,10 +10,18 @@ import { useApp } from '../../context';
 import { validateEmail, validatePhone, validatePassword } from '../../utils/validators';
 import cropsData from '../../data/crops.json';
 
+const SL_DISTRICTS = [
+    'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo',
+    'Galle', 'Gampaha', 'Hambantota', 'Jaffna', 'Kalutara',
+    'Kandy', 'Kegalle', 'Kilinochchi', 'Kurunegala', 'Mannar',
+    'Matale', 'Matara', 'Monaragala', 'Mullaitivu', 'Nuwara Eliya',
+    'Polonnaruwa', 'Puttalam', 'Ratnapura', 'Trincomalee', 'Vavuniya',
+];
+
 const Register: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
-    const { register, isLoading } = useApp();
+    const { register, isLoading, loginError } = useApp();
 
     const [step, setStep] = useState(1);
     const [name, setName] = useState('');
@@ -24,6 +32,7 @@ const Register: React.FC = () => {
     const [district, setDistrict] = useState('');
     const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
     const [showPassword, setShowPassword] = useState(false);
+    const [showDistrictPicker, setShowDistrictPicker] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const validateStep1 = (): boolean => {
@@ -104,7 +113,14 @@ const Register: React.FC = () => {
         });
 
         if (success) {
-            navigation.replace('MainTabs');
+            // Reset the parent (FarmerNavigator RootStack) so the auth screens
+            // are removed from history and the user lands on the dashboard.
+            navigation.getParent()?.dispatch(
+                CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'MainTabs' }],
+                })
+            );
         }
     };
 
@@ -167,14 +183,79 @@ const Register: React.FC = () => {
                 error={errors.confirmPassword}
             />
 
-            <InputField
-                label={t('auth.district')}
-                placeholder="Kandy"
-                value={district}
-                onChangeText={setDistrict}
-                icon="location-outline"
-                autoCapitalize="words"
-            />
+            {/* District Dropdown */}
+            <Text style={styles.districtLabel}>{t('auth.district')}</Text>
+            <TouchableOpacity
+                style={[
+                    styles.districtButton,
+                    errors.district ? styles.districtButtonError : null,
+                ]}
+                onPress={() => setShowDistrictPicker(true)}
+                activeOpacity={0.7}
+            >
+                <Ionicons name="location-outline" size={18} color={COLORS.neutral[500]} />
+                <Text style={[
+                    styles.districtButtonText,
+                    !district && styles.districtPlaceholder,
+                ]}>
+                    {district || 'Select your district'}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color={COLORS.neutral[400]} />
+            </TouchableOpacity>
+            {errors.district ? (
+                <Text style={styles.districtError}>{errors.district}</Text>
+            ) : null}
+
+            {/* District Picker Modal */}
+            <Modal
+                visible={showDistrictPicker}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowDistrictPicker(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowDistrictPicker(false)}
+                >
+                    <View style={styles.modalSheet}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Select District</Text>
+                            <TouchableOpacity onPress={() => setShowDistrictPicker(false)}>
+                                <Ionicons name="close" size={22} color={COLORS.neutral[600]} />
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={SL_DISTRICTS}
+                            keyExtractor={(item) => item}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={[
+                                        styles.districtItem,
+                                        district === item && styles.districtItemSelected,
+                                    ]}
+                                    onPress={() => {
+                                        setDistrict(item);
+                                        setShowDistrictPicker(false);
+                                        setErrors(prev => ({ ...prev, district: '' }));
+                                    }}
+                                >
+                                    <Text style={[
+                                        styles.districtItemText,
+                                        district === item && styles.districtItemTextSelected,
+                                    ]}>
+                                        {item}
+                                    </Text>
+                                    {district === item && (
+                                        <Ionicons name="checkmark" size={18} color={COLORS.primary[600]} />
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                            showsVerticalScrollIndicator={false}
+                        />
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 
@@ -268,6 +349,14 @@ const Register: React.FC = () => {
                     {step === 1 && renderStep1()}
                     {step === 2 && renderStep2()}
                     {step === 3 && renderStep3()}
+
+                    {/* API Error */}
+                    {loginError && step === 3 && (
+                        <View style={styles.errorBanner}>
+                            <Ionicons name="alert-circle-outline" size={16} color="#dc2626" />
+                            <Text style={styles.errorBannerText}>{loginError}</Text>
+                        </View>
+                    )}
 
                     {/* Action Button */}
                     <View style={styles.actionButton}>
@@ -375,6 +464,87 @@ const styles = StyleSheet.create({
     stepLineInactive: {
         backgroundColor: COLORS.neutral[200],
     },
+    districtLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: COLORS.neutral[700],
+        marginBottom: 6,
+    },
+    districtButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: COLORS.neutral[300],
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 13,
+        backgroundColor: '#fff',
+        gap: 10,
+        marginBottom: 4,
+    },
+    districtButtonError: {
+        borderColor: '#dc2626',
+    },
+    districtButtonText: {
+        flex: 1,
+        fontSize: 15,
+        color: COLORS.neutral[800],
+    },
+    districtPlaceholder: {
+        color: COLORS.neutral[400],
+    },
+    districtError: {
+        fontSize: 12,
+        color: '#dc2626',
+        marginBottom: 12,
+        marginLeft: 4,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'flex-end',
+    },
+    modalSheet: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        maxHeight: '65%',
+        paddingBottom: 24,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+    },
+    modalTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    districtItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[50],
+    },
+    districtItemSelected: {
+        backgroundColor: COLORS.primary[50],
+    },
+    districtItemText: {
+        fontSize: 15,
+        color: COLORS.neutral[700],
+    },
+    districtItemTextSelected: {
+        color: COLORS.primary[600],
+        fontWeight: '600',
+    },
     cropsLabel: {
         fontSize: 14,
         color: COLORS.neutral[600],
@@ -394,6 +564,20 @@ const styles = StyleSheet.create({
     },
     loginText: {
         color: COLORS.neutral[500],
+    },
+    errorBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fef2f2',
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 12,
+        gap: 8,
+    },
+    errorBannerText: {
+        flex: 1,
+        fontSize: 13,
+        color: '#dc2626',
     },
     loginLink: {
         color: COLORS.primary[600],

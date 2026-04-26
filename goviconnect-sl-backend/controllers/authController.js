@@ -35,7 +35,7 @@ exports.registerFarmer = async (req, res, next) => {
       email,
       phone,
       password,
-      district,
+      ...(district && district.trim() ? { district: district.trim() } : {}),
       crops: crops || [],
       hasCompletedOnboarding: true,
     });
