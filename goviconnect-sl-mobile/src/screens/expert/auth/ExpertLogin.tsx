@@ -10,22 +10,22 @@ import { useExpert } from '../../../context/ExpertContext';
 const { width } = Dimensions.get('window');
 
 const ExpertLogin: React.FC = () => {
-    const { login, isLoading } = useExpert();
+    const { login, isLoading, loginError } = useExpert();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState('');
+    const [localError, setLocalError] = useState('');
+
+    // Show context error (network/server) or local validation error
+    const error = loginError || localError;
 
     const handleLogin = async () => {
         if (!email.trim() || !password.trim()) {
-            setError('Please fill in all fields');
+            setLocalError('Please fill in all fields');
             return;
         }
-        setError('');
-        const success = await login(email, password);
-        if (!success) {
-            setError('Invalid credentials. Please try again.');
-        }
+        setLocalError('');
+        await login(email, password);
     };
 
     return (

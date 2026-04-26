@@ -135,9 +135,14 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
             setIsAuthenticated(true);
             return true;
         } catch (error: any) {
-            const msg = error?.response?.data?.message || 'Login failed. Please try again.';
+            let msg = 'Login failed. Please try again.';
+            if (error?.response?.data?.message) {
+                msg = error.response.data.message;
+            } else if (!error?.response) {
+                msg = 'Cannot connect to server. Check your network and try again.';
+            }
             setLoginError(msg);
-            console.error('Expert login error:', msg);
+            console.error('Expert login error:', error?.response?.data || error?.message);
             return false;
         } finally {
             setIsLoading(false);
