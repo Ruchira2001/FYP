@@ -346,7 +346,7 @@ exports.getExpertMeetings = async (req, res, next) => {
 // @route   POST /api/expert/meetings
 exports.createMeeting = async (req, res, next) => {
   try {
-    const { type, topic, topicSi, description, descriptionSi, sessionTitle, sessionTitleSi, dateTime, duration, maxAttendees } = req.body;
+    const { type, topic, topicSi, description, descriptionSi, sessionTitle, sessionTitleSi, dateTime, duration, maxAttendees, meetingLink } = req.body;
 
     const meeting = await Meeting.create({
       expertId: req.user._id,
@@ -363,8 +363,14 @@ exports.createMeeting = async (req, res, next) => {
       duration: duration || 60,
       status: 'confirmed',
       maxAttendees: maxAttendees || 50,
-      meetingLink: `https://meet.goviconnect.lk/session_${Date.now()}`,
+      meetingLink: meetingLink || `https://meet.goviconnect.lk/session_${Date.now()}`,
     });
+
+    // Emit real-time event so farmer clients can refresh
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('meeting_created', { meeting });
+    }
 
     res.status(201).json({ success: true, data: meeting });
   } catch (error) {
@@ -398,6 +404,12 @@ exports.updateMeeting = async (req, res, next) => {
         bodySi: `ඔබේ රැස්වීම "${meeting.topicSi || meeting.topic}" ${req.body.status} කර ඇත`,
         data: { meetingId: meeting._id },
       });
+    }
+
+    // Emit real-time event so farmer apps refresh
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('meeting_updated', { meetingId: meeting._id.toString() });
     }
 
     res.json({ success: true, data: meeting });

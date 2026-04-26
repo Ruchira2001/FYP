@@ -124,6 +124,12 @@ exports.bookMeeting = async (req, res, next) => {
       data: { meetingId: meeting._id },
     });
 
+    // Emit real-time socket event to expert
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('meeting_booked', { meeting, expertId: expert._id.toString() });
+    }
+
     res.status(201).json({ success: true, data: meeting });
   } catch (error) {
     next(error);
@@ -250,6 +256,12 @@ exports.registerForSession = async (req, res, next) => {
     session.registeredUsers.push(req.user._id);
     session.attendees += 1;
     await session.save();
+
+    // Notify expert of new registration in real time
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('meeting_registered', { sessionId: session._id.toString(), expertId: session.expertId.toString(), attendees: session.attendees });
+    }
 
     res.json({ success: true, data: session });
   } catch (error) {

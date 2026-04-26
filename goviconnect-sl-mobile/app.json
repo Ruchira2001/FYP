@@ -1,53 +1,54 @@
 {
-    "expo": {
-        "name": "Goviconnect SL",
-        "slug": "goviconnect-sl",
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "userInterfaceStyle": "automatic",
-        "splash": {
-            "resizeMode": "contain",
-            "backgroundColor": "#22c55e"
-        },
-        "assetBundlePatterns": [
-            "**/*"
-        ],
-        "platforms": [
-            "ios",
-            "android",
-            "web"
-        ],
-        "ios": {
-            "supportsTablet": true,
-            "bundleIdentifier": "com.goviconnect.sl"
-        },
-        "android": {
-            "adaptiveIcon": {
-                "backgroundColor": "#22c55e"
-            },
-            "package": "com.goviconnect.sl"
-        },
-        "web": {
-            "bundler": "metro"
-        },
-        "plugins": [
-            "expo-font",
-            "expo-localization",
-            [
-                "expo-image-picker",
-                {
-                    "photosPermission": "Allow Goviconnect SL to access your photos for crop disease analysis.",
-                    "cameraPermission": "Allow Goviconnect SL to access your camera for crop disease analysis."
-                }
-            ],
-            [
-                "expo-location",
-                {
-                    "locationAlwaysAndWhenInUsePermission": "Allow Goviconnect SL to access your location to show real-time weather for your area.",
-                    "locationWhenInUsePermission": "Allow Goviconnect SL to access your location to show real-time weather for your area."
-                }
-            ]
-        ],
-        "scheme": "goviconnect"
-    }
+  "expo": {
+    "name": "Goviconnect SL",
+    "slug": "goviconnect-sl",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#22c55e"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.goviconnect.sl"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#22c55e"
+      },
+      "package": "com.goviconnect.sl"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Goviconnect SL to access your photos for crop disease analysis.",
+          "cameraPermission": "Allow Goviconnect SL to access your camera for crop disease analysis."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Goviconnect SL to access your location to show real-time weather for your area.",
+          "locationWhenInUsePermission": "Allow Goviconnect SL to access your location to show real-time weather for your area."
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "scheme": "goviconnect"
+  }
 }

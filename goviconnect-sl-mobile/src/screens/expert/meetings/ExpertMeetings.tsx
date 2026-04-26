@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput, Alert, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { Header, EmptyState, Chip, PrimaryButton } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { formatDate, formatTime, getRelativeTime } from '../../../utils/validators';
 import { expertDashboardAPI } from '../../../services/api';
+import { getSocket } from '../../../services/socketService';
 
 const MEETING_FILTERS = ['All', 'Upcoming', 'Personal', 'Group', 'Completed'];
 
@@ -18,15 +19,77 @@ const ExpertMeetings: React.FC = () => {
     const [activeFilter, setActiveFilter] = useState('All');
     const [meetings, setMeetings] = useState<any[]>([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const [newMeeting, setNewMeeting] = useState({
         title: '',
         description: '',
         type: 'group' as 'group' | 'personal',
         duration: '60',
+        zoomLink: '',
+        dateTime: tomorrow,
     });
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [calendarMonth, setCalendarMonth] = useState(() => {
+        const d = new Date(tomorrow);
+        d.setDate(1);
+        return d;
+    });
+
+    const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DAY_NAMES = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06:00 – 22:00
+    const MINUTES = [0, 15, 30, 45];
+
+    const getDaysInMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    const getFirstDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1).getDay();
+    const isSameDay = (a: Date, b: Date) =>
+        a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+
+    const prevMonth = () => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    const nextMonth = () => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+
+    const selectDay = (day: number) => {
+        const selected = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), day);
+        const updated = new Date(newMeeting.dateTime);
+        updated.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+        setNewMeeting(prev => ({ ...prev, dateTime: updated }));
+        setShowDatePicker(false);
+    };
+
+    const selectHour = (h: number) => {
+        const updated = new Date(newMeeting.dateTime);
+        updated.setHours(h);
+        setNewMeeting(prev => ({ ...prev, dateTime: updated }));
+    };
+
+    const selectMinute = (m: number) => {
+        const updated = new Date(newMeeting.dateTime);
+        updated.setMinutes(m);
+        setNewMeeting(prev => ({ ...prev, dateTime: updated }));
+        setShowTimePicker(false);
+    };
 
     useEffect(() => {
         loadMeetings();
+
+        // Real-time: listen for meeting updates from farmers
+        const socket = getSocket();
+        if (socket) {
+            socket.on('meeting_booked', (data: any) => {
+                loadMeetings();
+            });
+            socket.on('meeting_registered', (data: any) => {
+                loadMeetings();
+            });
+        }
+
+        return () => {
+            if (socket) {
+                socket.off('meeting_booked');
+                socket.off('meeting_registered');
+            }
+        };
     }, []);
 
     const loadMeetings = async () => {
@@ -38,7 +101,7 @@ const ExpertMeetings: React.FC = () => {
                 sessionTitle: m.sessionTitle || m.title || '',
                 description: m.description || '',
                 type: m.type || 'group',
-                status: m.status || 'upcoming',
+                status: m.status || 'pending',
                 dateTime: m.dateTime || m.date || '',
                 duration: m.duration || 60,
                 farmerName: m.farmer?.name || m.farmerName || '',
@@ -51,15 +114,18 @@ const ExpertMeetings: React.FC = () => {
         }
     };
 
+    const isActiveStatus = (status: string) =>
+        status === 'pending' || status === 'confirmed';
+
     const filteredMeetings = meetings.filter(meeting => {
-        if (activeFilter === 'Upcoming') return meeting.status === 'upcoming';
+        if (activeFilter === 'Upcoming') return isActiveStatus(meeting.status);
         if (activeFilter === 'Personal') return meeting.type === 'personal';
         if (activeFilter === 'Group') return meeting.type === 'group';
-        if (activeFilter === 'Completed') return meeting.status === 'completed';
+        if (activeFilter === 'Completed') return meeting.status === 'completed' || meeting.status === 'cancelled';
         return true;
     });
 
-    const upcomingCount = meetings.filter(m => m.status === 'upcoming').length;
+    const upcomingCount = meetings.filter(m => isActiveStatus(m.status)).length;
 
     const getMeetingTypeConfig = (type: string) => {
         if (type === 'personal') {
@@ -73,26 +139,34 @@ const ExpertMeetings: React.FC = () => {
             Alert.alert('Error', 'Please enter a meeting title.');
             return;
         }
+        if (newMeeting.dateTime <= new Date()) {
+            Alert.alert('Error', 'Please select a future date and time.');
+            return;
+        }
         try {
             await expertDashboardAPI.createMeeting({
-                title: newMeeting.title,
+                topic: newMeeting.title,
+                sessionTitle: newMeeting.title,
                 description: newMeeting.description,
                 type: newMeeting.type,
                 duration: parseInt(newMeeting.duration),
+                dateTime: newMeeting.dateTime.toISOString(),
+                meetingLink: newMeeting.zoomLink.trim() || undefined,
             });
             Alert.alert('Success', 'Meeting session created successfully!');
             setShowCreateModal(false);
-            setNewMeeting({ title: '', description: '', type: 'group', duration: '60' });
+            setNewMeeting({ title: '', description: '', type: 'group', duration: '60', zoomLink: '', dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000) });
             loadMeetings();
-        } catch (e) {
+        } catch (e: any) {
             console.error('Failed to create meeting:', e);
-            Alert.alert('Error', 'Failed to create meeting.');
+            const message = e?.response?.data?.message || e?.message || 'Failed to create meeting.';
+            Alert.alert('Error', message);
         }
     };
 
     const renderMeetingCard = (meeting: any) => {
         const typeConfig = getMeetingTypeConfig(meeting.type);
-        const isUpcoming = meeting.status === 'upcoming';
+        const isUpcoming = isActiveStatus(meeting.status);
 
         return (
             <TouchableOpacity
@@ -178,7 +252,11 @@ const ExpertMeetings: React.FC = () => {
 
                 {/* Action Button */}
                 {isUpcoming && meeting.meetingLink && (
-                    <TouchableOpacity style={styles.joinButton} activeOpacity={0.7}>
+                    <TouchableOpacity
+                        style={styles.joinButton}
+                        activeOpacity={0.7}
+                        onPress={() => Linking.openURL(meeting.meetingLink).catch(() => Alert.alert('Error', 'Cannot open meeting link.'))}
+                    >
                         <Ionicons name="videocam" size={18} color="#ffffff" />
                         <Text style={styles.joinButtonText}>
                             {meeting.type === 'personal' ? 'Start Session' : 'Start Meeting'}
@@ -352,6 +430,154 @@ const ExpertMeetings: React.FC = () => {
                                         ]}>{duration}</Text>
                                     </TouchableOpacity>
                                 ))}
+                            </View>
+                        </View>
+
+                        {/* Date Picker */}
+                        <View style={styles.formGroup}>
+                            <Text style={styles.formLabel}>Date</Text>
+                            <TouchableOpacity
+                                style={styles.datePickerButton}
+                                onPress={() => {
+                                    const m = new Date(newMeeting.dateTime);
+                                    m.setDate(1);
+                                    setCalendarMonth(m);
+                                    setShowDatePicker(v => !v);
+                                    setShowTimePicker(false);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="calendar-outline" size={18} color={COLORS.primary[500]} />
+                                <Text style={styles.datePickerText}>
+                                    {newMeeting.dateTime.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                                </Text>
+                                <Ionicons name={showDatePicker ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.neutral[400]} style={{ marginLeft: 'auto' }} />
+                            </TouchableOpacity>
+
+                            {showDatePicker && (
+                                <View style={styles.calendarPanel}>
+                                    {/* Month nav */}
+                                    <View style={styles.calendarNav}>
+                                        <TouchableOpacity onPress={prevMonth} style={styles.calendarNavBtn}>
+                                            <Ionicons name="chevron-back" size={20} color={COLORS.primary[500]} />
+                                        </TouchableOpacity>
+                                        <Text style={styles.calendarMonthLabel}>
+                                            {MONTH_NAMES[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+                                        </Text>
+                                        <TouchableOpacity onPress={nextMonth} style={styles.calendarNavBtn}>
+                                            <Ionicons name="chevron-forward" size={20} color={COLORS.primary[500]} />
+                                        </TouchableOpacity>
+                                    </View>
+                                    {/* Day headers */}
+                                    <View style={styles.calendarRow}>
+                                        {DAY_NAMES.map(d => (
+                                            <Text key={d} style={styles.calendarDayHeader}>{d}</Text>
+                                        ))}
+                                    </View>
+                                    {/* Day grid */}
+                                    <View style={styles.calendarGrid}>
+                                        {Array.from({ length: getFirstDay(calendarMonth) }).map((_, i) => (
+                                            <View key={`e${i}`} style={styles.calendarCell} />
+                                        ))}
+                                        {Array.from({ length: getDaysInMonth(calendarMonth) }).map((_, i) => {
+                                            const day = i + 1;
+                                            const thisDate = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), day);
+                                            const today = new Date(); today.setHours(0, 0, 0, 0);
+                                            const isPast = thisDate < today;
+                                            const isSelected = isSameDay(thisDate, newMeeting.dateTime);
+                                            return (
+                                                <TouchableOpacity
+                                                    key={day}
+                                                    style={[styles.calendarCell, isSelected && styles.calendarCellSelected]}
+                                                    onPress={() => !isPast && selectDay(day)}
+                                                    activeOpacity={isPast ? 1 : 0.7}
+                                                >
+                                                    <Text style={[
+                                                        styles.calendarDayText,
+                                                        isSelected && styles.calendarDayTextSelected,
+                                                        isPast && styles.calendarDayPast,
+                                                    ]}>{day}</Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Time Picker */}
+                        <View style={styles.formGroup}>
+                            <Text style={styles.formLabel}>Time</Text>
+                            <TouchableOpacity
+                                style={styles.datePickerButton}
+                                onPress={() => {
+                                    setShowTimePicker(v => !v);
+                                    setShowDatePicker(false);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="time-outline" size={18} color={COLORS.primary[500]} />
+                                <Text style={styles.datePickerText}>
+                                    {newMeeting.dateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                </Text>
+                                <Ionicons name={showTimePicker ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.neutral[400]} style={{ marginLeft: 'auto' }} />
+                            </TouchableOpacity>
+
+                            {showTimePicker && (
+                                <View style={styles.timePanel}>
+                                    <Text style={styles.timePanelLabel}>Hour</Text>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                                        {HOURS.map(h => {
+                                            const sel = newMeeting.dateTime.getHours() === h;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={h}
+                                                    style={[styles.timeChip, sel && styles.timeChipSelected]}
+                                                    onPress={() => selectHour(h)}
+                                                >
+                                                    <Text style={[styles.timeChipText, sel && styles.timeChipTextSelected]}>
+                                                        {h.toString().padStart(2, '0')}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </ScrollView>
+                                    <Text style={styles.timePanelLabel}>Minute</Text>
+                                    <View style={styles.minuteRow}>
+                                        {MINUTES.map(m => {
+                                            const sel = newMeeting.dateTime.getMinutes() === m;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={m}
+                                                    style={[styles.timeChip, sel && styles.timeChipSelected]}
+                                                    onPress={() => selectMinute(m)}
+                                                >
+                                                    <Text style={[styles.timeChipText, sel && styles.timeChipTextSelected]}>
+                                                        :{m.toString().padStart(2, '0')}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Zoom / Meeting Link */}
+                        <View style={styles.formGroup}>
+                            <Text style={styles.formLabel}>Zoom / Meeting Link (optional)</Text>
+                            <View style={styles.linkInputRow}>
+                                <Ionicons name="videocam-outline" size={18} color={COLORS.primary[500]} style={{ marginRight: 8 }} />
+                                <TextInput
+                                    style={[styles.formInput, { flex: 1 }]}
+                                    placeholder="https://zoom.us/j/..."
+                                    placeholderTextColor={COLORS.neutral[400]}
+                                    value={newMeeting.zoomLink}
+                                    onChangeText={(text) => setNewMeeting(prev => ({ ...prev, zoomLink: text }))}
+                                    keyboardType="url"
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                />
                             </View>
                         </View>
                     </ScrollView>
@@ -667,6 +893,131 @@ const styles = StyleSheet.create({
     },
     durationTextActive: {
         color: COLORS.primary[600],
+    },
+    datePickerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.neutral[50],
+        borderRadius: 12,
+        padding: 14,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+    },
+    datePickerText: {
+        fontSize: 14,
+        color: COLORS.neutral[800],
+        marginLeft: 8,
+    },
+    // ── Calendar ─────────────────────────────────────────────
+    calendarPanel: {
+        marginTop: 8,
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+        padding: 12,
+    },
+    calendarNav: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
+    calendarNavBtn: {
+        padding: 6,
+    },
+    calendarMonthLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    calendarRow: {
+        flexDirection: 'row',
+        marginBottom: 4,
+    },
+    calendarDayHeader: {
+        flex: 1,
+        textAlign: 'center',
+        fontSize: 11,
+        fontWeight: '600',
+        color: COLORS.neutral[400],
+        paddingVertical: 4,
+    },
+    calendarGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    calendarCell: {
+        width: '14.28%',
+        aspectRatio: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 20,
+    },
+    calendarCellSelected: {
+        backgroundColor: COLORS.primary[500],
+    },
+    calendarDayText: {
+        fontSize: 13,
+        color: COLORS.neutral[700],
+    },
+    calendarDayTextSelected: {
+        color: '#ffffff',
+        fontWeight: '700',
+    },
+    calendarDayPast: {
+        color: COLORS.neutral[300],
+    },
+    // ── Time Picker ──────────────────────────────────────────
+    timePanel: {
+        marginTop: 8,
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+        padding: 12,
+    },
+    timePanelLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.neutral[500],
+        marginBottom: 8,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    minuteRow: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    timeChip: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1.5,
+        borderColor: COLORS.neutral[200],
+        marginRight: 8,
+        backgroundColor: COLORS.neutral[50],
+    },
+    timeChipSelected: {
+        borderColor: COLORS.primary[500],
+        backgroundColor: COLORS.primary[500],
+    },
+    timeChipText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.neutral[600],
+    },
+    timeChipTextSelected: {
+        color: '#ffffff',
+    },
+    linkInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.neutral[50],
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
     },
     modalFooter: {
         padding: 16,

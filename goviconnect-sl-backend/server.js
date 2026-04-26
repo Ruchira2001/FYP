@@ -36,6 +36,9 @@ const server = http.createServer(app);
 const io = initSocket(server);
 setupSocketHandlers(io);
 
+// Make io accessible in controllers via req.app.get('io')
+app.set('io', io);
+
 // Connect to MongoDB
 connectDB();
 

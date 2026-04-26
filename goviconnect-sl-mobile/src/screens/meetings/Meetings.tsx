@@ -8,6 +8,7 @@ import { Header, EmptyState } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { formatDateTime } from '../../utils/validators';
 import { meetingAPI } from '../../services/api';
+import { getSocket } from '../../services/socketService';
 
 const Meetings: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -17,6 +18,16 @@ const Meetings: React.FC = () => {
 
     useEffect(() => {
         loadSessions();
+
+        // Real-time: refresh sessions when an expert creates a new one
+        const socket = getSocket();
+        if (socket) {
+            socket.on('meeting_created', () => loadSessions());
+        }
+
+        return () => {
+            if (socket) socket.off('meeting_created');
+        };
     }, []);
 
     const loadSessions = async () => {

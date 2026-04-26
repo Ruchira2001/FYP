@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { COLORS, MEETING_STATUSES } from '../../utils/constants';
 import { Meeting } from '../../services/storage';
 import { meetingAPI } from '../../services/api';
 import { formatDateTime } from '../../utils/validators';
+import { getSocket } from '../../services/socketService';
 
 type FilterType = 'all' | 'pending' | 'confirmed' | 'completed';
 
@@ -21,6 +22,16 @@ const MyMeetings: React.FC = () => {
 
     useEffect(() => {
         loadMeetings();
+
+        // Real-time: refresh when expert updates meeting status
+        const socket = getSocket();
+        if (socket) {
+            socket.on('meeting_updated', () => loadMeetings());
+        }
+
+        return () => {
+            if (socket) socket.off('meeting_updated');
+        };
     }, []);
 
     const loadMeetings = async () => {
@@ -117,6 +128,16 @@ const MyMeetings: React.FC = () => {
                                 <Text style={styles.sourceText}>Booked from chat</Text>
                             </View>
                         )}
+
+                        {item.status === 'confirmed' && item.meetingLink ? (
+                            <TouchableOpacity
+                                style={styles.joinButton}
+                                onPress={() => Linking.openURL(item.meetingLink!).catch(() => Alert.alert('Error', 'Cannot open meeting link.'))}
+                            >
+                                <Ionicons name="videocam" size={14} color="#fff" />
+                                <Text style={styles.joinButtonText}>Join Meeting</Text>
+                            </TouchableOpacity>
+                        ) : null}
                     </View>
                 </View>
             </TouchableOpacity>
@@ -262,6 +283,22 @@ const styles = StyleSheet.create({
     sourceText: {
         fontSize: 12,
         color: COLORS.neutral[400],
+        marginLeft: 4,
+    },
+    joinButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.primary[500],
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+        marginTop: 8,
+        alignSelf: 'flex-start',
+    },
+    joinButtonText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#ffffff',
         marginLeft: 4,
     },
 });
