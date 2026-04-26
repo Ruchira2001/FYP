@@ -21,7 +21,7 @@ const DISTRICTS = [
 const EditProfile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
-    const { user } = useApp();
+    const { user, updateUser } = useApp();
 
     const [name, setName] = useState(user?.name || '');
     const [phone, setPhone] = useState(user?.phone || '');
@@ -54,11 +54,20 @@ const EditProfile: React.FC = () => {
 
         setIsLoading(true);
         try {
-            await userAPI.updateFarmerProfile({
+            const res = await userAPI.updateFarmerProfile({
                 name: name.trim(),
                 phone: phone.trim(),
                 district: district,
                 crops: selectedCrops,
+            });
+
+            // Update context so profile page reflects the new data immediately
+            const updated = res.data.user;
+            updateUser({
+                name: updated.name,
+                phone: updated.phone || '',
+                district: updated.district || '',
+                crops: updated.crops || [],
             });
 
             Alert.alert(t('common.success'), 'Profile updated successfully', [

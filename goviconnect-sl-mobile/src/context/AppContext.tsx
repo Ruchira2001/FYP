@@ -21,6 +21,7 @@ interface AppContextType {
     login: (email: string, password: string) => Promise<boolean>;
     register: (userData: Partial<User> & { password: string }) => Promise<boolean>;
     logout: () => Promise<void>;
+    updateUser: (updated: Partial<User>) => void;
 
     // Onboarding
     hasCompletedOnboarding: boolean;
@@ -185,6 +186,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         }
     };
 
+    const updateUser = (updated: Partial<User>): void => {
+        setUser(prev => prev ? { ...prev, ...updated } : prev);
+    };
+
     const logout = async (): Promise<void> => {
         setIsLoading(true);
         try {
@@ -224,6 +229,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
                 login,
                 register,
                 logout,
+                updateUser,
                 hasCompletedOnboarding,
                 completeOnboarding,
                 settings,

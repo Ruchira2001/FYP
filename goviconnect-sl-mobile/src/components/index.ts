@@ -8,3 +8,4 @@ export { default as EmptyState } from './EmptyState';
 export { default as Toast } from './Toast';
 export { default as InputField } from './InputField';
 export { default as CropCard } from './CropCard';
+export { default as WeatherCard } from './WeatherCard';

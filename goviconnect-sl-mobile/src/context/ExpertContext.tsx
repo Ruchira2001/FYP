@@ -34,6 +34,7 @@ interface ExpertContextType {
     loginError: string | null;
     login: (email: string, password: string) => Promise<boolean>;
     logout: () => Promise<void>;
+    updateExpert: (updated: Partial<ExpertUser>) => void;
 
     // Onboarding
     hasCompletedOnboarding: boolean;
@@ -149,6 +150,10 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
         }
     };
 
+    const updateExpert = (updated: Partial<ExpertUser>): void => {
+        setExpert(prev => prev ? { ...prev, ...updated } : prev);
+    };
+
     const logout = async (): Promise<void> => {
         setIsLoading(true);
         try {
@@ -187,6 +192,7 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
                 loginError,
                 login,
                 logout,
+                updateExpert,
                 hasCompletedOnboarding,
                 completeOnboarding,
                 settings,

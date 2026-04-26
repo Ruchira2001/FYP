@@ -39,6 +39,13 @@
                     "photosPermission": "Allow Goviconnect SL to access your photos for crop disease analysis.",
                     "cameraPermission": "Allow Goviconnect SL to access your camera for crop disease analysis."
                 }
+            ],
+            [
+                "expo-location",
+                {
+                    "locationAlwaysAndWhenInUsePermission": "Allow Goviconnect SL to access your location to show real-time weather for your area.",
+                    "locationWhenInUsePermission": "Allow Goviconnect SL to access your location to show real-time weather for your area."
+                }
             ]
         ],
         "scheme": "goviconnect"

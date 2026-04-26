@@ -17,6 +17,7 @@ interface ShopContextType {
     isLoading: boolean;
     login: (email: string, password: string) => Promise<boolean>;
     logout: () => Promise<void>;
+    updateShop: (updated: Partial<ShopProfile>) => void;
     isInitialized: boolean;
 }
 
@@ -82,6 +83,10 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const updateShop = (updated: Partial<ShopProfile>): void => {
+        setShop(prev => prev ? { ...prev, ...updated } : prev);
+    };
+
     const logout = async () => {
         try {
             await clearAuthData();
@@ -101,6 +106,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isLoading,
             login,
             logout,
+            updateShop,
             isInitialized
         }}>
             {children}

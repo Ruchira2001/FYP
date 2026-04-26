@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, ActionCard } from '../../../components';
+import { Header, ActionCard, WeatherCard } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { useExpert } from '../../../context/ExpertContext';
 import { getRelativeTime } from '../../../utils/validators';
@@ -182,6 +182,11 @@ const ExpertHome: React.FC = () => {
                     </View>
                 </View>
 
+                {/* Weather Card */}
+                <View style={styles.weatherSection}>
+                    <WeatherCard role="expert" fallbackLocation={expert?.district} />
+                </View>
+
                 {/* Stats Overview */}
                 <View style={styles.statsSection}>
                     <View style={styles.statsGrid}>
@@ -333,6 +338,10 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
+    },
+    weatherSection: {
+        paddingHorizontal: 16,
+        marginBottom: 8,
     },
     greetingContainer: {
         paddingHorizontal: 16,

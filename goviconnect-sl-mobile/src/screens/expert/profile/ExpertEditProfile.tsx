@@ -26,7 +26,7 @@ const SPECIALIZATIONS = [
 const ExpertEditProfile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
-    const { expert } = useExpert();
+    const { expert, updateExpert } = useExpert();
 
     const [name, setName] = useState(expert?.name || '');
     const [phone, setPhone] = useState(expert?.phone || '');
@@ -54,12 +54,22 @@ const ExpertEditProfile: React.FC = () => {
 
         setIsLoading(true);
         try {
-            await userAPI.updateExpertProfile({
+            const res = await userAPI.updateExpertProfile({
                 name: name.trim(),
                 phone,
                 district,
                 specialty,
                 specializations: selectedSpecializations,
+            });
+
+            // Update context so profile page reflects the new data immediately
+            const updated = res.data.user;
+            updateExpert({
+                name: updated.name,
+                phone: updated.phone || '',
+                district: updated.district || '',
+                specialty: updated.specialty || '',
+                specializations: updated.specializations || [],
             });
 
             Alert.alert(t('common.success'), 'Profile updated successfully', [

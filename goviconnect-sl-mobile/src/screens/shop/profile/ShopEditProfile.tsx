@@ -20,7 +20,7 @@ const SHOP_TYPES: Array<'Individual' | 'Business' | 'Exporter'> = ['Individual',
 const ShopEditProfile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t } = useTranslation();
-    const { shop } = useShop();
+    const { shop, updateShop } = useShop();
 
     const [name, setName] = useState(shop?.name || '');
     const [email, setEmail] = useState(shop?.email || '');
@@ -37,12 +37,22 @@ const ShopEditProfile: React.FC = () => {
 
         setIsLoading(true);
         try {
-            await userAPI.updateShopProfile({
+            const res = await userAPI.updateShopProfile({
                 name: name.trim(),
                 email,
                 location,
                 type: shopType,
             });
+
+            // Update context so profile page reflects the new data immediately
+            const updated = res.data.user;
+            updateShop({
+                name: updated.name,
+                email: updated.email || '',
+                location: updated.location || '',
+                type: updated.type || shopType,
+            });
+
             Alert.alert(t('common.success'), 'Profile updated successfully', [
                 { text: 'OK', onPress: () => navigation.goBack() }
             ]);

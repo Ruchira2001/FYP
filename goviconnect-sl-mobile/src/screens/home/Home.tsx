@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, ActionCard, FeedCard } from '../../components';
+import { Header, ActionCard, FeedCard, WeatherCard } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { useApp } from '../../context';
 import { feedAPI, notificationAPI, chatAPI } from '../../services/api';
@@ -136,22 +136,7 @@ const Home: React.FC = () => {
 
                 {/* Weather Card */}
                 <View style={styles.weatherSection}>
-                    <View style={styles.weatherCard}>
-                        <View style={styles.weatherInfo}>
-                            <View style={styles.weatherHeader}>
-                                <Ionicons name="location" size={16} color={COLORS.neutral[500]} />
-                                <Text style={styles.locationText}>{user?.district || 'Colombo, Sri Lanka'}</Text>
-                            </View>
-                            <View style={styles.weatherMain}>
-                                <Text style={styles.tempText}>29°C</Text>
-                                <Text style={styles.conditionText}>Partly Cloudy</Text>
-                            </View>
-                            <Text style={styles.weatherAdvice}>Good day for harvesting!</Text>
-                        </View>
-                        <View style={styles.weatherIconContainer}>
-                            <Ionicons name="partly-sunny" size={64} color="#f59e0b" />
-                        </View>
-                    </View>
+                    <WeatherCard role="farmer" fallbackLocation={user?.district} />
                 </View>
 
                 {/* Quick Actions */}
@@ -336,61 +321,6 @@ const styles = StyleSheet.create({
     weatherSection: {
         paddingHorizontal: 16,
         marginBottom: 8,
-    },
-    weatherCard: {
-        backgroundColor: '#ffffff',
-        borderRadius: 20,
-        padding: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderWidth: 1,
-        borderColor: COLORS.neutral[100],
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    weatherInfo: {
-        flex: 1,
-    },
-    weatherHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    locationText: {
-        fontSize: 14,
-        color: COLORS.neutral[500],
-        marginLeft: 4,
-        fontWeight: '500',
-    },
-    weatherMain: {
-        marginBottom: 8,
-    },
-    tempText: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: COLORS.neutral[800],
-    },
-    conditionText: {
-        fontSize: 16,
-        color: COLORS.neutral[600],
-        fontWeight: '500',
-    },
-    weatherAdvice: {
-        fontSize: 12,
-        color: COLORS.success,
-        backgroundColor: '#dcfce7',
-        alignSelf: 'flex-start',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
-    weatherIconContainer: {
-        marginLeft: 16,
     },
 });
 
