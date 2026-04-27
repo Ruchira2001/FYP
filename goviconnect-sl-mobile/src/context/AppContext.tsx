@@ -220,9 +220,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     };
 
     const switchRole = async (targetRole: 'farmer' | 'expert'): Promise<boolean> => {
+        console.log('--- AppContext switchRole started --- Target:', targetRole);
         setIsLoading(true);
         try {
             const res = await authAPI.switchRole(targetRole);
+            console.log('--- AppContext switchRole API Response ---', res.data.success);
             if (res.data.success) {
                 const { token, user: u } = res.data;
                 const formatted: User = {

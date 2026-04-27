@@ -7,11 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { useExpert } from '../../../context/ExpertContext';
+import { useApp } from '../../../context';
 
 const ExpertProfile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
-    const { expert, logout, switchRole } = useExpert();
+    const { expert, logout } = useExpert();
+    const { switchRole } = useApp();
 
     const handleLogout = () => {
         Alert.alert(
@@ -190,6 +192,7 @@ const ExpertProfile: React.FC = () => {
                 {/* Switch to Farmer Mode Card */}
                 <TouchableOpacity
                     onPress={async () => {
+                        console.log('--- Switch to Farmer button pressed ---');
                         Alert.alert(
                             'Switch Role',
                             'Switch back to Farmer Mode?',
@@ -198,7 +201,9 @@ const ExpertProfile: React.FC = () => {
                                 {
                                     text: 'Switch',
                                     onPress: async () => {
+                                        console.log('--- Role switch confirmed ---');
                                         const success = await switchRole('farmer');
+                                        console.log('--- Role switch result:', success);
                                         if (success) {
                                             navigation.reset({
                                                 index: 0,
@@ -212,7 +217,7 @@ const ExpertProfile: React.FC = () => {
                             ]
                         );
                     }}
-                    style={[styles.availabilityCard, { backgroundColor: COLORS.secondary[600], marginBottom: 0 }]}
+                    style={[styles.availabilityCard, { backgroundColor: COLORS.primary[600], marginBottom: 0 }]}
                 >
                     <View style={styles.availabilityContent}>
                         <View style={styles.availabilityIconContainer}>
@@ -229,7 +234,7 @@ const ExpertProfile: React.FC = () => {
                 </TouchableOpacity>
 
                 {/* Availability Banner */}
-                <View style={styles.availabilityCard}>
+                <View style={[styles.availabilityCard, { backgroundColor: COLORS.primary[600] }]}>
                     <View style={styles.availabilityContent}>
                         <View style={styles.availabilityIconContainer}>
                             <Ionicons name="pulse" size={24} color="#ffffff" />
