@@ -71,6 +71,11 @@ const userSchema = new mongoose.Schema(
         ref: 'UserCropGuide',
       },
     ],
+    expertId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Expert',
+      default: null,
+    },
     expoPushToken: {
       type: String,
       default: null,

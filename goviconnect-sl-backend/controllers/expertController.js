@@ -459,3 +459,55 @@ exports.getExpertById = async (req, res, next) => {
     next(error);
   }
 };
+// @desc    Register a farmer as an expert
+// @route   POST /api/experts/register
+exports.registerAsExpert = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+
+    // Check if already an expert
+    const user = await User.findById(userId);
+    if (user.expertId) {
+      const expert = await Expert.findById(user.expertId);
+      return res.status(200).json({ success: true, message: 'User is already registered as an expert', data: expert });
+    }
+
+    const { specialty, specialtySi, yearsExperience, qualifications, qualificationImages, specializations, bio, bioSi, availability } = req.body;
+
+    if (!specialty) {
+      return res.status(400).json({ success: false, message: 'Specialty is required' });
+    }
+
+    // Create expert profile linked to this user
+    // We generate a dummy password because the Expert model requires it, 
+    // but the user will likely log in via their main account or role switch
+    const crypto = require('crypto');
+    const tempPassword = crypto.randomBytes(16).toString('hex');
+
+    const expert = await Expert.create({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      password: tempPassword,
+      district: user.district,
+      specialty,
+      specialtySi,
+      yearsExperience: parseInt(yearsExperience) || 0,
+      qualifications: qualifications || [],
+      qualificationImages: qualificationImages || [],
+      specializations: specializations || [],
+      bio,
+      bioSi,
+      availability: availability || [],
+      avatar: user.avatar,
+    });
+
+    // Update user record with expert link
+    user.expertId = expert._id;
+    await user.save();
+
+    res.status(201).json({ success: true, data: expert });
+  } catch (error) {
+    next(error);
+  }
+};

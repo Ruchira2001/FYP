@@ -166,6 +166,35 @@ const Profile: React.FC = () => {
                     </View>
                 </TouchableOpacity>
 
+                {/* Become/Switch to Expert Card */}
+                <TouchableOpacity
+                    onPress={() => {
+                        if (user?.expertId) {
+                            // If already an expert, navigate to Expert side
+                            // We use navigation.reset or navigate to ExpertApp root
+                            navigation.navigate('ExpertApp' as any);
+                        } else {
+                            navigation.navigate('ExpertRegister');
+                        }
+                    }}
+                    style={[styles.contributionCard, { backgroundColor: COLORS.primary[600] }]}
+                >
+                    <View style={styles.contributionContent}>
+                        <View style={styles.contributionIconContainer}>
+                            <Ionicons name={user?.expertId ? "swap-horizontal" : "school"} size={24} color="#ffffff" />
+                        </View>
+                        <View style={styles.contributionTextInfo}>
+                            <Text style={styles.contributionTitle}>
+                                {user?.expertId ? 'Switch to Expert Mode' : 'Become an Expert'}
+                            </Text>
+                            <Text style={styles.contributionSubtitle}>
+                                {user?.expertId ? 'Access expert tools and requests' : 'Apply to share professional advice'}
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={24} color="#ffffff" />
+                    </View>
+                </TouchableOpacity>
+
                 {/* Quick Shortcuts */}
                 <View style={styles.shortcutsSection}>
                     <Text style={styles.sectionTitle}>

@@ -13,12 +13,14 @@ import ExpertProfile from '../screens/expert/profile/ExpertProfile';
 
 // Shared screens (reused from farmer side)
 import { Settings, HelpFAQ } from '../screens/profile';
+import { LearnHub, CropDetails, SavedLibrary, OfflineDownloads, AddCropGuide, FarmerGuideDetails } from '../screens/learnhub';
 
 // Stack navigators for each tab
 const HomeStack = createNativeStackNavigator();
 const DiagnosisStack = createNativeStackNavigator();
 const MeetingsStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
+const LearnHubStack = createNativeStackNavigator();
 
 const Tab = createBottomTabNavigator();
 
@@ -40,6 +42,17 @@ const MeetingsStackNavigator = () => (
     <MeetingsStack.Navigator screenOptions={{ headerShown: false }}>
         <MeetingsStack.Screen name="ExpertMeetingsScreen" component={ExpertMeetings} />
     </MeetingsStack.Navigator>
+);
+
+const LearnHubStackNavigator = () => (
+    <LearnHubStack.Navigator screenOptions={{ headerShown: false }}>
+        <LearnHubStack.Screen name="LearnHubScreen" component={LearnHub} />
+        <LearnHubStack.Screen name="CropDetails" component={CropDetails} />
+        <LearnHubStack.Screen name="SavedLibrary" component={SavedLibrary} />
+        <LearnHubStack.Screen name="OfflineDownloads" component={OfflineDownloads} />
+        <LearnHubStack.Screen name="AddCropGuide" component={AddCropGuide} />
+        <LearnHubStack.Screen name="FarmerGuideDetails" component={FarmerGuideDetails} />
+    </LearnHubStack.Navigator>
 );
 
 import ExpertEditProfile from '../screens/expert/profile/ExpertEditProfile';
@@ -85,6 +98,9 @@ const ExpertTabNavigator: React.FC = () => {
                         case 'ExpertMeetingsTab':
                             iconName = focused ? 'calendar' : 'calendar-outline';
                             break;
+                        case 'ExpertLearnHubTab':
+                            iconName = focused ? 'book' : 'book-outline';
+                            break;
                         case 'ExpertProfileTab':
                             iconName = focused ? 'person' : 'person-outline';
                             break;
@@ -114,6 +130,11 @@ const ExpertTabNavigator: React.FC = () => {
                 name="ExpertMeetingsTab"
                 component={MeetingsStackNavigator}
                 options={{ tabBarLabel: 'Meetings' }}
+            />
+            <Tab.Screen
+                name="ExpertLearnHubTab"
+                component={LearnHubStackNavigator}
+                options={{ tabBarLabel: 'LearnHub' }}
             />
             <Tab.Screen
                 name="ExpertProfileTab"

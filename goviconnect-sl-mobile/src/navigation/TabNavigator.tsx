@@ -12,6 +12,7 @@ import { LearnHub, CropDetails, SavedLibrary, OfflineDownloads, AddCropGuide, Fa
 import { AIHome, CropDoctorUpload, CropDoctorResult, DiagnosisHistory, PriceForm, PriceResult, PredictionHistory } from '../screens/ai';
 import { Meetings, MeetingDetails, MyMeetings } from '../screens/meetings';
 import { Profile, Settings, HelpFAQ, EditProfile } from '../screens/profile';
+import { ExpertRegister } from '../screens/expert/auth';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -69,6 +70,7 @@ const ProfileStackNavigator = () => (
         <ProfileStack.Screen name="HelpFAQ" component={HelpFAQ} />
         <ProfileStack.Screen name="EditProfile" component={EditProfile} />
         <ProfileStack.Screen name="AddCropGuide" component={AddCropGuide} />
+        <ProfileStack.Screen name="ExpertRegister" component={ExpertRegister} />
     </ProfileStack.Navigator>
 );
 

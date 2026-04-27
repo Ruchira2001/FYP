@@ -17,12 +17,16 @@ const {
   updateMeeting,
   listExperts,
   getExpertById,
+  registerAsExpert,
 } = require('../controllers/expertController');
 
 // Expert-only routes (must come BEFORE /:id to avoid matching "me" as an ID)
 router.get('/me/dashboard', protect, authorize('expert'), getDashboard);
 router.put('/me/profile', protect, authorize('expert'), updateExpertProfile);
 router.put('/me/avatar', protect, authorize('expert'), uploadAvatar, updateExpertAvatar);
+
+// Register as expert (from farmer side)
+router.post('/register', protect, registerAsExpert);
 
 // Farmer requests
 router.get('/me/requests', protect, authorize('expert'), getFarmerRequests);

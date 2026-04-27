@@ -81,6 +81,7 @@ const expertSchema = new mongoose.Schema(
       default: 0,
     },
     qualifications: [String],
+    qualificationImages: [String],
     specializations: [String],
     bio: String,
     bioSi: String,
