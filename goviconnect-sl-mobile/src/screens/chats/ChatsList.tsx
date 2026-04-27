@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { Header, EmptyState, Chip } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { getRelativeTime } from '../../utils/validators';
 import { chatAPI } from '../../services/api';
+import { getSocket } from '../../services/socketService';
 
 const CATEGORIES = ['All', 'Unread', 'Experts', 'Groups'];
 
@@ -18,28 +19,53 @@ const ChatsList: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [chats, setChats] = useState<any[]>([]);
 
-    useEffect(() => {
-        loadChats();
-    }, []);
-
-    const loadChats = async () => {
+    const loadChats = useCallback(async () => {
         try {
             const res = await chatAPI.getChats();
             const data = Array.isArray(res.data.data) ? res.data.data : [];
-            setChats(data.map((c: any) => ({
-                id: c._id || c.id,
-                expertId: c.expert?._id || c.expertId,
-                expertName: c.expert?.name || c.expertName || 'Expert',
-                lastMessage: c.lastMessage?.content || c.lastMessage || '',
-                lastMessageSi: c.lastMessageSi || c.lastMessage?.content || '',
-                lastMessageTime: c.lastMessage?.createdAt || c.updatedAt || new Date().toISOString(),
-                unreadCount: c.unreadCount || 0,
-                online: c.online || false,
-            })));
+            setChats(data.map((c: any) => {
+                // Backend resolves unreadCount per-user but may return as Map object
+                const unread = typeof c.unreadCount === 'object' && c.unreadCount !== null
+                    ? (Object.values(c.unreadCount)[0] as number) || 0
+                    : (c.unreadCount as number) || 0;
+                // Extract expert from participants array or legacy fields
+                const expertParticipant = c.participants?.find((p: any) => p.userType === 'expert');
+                return {
+                    id: c._id || c.id,
+                    expertId: expertParticipant?.userId || c.expertId,
+                    expertName: expertParticipant?.name || c.expertName || 'Expert',
+                    lastMessage: c.lastMessage || '',
+                    lastMessageTime: c.lastMessageTime || c.updatedAt || new Date().toISOString(),
+                    unreadCount: unread,
+                    online: c.online || false,
+                };
+            }));
         } catch (e) {
             console.error('Failed to load chats:', e);
         }
-    };
+    }, []);
+
+    // Refresh every time the screen comes into focus (handles returning from ChatDetail after reading)
+    useFocusEffect(
+        useCallback(() => {
+            loadChats();
+        }, [loadChats])
+    );
+
+    // Real-time: update badge when new message arrives or messages are read
+    useEffect(() => {
+        const socket = getSocket();
+        if (socket) {
+            socket.on('new_message', loadChats);
+            socket.on('messages_read', loadChats);
+        }
+        return () => {
+            if (socket) {
+                socket.off('new_message', loadChats);
+                socket.off('messages_read', loadChats);
+            }
+        };
+    }, [loadChats]);
 
     const filteredChats = chats.filter(chat => {
         if (activeCategory === 'Unread') return chat.unreadCount > 0;
@@ -54,8 +80,11 @@ const ChatsList: React.FC = () => {
 
     const renderChat = ({ item }: { item: any }) => (
         <TouchableOpacity
-            onPress={() => navigation.navigate('ChatDetail', { chatId: item.id })}
-            style={styles.chatCard}
+            onPress={() => navigation.navigate('ChatDetail', {
+                chatId: item.id,
+                expertName: item.expertName,
+            })}
+            style={[styles.chatCard, item.unreadCount > 0 && styles.chatCardUnread]}
         >
             {/* Avatar */}
             <View style={styles.avatarContainer}>
@@ -69,7 +98,7 @@ const ChatsList: React.FC = () => {
 
             <View style={styles.chatInfo}>
                 <View style={styles.chatHeader}>
-                    <Text style={styles.expertName}>
+                    <Text style={[styles.expertName, item.unreadCount > 0 && styles.expertNameUnread]}>
                         {item.expertName}
                     </Text>
                     <Text style={styles.timeText}>
@@ -79,7 +108,7 @@ const ChatsList: React.FC = () => {
 
                 <View style={styles.messageRow}>
                     <Text style={styles.lastMessage} numberOfLines={1}>
-                        {i18n.language === 'si' ? item.lastMessageSi : item.lastMessage}
+                        {item.lastMessage || 'No messages yet'}
                     </Text>
 
                     {item.unreadCount > 0 && (
@@ -170,6 +199,10 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 1,
     },
+    chatCardUnread: {
+        borderColor: COLORS.primary[200],
+        backgroundColor: COLORS.primary[50],
+    },
     avatarContainer: {
         position: 'relative',
         marginRight: 12,
@@ -206,6 +239,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: COLORS.neutral[800],
+    },
+    expertNameUnread: {
+        color: COLORS.primary[700],
+        fontWeight: '700',
     },
     timeText: {
         fontSize: 12,

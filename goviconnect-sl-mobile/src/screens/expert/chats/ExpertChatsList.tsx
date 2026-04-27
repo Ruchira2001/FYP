@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -53,14 +53,23 @@ const ExpertChatsList: React.FC = () => {
         if (socket) {
             socket.on('new_chat', loadChats);
             socket.on('new_message', loadChats);
+            socket.on('messages_read', loadChats);
         }
         return () => {
             if (socket) {
                 socket.off('new_chat', loadChats);
                 socket.off('new_message', loadChats);
+                socket.off('messages_read', loadChats);
             }
         };
     }, [loadChats]);
+
+    // Refresh when returning from ExpertChatDetail so badge clears immediately
+    useFocusEffect(
+        useCallback(() => {
+            loadChats();
+        }, [loadChats])
+    );
 
     const filteredChats = chats.filter(chat => {
         if (activeCategory === 'Unread') return chat.unreadCount > 0;
@@ -73,7 +82,7 @@ const ExpertChatsList: React.FC = () => {
     const renderChat = ({ item }: { item: any }) => (
         <TouchableOpacity
             onPress={() => navigation.navigate('ExpertChatDetail', { chatId: item.id, farmerName: item.farmerName })}
-            style={styles.chatCard}
+            style={[styles.chatCard, item.unreadCount > 0 && styles.chatCardUnread]}
         >
             {/* Avatar */}
             <View style={styles.avatarContainer}>
@@ -88,7 +97,7 @@ const ExpertChatsList: React.FC = () => {
             <View style={styles.chatInfo}>
                 <View style={styles.chatHeader}>
                     <View style={styles.nameRow}>
-                        <Text style={styles.farmerName}>{item.farmerName}</Text>
+                        <Text style={[styles.farmerName, item.unreadCount > 0 && styles.farmerNameUnread]}>{item.farmerName}</Text>
                         {item.hasActiveDiagnosis && (
                             <View style={styles.diagnosisBadge}>
                                 <Ionicons name="medical" size={10} color={COLORS.error} />
@@ -202,6 +211,10 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         ...SHADOW.sm,
     },
+    chatCardUnread: {
+        borderColor: COLORS.primary[200],
+        backgroundColor: COLORS.primary[50],
+    },
     avatarContainer: {
         position: 'relative',
         marginRight: 12,
@@ -245,6 +258,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: COLORS.neutral[800],
+    },
+    farmerNameUnread: {
+        color: COLORS.primary[700],
+        fontWeight: '700',
     },
     diagnosisBadge: {
         marginLeft: 6,

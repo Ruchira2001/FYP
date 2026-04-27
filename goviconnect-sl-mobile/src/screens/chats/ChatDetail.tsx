@@ -22,15 +22,16 @@ import { chatAPI } from '../../services/api';
 import { queueService } from '../../services/queueService';
 import { useConnectionStatus } from '../../services/netinfo';
 import { generateId, formatTime } from '../../utils/validators';
+import { getSocket } from '../../services/socketService';
 
 type ParamList = {
-    ChatDetail: { chatId: string };
+    ChatDetail: { chatId: string; expertName?: string };
 };
 
 const ChatDetail: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const route = useRoute<RouteProp<ParamList, 'ChatDetail'>>();
-    const { chatId } = route.params;
+    const { chatId, expertName: paramExpertName } = route.params;
     const { t, i18n } = useTranslation();
     const { isConnected } = useConnectionStatus();
     const flatListRef = useRef<FlatList>(null);
@@ -42,7 +43,42 @@ const ChatDetail: React.FC = () => {
 
     useEffect(() => {
         loadChat();
-    }, []);
+
+        // Mark chat as read to clear unread badge
+        chatAPI.markChatRead(chatId).catch(() => {});
+
+        // Join socket room for real-time incoming messages
+        const socket = getSocket();
+        if (socket) {
+            socket.emit('join_chat', chatId);
+
+            const handleNewMessage = (data: any) => {
+                if (data.chatId !== chatId) return;
+                const m = data.message;
+                setMessages(prev => {
+                    if (prev.some(msg => msg.id === (m._id || m.id))) return prev;
+                    return [...prev, {
+                        id: m._id || m.id,
+                        chatId,
+                        senderId: m.senderId || '',
+                        senderType: m.senderType || 'expert',
+                        content: m.content || '',
+                        type: m.type || 'text',
+                        timestamp: m.createdAt || m.timestamp,
+                        synced: true,
+                    }];
+                });
+                setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
+            };
+
+            socket.on('new_message', handleNewMessage);
+
+            return () => {
+                socket.emit('leave_chat', chatId);
+                socket.off('new_message', handleNewMessage);
+            };
+        }
+    }, [chatId]);
 
     const loadChat = async () => {
         try {
@@ -56,8 +92,10 @@ const ChatDetail: React.FC = () => {
                 setChat({
                     id: found._id || found.id,
                     expertId: found.expert?._id || found.expertId,
-                    expertName: found.expert?.name || found.expertName || 'Expert',
+                    expertName: paramExpertName || found.expert?.name || found.expertName || 'Expert',
                 });
+            } else if (paramExpertName) {
+                setChat({ id: chatId, expertName: paramExpertName });
             }
             const msgs = Array.isArray(msgsRes.data.data) ? msgsRes.data.data : [];
             setMessages(msgs.map((m: any) => ({

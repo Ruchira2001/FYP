@@ -10,6 +10,7 @@ import { Header } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { formatTime, generateId } from '../../../utils/validators';
 import { chatAPI } from '../../../services/api';
+import { getSocket } from '../../../services/socketService';
 
 interface ChatMessage {
     id: string;
@@ -32,7 +33,40 @@ const ExpertChatDetail: React.FC = () => {
 
     useEffect(() => {
         loadMessages();
-    }, []);
+
+        // Mark chat as read to clear expert's unread badge
+        if (chatId) chatAPI.markChatRead(chatId).catch(() => {});
+
+        // Join socket room to receive real-time messages from farmer
+        const socket = getSocket();
+        if (socket && chatId) {
+            socket.emit('join_chat', chatId);
+
+            const handleNewMessage = (data: any) => {
+                if (data.chatId !== chatId) return;
+                const m = data.message;
+                setMessages(prev => {
+                    if (prev.some(msg => msg.id === (m._id || m.id))) return prev;
+                    return [...prev, {
+                        id: m._id || m.id,
+                        senderId: m.senderId || '',
+                        senderType: m.senderType === 'expert' ? 'expert' : 'farmer',
+                        content: m.content || '',
+                        type: m.type || 'text',
+                        timestamp: m.createdAt || m.timestamp,
+                    }];
+                });
+                setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+            };
+
+            socket.on('new_message', handleNewMessage);
+
+            return () => {
+                socket.emit('leave_chat', chatId);
+                socket.off('new_message', handleNewMessage);
+            };
+        }
+    }, [chatId]);
 
     const loadMessages = async () => {
         try {
@@ -42,7 +76,7 @@ const ExpertChatDetail: React.FC = () => {
             setMessages(data.map((m: any) => ({
                 id: m._id || m.id,
                 senderId: m.sender?._id || m.senderId,
-                senderType: m.senderRole === 'expert' ? 'expert' : 'farmer',
+                senderType: m.senderType === 'expert' ? 'expert' : 'farmer',
                 content: m.content || '',
                 type: m.type || 'text',
                 timestamp: m.createdAt || m.timestamp,
