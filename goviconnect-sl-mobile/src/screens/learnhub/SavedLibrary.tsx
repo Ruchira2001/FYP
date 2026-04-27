@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Header, CropCard, EmptyState } from '../../components';
@@ -12,9 +12,11 @@ const SavedLibrary: React.FC = () => {
     const { t, i18n } = useTranslation();
     const [savedItems, setSavedItems] = useState<any[]>([]);
 
-    useEffect(() => {
-        loadSavedItems();
-    }, []);
+    useFocusEffect(
+        React.useCallback(() => {
+            loadSavedItems();
+        }, [])
+    );
 
     const loadSavedItems = async () => {
         try {
@@ -26,22 +28,25 @@ const SavedLibrary: React.FC = () => {
         }
     };
 
-    const renderItem = ({ item }: { item: any }) => (
-        <View style={styles.itemContainer}>
-            <CropCard
-                id={item._id || item.id}
-                name={item.name || item.title || ''}
-                nameSi={item.nameSi || item.titleSi || ''}
-                category={item.category || ''}
-                thumbnail={item.images?.[0]}
-                onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item })}
-                isSaved={true}
-                isDownloaded={false}
-                locale={i18n.language}
-                size="lg"
-            />
-        </View>
-    );
+    const renderItem = ({ item }: { item: any }) => {
+        // Check if item is downloaded (we can pass this info or check here)
+        return (
+            <View style={styles.itemContainer}>
+                <CropCard
+                    id={item._id || item.id}
+                    name={item.name || item.title || ''}
+                    nameSi={item.nameSi || item.titleSi || ''}
+                    category={item.category || ''}
+                    thumbnail={item.images?.[0]}
+                    onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item })}
+                    isSaved={true}
+                    isDownloaded={false} // Would need a check similar to FarmerGuideDetails
+                    locale={i18n.language}
+                    size="lg"
+                />
+            </View>
+        );
+    };
 
     return (
         <View style={styles.container}>

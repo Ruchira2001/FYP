@@ -1,21 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { View, FlatList, TouchableOpacity, Text, Alert, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, FlatList, TouchableOpacity, Text, Alert, Image, StyleSheet } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState } from '../../components';
 import { COLORS } from '../../utils/constants';
-import { getSavedLearnHub, SavedLearnHubItem } from '../../services/storage';
+import { getSavedLearnHub, removeLearnHubItem, SavedLearnHubItem } from '../../services/storage';
 
 const OfflineDownloads: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
     const [downloads, setDownloads] = useState<SavedLearnHubItem[]>([]);
 
-    useEffect(() => {
-        loadDownloads();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadDownloads();
+        }, [])
+    );
 
     const loadDownloads = async () => {
         const items = await getSavedLearnHub();
@@ -32,8 +34,7 @@ const OfflineDownloads: React.FC = () => {
                     text: t('common.confirm'),
                     style: 'destructive',
                     onPress: async () => {
-                        // In real app, would remove download logic
-                        // For now we just reload what's there (mock behavior)
+                        await removeLearnHubItem(item.id);
                         await loadDownloads();
                     }
                 },

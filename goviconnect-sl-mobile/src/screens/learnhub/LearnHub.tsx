@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, Chip, CropCard, EmptyState } from '../../components';
 import { COLORS, CROP_CATEGORIES } from '../../utils/constants';
 import { learnhubAPI, feedAPI } from '../../services/api';
+import { getSavedLearnHub } from '../../services/storage';
 
 type TabType = 'official' | 'community' | 'myguides';
 
@@ -22,6 +23,7 @@ const LearnHub: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [savedIds, setSavedIds] = useState<string[]>([]);
+    const [downloadedIds, setDownloadedIds] = useState<string[]>([]);
     const [communityGuides, setCommunityGuides] = useState<any[]>([]);
     const [myGuides, setMyGuides] = useState<any[]>([]);
     const [loadingCommunity, setLoadingCommunity] = useState(false);
@@ -39,12 +41,14 @@ const LearnHub: React.FC = () => {
 
     const loadOfficialData = async () => {
         try {
-            const [savedRes, communityRes] = await Promise.all([
+            const [savedRes, communityRes, localDownloads] = await Promise.all([
                 learnhubAPI.getSavedGuides().catch(() => ({ data: { data: [] } })),
                 learnhubAPI.getCommunityGuides({}).catch(() => ({ data: { data: [] } })),
+                getSavedLearnHub().catch(() => []),
             ]);
             const saved = Array.isArray(savedRes.data.data) ? savedRes.data.data : [];
             setSavedIds(saved.map((s: any) => s._id || s.id || s.guideId));
+            setDownloadedIds(localDownloads.filter((d: any) => d.isDownloaded).map((d: any) => d.id));
             const approvedGuides = Array.isArray(communityRes.data.data) ? communityRes.data.data : [];
             setCommunityGuides(approvedGuides);
         } catch (e) {
@@ -142,6 +146,9 @@ const LearnHub: React.FC = () => {
         const isReacting = reactingGuideIds.includes(guideId);
         const isLiked = !!item.isLiked;
 
+        const isSaved = savedIds.includes(guideId);
+        const isDownloaded = downloadedIds.includes(guideId);
+
         return (
             <TouchableOpacity
                 key={guideId}
@@ -152,10 +159,24 @@ const LearnHub: React.FC = () => {
                 {item.images && item.images.length > 0 ? (
                     <Image source={{ uri: item.images[0] }} style={styles.farmerGuideThumb} />
                 ) : (
-                    <View style={[styles.farmerGuideThumb, styles.farmerGuideThumbPlaceholder]}>
-                        <Text style={{ fontSize: 28 }}>🌿</Text>
+                    <View style={styles.farmerGuidePlaceholder}>
+                        <Text style={{ fontSize: 24 }}>🌿</Text>
                     </View>
                 )}
+
+                {/* Status Badges */}
+                <View style={styles.statusBadges}>
+                    {isSaved && (
+                        <View style={styles.badgeIcon}>
+                            <Ionicons name="bookmark" size={10} color={COLORS.primary[600]} />
+                        </View>
+                    )}
+                    {isDownloaded && (
+                        <View style={[styles.badgeIcon, { backgroundColor: '#dcfce7' }]}>
+                            <Ionicons name="cloud-done" size={10} color={COLORS.success} />
+                        </View>
+                    )}
+                </View>
 
                 <View style={styles.farmerGuideTopRow}>
                     <Text style={styles.farmerGuideCategory} numberOfLines={1}>{item.category || 'Guide'}</Text>
@@ -452,10 +473,30 @@ const styles = StyleSheet.create({
         resizeMode: 'cover',
         marginBottom: 8,
     },
-    farmerGuideThumbPlaceholder: {
+    farmerGuidePlaceholder: {
+        width: '100%',
+        height: 96,
+        backgroundColor: COLORS.primary[50],
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: COLORS.primary[50],
+        borderRadius: 12,
+        marginBottom: 8,
+    },
+    statusBadges: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        flexDirection: 'row',
+        gap: 4,
+    },
+    badgeIcon: {
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: COLORS.primary[100],
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 2,
     },
     farmerGuideTopRow: {
         flexDirection: 'row',
@@ -570,11 +611,6 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         marginBottom: 14,
         resizeMode: 'cover',
-    },
-    guideModalImagePlaceholder: {
-        backgroundColor: COLORS.primary[50],
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     guideModalSection: {
         marginBottom: 14,
