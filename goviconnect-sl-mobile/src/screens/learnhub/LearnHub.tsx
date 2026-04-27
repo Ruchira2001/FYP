@@ -38,13 +38,16 @@ const LearnHub: React.FC = () => {
 
     const loadOfficialData = async () => {
         try {
-            const [cropsRes, savedRes] = await Promise.all([
+            const [cropsRes, savedRes, communityRes] = await Promise.all([
                 feedAPI.getCrops().catch(() => ({ data: { data: [] } })),
                 learnhubAPI.getSavedGuides().catch(() => ({ data: { data: [] } })),
+                learnhubAPI.getCommunityGuides({}).catch(() => ({ data: { data: [] } })),
             ]);
             setCrops(Array.isArray(cropsRes.data.data) ? cropsRes.data.data : []);
             const saved = Array.isArray(savedRes.data.data) ? savedRes.data.data : [];
             setSavedIds(saved.map((s: any) => s._id || s.id || s.guideId));
+            const approvedGuides = Array.isArray(communityRes.data.data) ? communityRes.data.data : [];
+            setCommunityGuides(approvedGuides);
         } catch (e) {
             console.error('LearnHub load error:', e);
         }
@@ -262,23 +265,66 @@ const LearnHub: React.FC = () => {
                         </TouchableOpacity>
                     </View>
 
-                    {filteredCrops.length > 0 ? (
-                        <FlatList
-                            data={filteredCrops}
-                            renderItem={renderCropItem}
-                            keyExtractor={(item) => item._id || item.id}
-                            numColumns={2}
-                            contentContainerStyle={styles.listContent}
-                            columnWrapperStyle={styles.columnWrapper}
-                            showsVerticalScrollIndicator={false}
-                        />
-                    ) : (
-                        <EmptyState
-                            variant="search"
-                            title={t('empty_states.no_results')}
-                            description={t('empty_states.no_results_desc')}
-                        />
-                    )}
+                    <FlatList
+                        data={filteredCrops}
+                        renderItem={renderCropItem}
+                        keyExtractor={(item) => item._id || item.id}
+                        numColumns={2}
+                        contentContainerStyle={styles.listContent}
+                        columnWrapperStyle={styles.columnWrapper}
+                        showsVerticalScrollIndicator={false}
+                        ListEmptyComponent={
+                            <EmptyState
+                                variant="search"
+                                title={t('empty_states.no_results')}
+                                description={t('empty_states.no_results_desc')}
+                            />
+                        }
+                        ListFooterComponent={
+                            communityGuides.length > 0 ? (
+                                <View style={styles.approvedGuidesSection}>
+                                    <View style={styles.approvedGuidesHeader}>
+                                        <Ionicons name="people" size={18} color={COLORS.primary[600]} />
+                                        <Text style={styles.approvedGuidesTitle}>
+                                            Approved Farmer Guides ({communityGuides.length})
+                                        </Text>
+                                    </View>
+                                    {communityGuides.map((item) => (
+                                        <View key={item._id || item.id} style={styles.communityCard}>
+                                            {item.images && item.images.length > 0 ? (
+                                                <Image source={{ uri: item.images[0] }} style={styles.communityCardImage} />
+                                            ) : (
+                                                <View style={[styles.communityCardImage, styles.communityCardImagePlaceholder]}>
+                                                    <Text style={{ fontSize: 32 }}>🌿</Text>
+                                                </View>
+                                            )}
+                                            <View style={styles.communityCardBody}>
+                                                <Text style={styles.communityCardName} numberOfLines={1}>{item.name}</Text>
+                                                {item.category ? (
+                                                    <Text style={styles.communityCardCategory}>{item.category}</Text>
+                                                ) : null}
+                                                <Text style={styles.communityCardDesc} numberOfLines={2}>
+                                                    {item.description || 'No description provided.'}
+                                                </Text>
+                                                <View style={styles.communityCardFooter}>
+                                                    <View style={styles.communityCardAuthor}>
+                                                        <Ionicons name="person-circle-outline" size={16} color={COLORS.neutral[400]} />
+                                                        <Text style={styles.communityCardAuthorText} numberOfLines={1}>
+                                                            {item.userId?.name || 'Farmer'}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={styles.communityCardLikes}>
+                                                        <Ionicons name="heart" size={14} color="#ef4444" />
+                                                        <Text style={styles.communityCardLikeText}>{item.likeCount || 0}</Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            ) : null
+                        }
+                    />
                 </>
             )}
 
