@@ -87,6 +87,7 @@ export interface User {
     district: string;
     crops: string[];
     avatar?: string;
+    expertId?: string;
 }
 
 export const getUser = async (): Promise<User | null> => {

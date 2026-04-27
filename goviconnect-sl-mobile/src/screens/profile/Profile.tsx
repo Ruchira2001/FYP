@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +12,15 @@ import cropsData from '../../data/crops.json';
 const Profile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
-    const { user, logout } = useApp();
+    const { user, logout, refreshUser, switchRole } = useApp();
+
+    useFocusEffect(
+        React.useCallback(() => {
+            refreshUser();
+        }, [])
+    );
+
+    console.log('Current User in Profile:', user?.name, 'ExpertID:', user?.expertId);
 
     const getCropDisplay = (cropId: string) => {
         const crop = cropsData.crops.find(c => c.id === cropId);
@@ -168,11 +176,17 @@ const Profile: React.FC = () => {
 
                 {/* Become/Switch to Expert Card */}
                 <TouchableOpacity
-                    onPress={() => {
+                    onPress={async () => {
                         if (user?.expertId) {
-                            // If already an expert, navigate to Expert side
-                            // We use navigation.reset or navigate to ExpertApp root
-                            navigation.navigate('ExpertApp' as any);
+                            const success = await switchRole('expert');
+                            if (success) {
+                                navigation.reset({
+                                    index: 0,
+                                    routes: [{ name: 'ExpertApp' }],
+                                });
+                            } else {
+                                Alert.alert('Error', 'Could not switch to Expert Mode');
+                            }
                         } else {
                             navigation.navigate('ExpertRegister');
                         }

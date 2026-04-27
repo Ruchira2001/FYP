@@ -463,6 +463,7 @@ exports.getExpertById = async (req, res, next) => {
 // @route   POST /api/experts/register
 exports.registerAsExpert = async (req, res, next) => {
   try {
+    console.log('Expert registration request received for user:', req.user._id);
     const userId = req.user._id;
 
     // Check if already an expert

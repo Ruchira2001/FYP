@@ -6,13 +6,12 @@ import { Header, InputField } from '../../../components';
 import { COLORS } from '../../../utils/constants';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
-import axios from 'axios';
-import { API_URL } from '../../../services/api';
+import { expertsAPI, authAPI } from '../../../services/api';
 import { useApp } from '../../../context';
 
 const ExpertRegister: React.FC = () => {
     const navigation = useNavigation();
-    const { user, token } = useApp();
+    const { refreshUser } = useApp();
     const [loading, setLoading] = useState(false);
     
     const [form, setForm] = useState({
@@ -47,18 +46,27 @@ const ExpertRegister: React.FC = () => {
 
         setLoading(true);
         try {
-            const response = await axios.post(`${API_URL}/experts/register`, {
+            const response = await expertsAPI.registerAsExpert({
                 ...form,
-                qualifications: form.qualifications.split(',').map(q => q.trim()),
-                qualificationImages: selectedImages, // In a real app, these would be uploaded to S3/Cloudinary first
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
+                qualifications: form.qualifications ? form.qualifications.split(',').map(q => q.trim()) : [],
+                qualificationImages: selectedImages,
             });
 
             if (response.data.success) {
-                Alert.alert('Success', 'You are now registered as an expert! You can switch your account from the profile page.', [
-                    { text: 'OK', onPress: () => navigation.goBack() }
-                ]);
+                console.log('Registration success response:', response.data);
+                
+                try {
+                    // Refresh user data using the new centralized helper
+                    await refreshUser();
+                } catch (refreshErr) {
+                    console.error('Final refresh error:', refreshErr);
+                }
+
+                Alert.alert(
+                    'Success', 
+                    'You are now registered as an expert!', 
+                    [{ text: 'OK', onPress: () => navigation.goBack() }]
+                );
             }
         } catch (error: any) {
             console.error('Expert registration error:', error);

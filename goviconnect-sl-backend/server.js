@@ -55,8 +55,8 @@ app.use(cors({
 }));
 
 // Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // HTTP request logging
 if (process.env.NODE_ENV !== 'production') {
@@ -68,6 +68,7 @@ if (process.env.NODE_ENV !== 'production') {
 // Static files (for any locally stored uploads)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// --------------- Routes ---------------
 // --------------- Routes ---------------
 
 // Health check

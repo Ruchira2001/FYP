@@ -22,6 +22,8 @@ interface AppContextType {
     register: (userData: Partial<User> & { password: string }) => Promise<boolean>;
     logout: () => Promise<void>;
     updateUser: (updated: Partial<User>) => void;
+    refreshUser: () => Promise<void>;
+    switchRole: (targetRole: 'farmer' | 'expert') => Promise<boolean>;
 
     // Onboarding
     hasCompletedOnboarding: boolean;
@@ -95,6 +97,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
                         district: u.district || '',
                         crops: u.crops || [],
                         avatar: u.avatar,
+                        expertId: u.expertId,
                     };
                     setUser(formatted);
                     setIsAuthenticated(true);
@@ -124,6 +127,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
                 district: u.district || '',
                 crops: u.crops || [],
                 avatar: u.avatar,
+                expertId: u.expertId,
             };
             await saveAuthData(token, formatted, 'farmer');
             await saveUser(formatted);
@@ -165,6 +169,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
                 district: u.district || '',
                 crops: u.crops || [],
                 avatar: u.avatar,
+                expertId: u.expertId,
             };
             await saveAuthData(token, formatted, 'farmer');
             await saveUser(formatted);
@@ -188,6 +193,63 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
     const updateUser = (updated: Partial<User>): void => {
         setUser(prev => prev ? { ...prev, ...updated } : prev);
+    };
+
+    const refreshUser = async (): Promise<void> => {
+        try {
+            const res = await authAPI.getMe();
+            if (res.data.success) {
+                const u = res.data.user;
+                const formatted: User = {
+                    id: u._id,
+                    name: u.name,
+                    email: u.email,
+                    phone: u.phone || '',
+                    district: u.district || '',
+                    crops: u.crops || [],
+                    avatar: u.avatar,
+                    expertId: u.expertId,
+                };
+                setUser(formatted);
+                await saveUser(formatted);
+                console.log('--- User State Refreshed ---', formatted.expertId);
+            }
+        } catch (error) {
+            console.error('Refresh user error:', error);
+        }
+    };
+
+    const switchRole = async (targetRole: 'farmer' | 'expert'): Promise<boolean> => {
+        setIsLoading(true);
+        try {
+            const res = await authAPI.switchRole(targetRole);
+            if (res.data.success) {
+                const { token, user: u } = res.data;
+                const formatted: User = {
+                    id: u._id,
+                    name: u.name,
+                    email: u.email,
+                    phone: u.phone || '',
+                    district: u.district || '',
+                    crops: u.crops || [],
+                    avatar: u.avatar,
+                    expertId: u.expertId,
+                };
+                
+                // Save for the target role
+                await saveAuthData(token, formatted, targetRole as any);
+                await saveUser(formatted);
+                setUser(formatted);
+                setIsAuthenticated(true);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Switch role error:', error);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const logout = async (): Promise<void> => {
@@ -230,6 +292,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
                 register,
                 logout,
                 updateUser,
+                refreshUser,
+                switchRole,
                 hasCompletedOnboarding,
                 completeOnboarding,
                 settings,

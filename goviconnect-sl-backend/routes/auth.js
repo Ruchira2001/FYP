@@ -1,4 +1,5 @@
 const router = require('express').Router();
+console.log('--- Auth Routes Initializing (Switch-Role active) ---');
 const { body } = require('express-validator');
 const validate = require('../middleware/validate');
 const { protect } = require('../middleware/auth');
@@ -11,8 +12,12 @@ const {
   registerExpert,
   loginShop,
   registerShop,
+  switchRole,
   getMe,
 } = require('../controllers/authController');
+
+// Role switching - Moved to top for priority
+router.post('/switch-role', protect, switchRole);
 
 // Farmer auth
 router.post(

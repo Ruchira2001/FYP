@@ -297,6 +297,51 @@ exports.registerShop = async (req, res, next) => {
 
 // @desc    Get current user
 // @route   GET /api/auth/me
+// @desc    Switch user role (if linked)
+// @route   POST /api/auth/switch-role
+exports.switchRole = async (req, res, next) => {
+  try {
+    const { targetRole } = req.body;
+    console.log('--- Role Switch Request --- Target:', targetRole, 'User:', req.user._id);
+    const userId = req.user._id;
+
+    if (targetRole === 'expert') {
+      const user = await User.findById(userId);
+      if (!user.expertId) {
+        return res.status(400).json({ success: false, message: 'Not registered as an expert' });
+      }
+      
+      const expert = await Expert.findById(user.expertId);
+      const token = generateToken(expert._id, 'expert');
+      
+      return res.json({
+        success: true,
+        token,
+        user: formatUserResponse(expert, 'expert'),
+      });
+    } else if (targetRole === 'farmer') {
+      // If current role is expert, find linked farmer
+      // Assuming email is the same
+      const farmer = await User.findOne({ expertId: userId });
+      if (!farmer) {
+        return res.status(400).json({ success: false, message: 'Farmer account not found' });
+      }
+
+      const token = generateToken(farmer._id, 'farmer');
+      
+      return res.json({
+        success: true,
+        token,
+        user: formatUserResponse(farmer, 'farmer'),
+      });
+    }
+
+    res.status(400).json({ success: false, message: 'Invalid target role' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.getMe = async (req, res, next) => {
   try {
     res.json({

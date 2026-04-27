@@ -11,7 +11,7 @@ import { useExpert } from '../../../context/ExpertContext';
 const ExpertProfile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
-    const { expert, logout } = useExpert();
+    const { expert, logout, switchRole } = useExpert();
 
     const handleLogout = () => {
         Alert.alert(
@@ -186,6 +186,47 @@ const ExpertProfile: React.FC = () => {
                         </View>
                     )}
                 </View>
+
+                {/* Switch to Farmer Mode Card */}
+                <TouchableOpacity
+                    onPress={async () => {
+                        Alert.alert(
+                            'Switch Role',
+                            'Switch back to Farmer Mode?',
+                            [
+                                { text: 'Cancel', style: 'cancel' },
+                                {
+                                    text: 'Switch',
+                                    onPress: async () => {
+                                        const success = await switchRole('farmer');
+                                        if (success) {
+                                            navigation.reset({
+                                                index: 0,
+                                                routes: [{ name: 'FarmerApp' }],
+                                            });
+                                        } else {
+                                            Alert.alert('Error', 'Could not switch to Farmer Mode');
+                                        }
+                                    }
+                                }
+                            ]
+                        );
+                    }}
+                    style={[styles.availabilityCard, { backgroundColor: COLORS.secondary[600], marginBottom: 0 }]}
+                >
+                    <View style={styles.availabilityContent}>
+                        <View style={styles.availabilityIconContainer}>
+                            <Ionicons name="swap-horizontal" size={24} color="#ffffff" />
+                        </View>
+                        <View style={styles.availabilityTextInfo}>
+                            <Text style={styles.availabilityTitle}>Switch to Farmer Mode</Text>
+                            <Text style={styles.availabilitySubtitle}>
+                                Back to your farmer account & tools
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={24} color="#ffffff" />
+                    </View>
+                </TouchableOpacity>
 
                 {/* Availability Banner */}
                 <View style={styles.availabilityCard}>

@@ -165,6 +165,7 @@ export const authAPI = {
 
   // Get current user
   getMe: () => api.get('/auth/me'),
+  switchRole: (targetRole: string) => api.post('/auth/switch-role', { targetRole }),
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -373,6 +374,7 @@ export const expertsAPI = {
     api.get('/experts', { params }),
 
   getExpertById: (id: string) => api.get(`/experts/${id}`),
+  registerAsExpert: (data: any) => api.post('/experts/apply', data),
 };
 
 // ═══════════════════════════════════════════════════════════════

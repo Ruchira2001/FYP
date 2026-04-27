@@ -1,4 +1,5 @@
 const router = require('express').Router();
+console.log('--- Experts Routes Initializing ---');
 const { protect, authorize } = require('../middleware/auth');
 const { uploadAvatar } = require('../middleware/upload');
 const { updateExpertProfile, updateExpertAvatar } = require('../controllers/userController');
@@ -26,7 +27,7 @@ router.put('/me/profile', protect, authorize('expert'), updateExpertProfile);
 router.put('/me/avatar', protect, authorize('expert'), uploadAvatar, updateExpertAvatar);
 
 // Register as expert (from farmer side)
-router.post('/register', protect, registerAsExpert);
+router.post('/apply', protect, registerAsExpert);
 
 // Farmer requests
 router.get('/me/requests', protect, authorize('expert'), getFarmerRequests);

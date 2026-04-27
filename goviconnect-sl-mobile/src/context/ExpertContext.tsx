@@ -35,6 +35,7 @@ interface ExpertContextType {
     login: (email: string, password: string) => Promise<boolean>;
     logout: () => Promise<void>;
     updateExpert: (updated: Partial<ExpertUser>) => void;
+    switchRole: (targetRole: 'farmer' | 'expert') => Promise<boolean>;
 
     // Onboarding
     hasCompletedOnboarding: boolean;
@@ -150,6 +151,37 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
         }
     };
 
+    const switchRole = async (targetRole: 'farmer' | 'expert'): Promise<boolean> => {
+        setIsLoading(true);
+        try {
+            const res = await authAPI.switchRole(targetRole);
+            if (res.data.success) {
+                const { token, user: u } = res.data;
+                
+                // Format correctly based on role
+                if (targetRole === 'expert') {
+                    const formatted = formatExpert(u);
+                    await saveAuthData(token, formatted, 'expert');
+                    setExpert(formatted);
+                } else {
+                    // For farmer, we just need to save the token and let AppContext handle it
+                    // but we can also clear expert state
+                    await saveAuthData(token, u, 'farmer');
+                    setExpert(null);
+                }
+                
+                setIsAuthenticated(targetRole === 'expert');
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Expert switch role error:', error);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const updateExpert = (updated: Partial<ExpertUser>): void => {
         setExpert(prev => prev ? { ...prev, ...updated } : prev);
     };
@@ -193,6 +225,7 @@ export const ExpertProvider: React.FC<ExpertProviderProps> = ({ children }) => {
                 login,
                 logout,
                 updateExpert,
+                switchRole,
                 hasCompletedOnboarding,
                 completeOnboarding,
                 settings,
