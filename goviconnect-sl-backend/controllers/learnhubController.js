@@ -16,7 +16,7 @@ const normalizeStringArray = (value) => {
 
 const buildUserGuidePayload = (body = {}) => ({
   cropId: normalizeText(body.cropId),
-  name: normalizeText(body.name),
+  name: normalizeText(body.name || body.title),
   scientificName: normalizeText(body.scientificName),
   category: normalizeText(body.category),
   description: normalizeText(body.description),
@@ -198,13 +198,42 @@ exports.updateUserGuide = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Guide not found' });
     }
 
-    const updates = buildUserGuidePayload(req.body);
+    const arrayFields = new Set(['videoLinks', 'videoUrls', 'images']);
+    const allowedFields = [
+      'cropId',
+      'name',
+      'scientificName',
+      'category',
+      'description',
+      'climate',
+      'soil',
+      'season',
+      'diseases',
+      'treatments',
+      'practices',
+      'videoLink',
+      'videoLinks',
+      'videoUrls',
+      'imageUrl',
+      'images',
+    ];
 
-    if (!updates.name) {
-      return res.status(400).json({ success: false, message: 'Guide name is required' });
+    const updates = {};
+    allowedFields.forEach((field) => {
+      if (!Object.prototype.hasOwnProperty.call(req.body, field)) return;
+      updates[field] = arrayFields.has(field)
+        ? normalizeStringArray(req.body[field])
+        : normalizeText(req.body[field]);
+    });
+
+    if (typeof updates.name === 'string' && !updates.name) {
+      delete updates.name;
     }
 
     Object.assign(guide, updates);
+    if (!guide.name) {
+      guide.name = 'User Guide';
+    }
     guide.status = 'pending'; // Reset to pending after edit
     guide.rejectionReason = undefined;
     await guide.save();

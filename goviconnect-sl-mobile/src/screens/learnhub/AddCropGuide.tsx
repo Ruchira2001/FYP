@@ -40,6 +40,7 @@ const AddCropGuide: React.FC = () => {
     const { t } = useTranslation();
 
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
+    const [editingGuideId, setEditingGuideId] = useState<string | null>(null);
     const [history, setHistory] = useState<GuideForm[]>([]);
     const [loading, setLoading] = useState(false);
     // Local image URIs picked from gallery (not yet uploaded)
@@ -127,7 +128,7 @@ const AddCropGuide: React.FC = () => {
             setHistory(data.map((g: any) => ({
                 id: g._id || g.id,
                 cropId: g.cropId || '',
-                name: g.name || '',
+                name: g.name || g.title || '',
                 scientificName: g.scientificName || '',
                 category: g.category || '',
                 description: g.description || '',
@@ -169,6 +170,7 @@ const AddCropGuide: React.FC = () => {
     });
 
     const resetForm = () => {
+        setEditingGuideId(null);
         setFormData({
             cropId: '',
             name: '',
@@ -198,7 +200,8 @@ const AddCropGuide: React.FC = () => {
     };
 
     const handleEdit = (item: GuideForm) => {
-        setFormData({ ...item });
+        setEditingGuideId(item.id || null);
+        setFormData({ ...item, id: item.id });
         setLocalImages(item.images || []);
         // Already-uploaded video URLs go into localVideos display list
         setLocalVideos(item.videoUrls || []);
@@ -401,8 +404,8 @@ const AddCropGuide: React.FC = () => {
                 images: uploadedImageUrls,
             };
 
-            if (formData.id) {
-                await learnhubAPI.updateUserGuide(formData.id, payload);
+            if (editingGuideId) {
+                await learnhubAPI.updateUserGuide(editingGuideId, payload);
                 resetForm();
                 await loadGuideHistory();
                 setViewMode('list');
@@ -805,7 +808,7 @@ const AddCropGuide: React.FC = () => {
                             </View>
                         ) : (
                             <Text style={styles.submitButtonText}>
-                                {formData.id ? 'Update Guide' : 'Submit Guide'}
+                                {editingGuideId ? 'Update Guide' : 'Submit Guide'}
                             </Text>
                         )}
                     </TouchableOpacity>
