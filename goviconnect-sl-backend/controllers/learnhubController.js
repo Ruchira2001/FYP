@@ -94,24 +94,36 @@ exports.getGuideById = async (req, res, next) => {
   }
 };
 
-// @desc    Save a guide
-// @route   POST /api/learnhub/saved/:id
+// @desc    Save a guide (official or community)
+// @route   POST /api/learnhub/guides/:id/save
 exports.saveGuide = async (req, res, next) => {
   try {
     const guideId = req.params.id;
 
-    // Verify guide exists
-    const guide = await CropGuide.findById(guideId);
+    // Check if it's a community guide first (since we're prioritizing them)
+    let guide = await UserCropGuide.findById(guideId);
+    let isCommunity = true;
+
+    if (!guide) {
+      // Check if it's an official guide
+      guide = await CropGuide.findById(guideId);
+      isCommunity = false;
+    }
+
     if (!guide) {
       return res.status(404).json({ success: false, message: 'Guide not found' });
     }
 
+    const updateField = isCommunity ? 'savedCommunityGuides' : 'savedGuides';
+
     await User.findByIdAndUpdate(req.user._id, {
-      $addToSet: { savedGuides: guideId },
+      $addToSet: { [updateField]: guideId },
     });
 
-    guide.likes += 1;
-    await guide.save();
+    if (!isCommunity) {
+      guide.likes += 1;
+      await guide.save();
+    }
 
     res.json({ success: true, message: 'Guide saved' });
   } catch (error) {
@@ -120,14 +132,20 @@ exports.saveGuide = async (req, res, next) => {
 };
 
 // @desc    Unsave a guide
-// @route   DELETE /api/learnhub/saved/:id
+// @route   DELETE /api/learnhub/guides/:id/save
 exports.unsaveGuide = async (req, res, next) => {
   try {
+    const guideId = req.params.id;
+
     await User.findByIdAndUpdate(req.user._id, {
-      $pull: { savedGuides: req.params.id },
+      $pull: { 
+        savedGuides: guideId,
+        savedCommunityGuides: guideId
+      },
     });
 
-    await CropGuide.findByIdAndUpdate(req.params.id, { $inc: { likes: -1 } });
+    // Try to decrement likes for official guide
+    await CropGuide.findByIdAndUpdate(guideId, { $inc: { likes: -1 } });
 
     res.json({ success: true, message: 'Guide removed from saved' });
   } catch (error) {
@@ -135,16 +153,25 @@ exports.unsaveGuide = async (req, res, next) => {
   }
 };
 
-// @desc    Get saved guides
+// @desc    Get saved guides (official and community)
 // @route   GET /api/learnhub/saved
 exports.getSavedGuides = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id).populate({
-      path: 'savedGuides',
-      select: 'cropId title titleSi category thumbnail overview.content overview.contentSi',
-    });
+    const user = await User.findById(req.user._id)
+      .populate({
+        path: 'savedGuides',
+        select: 'cropId title titleSi category thumbnail overview.content overview.contentSi',
+      })
+      .populate({
+        path: 'savedCommunityGuides',
+        select: 'name description category images climate soil season practices diseases treatments userId',
+        populate: { path: 'userId', select: 'name avatar' }
+      });
 
-    res.json({ success: true, data: user.savedGuides || [] });
+    const official = (user.savedGuides || []).map(g => ({ ...g.toObject(), isOfficial: true }));
+    const community = (user.savedCommunityGuides || []).map(g => ({ ...g.toObject(), isCommunity: true }));
+
+    res.json({ success: true, data: [...official, ...community] });
   } catch (error) {
     next(error);
   }

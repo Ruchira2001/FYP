@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { getSavedLearnHub, SavedLearnHubItem } from '../../services/storage';
-import cropsData from '../../data/crops.json';
 
 const OfflineDownloads: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -46,7 +45,7 @@ const OfflineDownloads: React.FC = () => {
         return (
             <TouchableOpacity 
                 style={styles.itemContainer}
-                onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item })}
+                onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item.data || item })}
             >
                 {item.images?.[0] ? (
                     <Image source={{ uri: item.images[0] }} style={styles.thumbnail} />

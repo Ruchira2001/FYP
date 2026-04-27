@@ -65,6 +65,12 @@ const userSchema = new mongoose.Schema(
         ref: 'CropGuide',
       },
     ],
+    savedCommunityGuides: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'UserCropGuide',
+      },
+    ],
     expoPushToken: {
       type: String,
       default: null,

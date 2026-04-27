@@ -105,6 +105,7 @@ export interface SavedLearnHubItem {
     category: string;
     savedAt: string;
     isDownloaded: boolean;
+    data?: any; // Full guide data for offline access
 }
 
 export const getSavedLearnHub = async (): Promise<SavedLearnHubItem[]> => {

@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { learnhubAPI } from '../../services/api';
+import { saveLearnHubItem, getSavedLearnHub } from '../../services/storage';
 
 type ParamList = {
     FarmerGuideDetails: { guide: any };
@@ -28,6 +29,7 @@ const FarmerGuideDetails: React.FC = () => {
 
     useEffect(() => {
         checkSavedStatus();
+        checkDownloadedStatus();
     }, []);
 
     const checkSavedStatus = async () => {
@@ -38,6 +40,16 @@ const FarmerGuideDetails: React.FC = () => {
             setIsSaved(saved.some((s: any) => (s._id || s.guideId || s.id) === id));
         } catch (e) {
             console.error('Check saved status error:', e);
+        }
+    };
+
+    const checkDownloadedStatus = async () => {
+        try {
+            const downloads = await getSavedLearnHub();
+            const id = guide._id || guide.id;
+            setIsDownloaded(downloads.some(d => d.id === id && d.isDownloaded));
+        } catch (e) {
+            console.error('Check download status error:', e);
         }
     };
 
@@ -84,9 +96,32 @@ const FarmerGuideDetails: React.FC = () => {
         }
     };
 
-    const handleDownload = () => {
-        setIsDownloaded(true);
-        Alert.alert('Success', 'Guide downloaded for offline access');
+    const handleDownload = async () => {
+        if (isDownloaded) {
+            Alert.alert('Info', 'This guide is already available offline');
+            return;
+        }
+        try {
+            const id = guide._id || guide.id;
+            if (!id) {
+                Alert.alert('Error', 'Cannot download: Guide ID is missing');
+                return;
+            }
+            await saveLearnHubItem({
+                id,
+                title: guide.name,
+                titleSi: guide.nameSi || guide.name,
+                category: guide.category,
+                savedAt: new Date().toISOString(),
+                isDownloaded: true,
+                data: guide // Store full object
+            });
+            setIsDownloaded(true);
+            Alert.alert('Success', 'Guide downloaded for offline access');
+        } catch (e) {
+            console.error('Download error:', e);
+            Alert.alert('Error', 'Failed to download guide');
+        }
     };
 
     const handleShare = async () => {
