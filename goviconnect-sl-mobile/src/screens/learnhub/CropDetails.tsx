@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Linking } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +24,8 @@ const CropDetails: React.FC = () => {
     const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [isSaved, setIsSaved] = useState(false);
     const [isDownloaded, setIsDownloaded] = useState(false);
+    const [isLiked, setIsLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(0);
     const [guide, setGuide] = useState<any>(null);
 
     const crop = cropsData.crops.find(c => c.id === cropId);
@@ -35,7 +37,10 @@ const CropDetails: React.FC = () => {
     const loadGuide = async () => {
         try {
             const res = await learnhubAPI.getGuideById(cropId);
-            setGuide(res.data.data);
+            const data = res.data.data;
+            setGuide(data);
+            setIsLiked(data?.isLiked || false);
+            setLikeCount(data?.likes || 0);
         } catch (e) {
             console.error('Failed to load guide:', e);
         }
@@ -63,6 +68,22 @@ const CropDetails: React.FC = () => {
 
     const handleDownload = async () => {
         setIsDownloaded(!isDownloaded);
+    };
+
+    const handleLike = async () => {
+        // Optimistic update
+        const newIsLiked = !isLiked;
+        setIsLiked(newIsLiked);
+        setLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
+        try {
+            const res = await learnhubAPI.reactToGuide(cropId);
+            setIsLiked(res.data.isLiked);
+            setLikeCount(res.data.likeCount);
+        } catch {
+            // Revert on error
+            setIsLiked(!newIsLiked);
+            setLikeCount(prev => newIsLiked ? Math.max(0, prev - 1) : prev + 1);
+        }
     };
 
     const tabs: { id: Tab; labelKey: string }[] = [
@@ -179,25 +200,43 @@ const CropDetails: React.FC = () => {
                 Videos and images related to {crop?.name} cultivation.
             </Text>
 
-            {guide?.media?.videos?.map((video, index) => (
+            {guide?.media?.videos?.map((video: string, index: number) => (
                 <TouchableOpacity
                     key={index}
                     style={styles.videoPlaceholder}
+                    onPress={() => video && Linking.openURL(video).catch(() => {})}
                 >
-                    <Ionicons name="play-circle" size={48} color={COLORS.neutral[400]} />
-                    <Text style={styles.videoText}>{video}</Text>
+                    <Ionicons name="play-circle" size={48} color={COLORS.primary[400]} />
+                    <Text style={styles.videoText} numberOfLines={2}>{video}</Text>
                 </TouchableOpacity>
             ))}
 
-            <View style={styles.imageGrid}>
-                {guide?.media?.images?.map((image, index) => (
-                    <View key={index} style={styles.imageWrapper}>
-                        <View style={styles.imagePlaceholder}>
-                            <Ionicons name="image" size={24} color={COLORS.neutral[400]} />
+            {guide?.media?.images && guide.media.images.length > 0 && (
+                <View style={styles.imageGrid}>
+                    {guide.media.images.map((image: string, index: number) => (
+                        <View key={index} style={styles.imageWrapper}>
+                            {image ? (
+                                <Image
+                                    source={{ uri: image }}
+                                    style={styles.imageThumbnail}
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <View style={styles.imagePlaceholder}>
+                                    <Ionicons name="image" size={24} color={COLORS.neutral[400]} />
+                                </View>
+                            )}
                         </View>
-                    </View>
-                ))}
-            </View>
+                    ))}
+                </View>
+            )}
+
+            {(!guide?.media?.videos?.length && !guide?.media?.images?.length) && (
+                <View style={styles.noMediaContainer}>
+                    <Ionicons name="images-outline" size={48} color={COLORS.neutral[300]} />
+                    <Text style={styles.noMediaText}>No media available yet</Text>
+                </View>
+            )}
         </View>
     );
 
@@ -262,6 +301,26 @@ const CropDetails: React.FC = () => {
                         isDownloaded ? styles.textWhite : styles.textNeutral
                     ]}>
                         {isDownloaded ? t('learnhub.downloaded') : t('learnhub.download')}
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={handleLike}
+                    style={[
+                        styles.actionButton,
+                        isLiked ? styles.likeButtonActive : styles.actionButtonInactive
+                    ]}
+                >
+                    <Ionicons
+                        name={isLiked ? 'heart' : 'heart-outline'}
+                        size={18}
+                        color={isLiked ? 'white' : COLORS.neutral[600]}
+                    />
+                    <Text style={[
+                        styles.actionButtonText,
+                        isLiked ? styles.textWhite : styles.textNeutral
+                    ]}>
+                        {likeCount > 0 ? likeCount.toString() : 'Like'}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -515,6 +574,24 @@ const styles = StyleSheet.create({
         aspectRatio: 1,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    imageThumbnail: {
+        width: '100%',
+        aspectRatio: 1,
+        borderRadius: 8,
+        backgroundColor: COLORS.neutral[200],
+    },
+    noMediaContainer: {
+        alignItems: 'center',
+        paddingVertical: 40,
+    },
+    noMediaText: {
+        fontSize: 14,
+        color: COLORS.neutral[400],
+        marginTop: 12,
+    },
+    likeButtonActive: {
+        backgroundColor: '#ef4444',
     },
 });
 

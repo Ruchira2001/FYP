@@ -304,7 +304,26 @@ export const learnhubAPI = {
   unsaveGuide: (guideId: string) =>
     api.delete(`/learnhub/guides/${guideId}/save`),
 
+  reactToGuide: (guideId: string) =>
+    api.post(`/learnhub/guides/${guideId}/react`),
+
   getSavedGuides: () => api.get('/learnhub/saved'),
+
+  getCommunityGuides: (params?: { page?: number; limit?: number }) =>
+    api.get('/learnhub/community', { params }),
+
+  reactToCommunityGuide: (guideId: string) =>
+    api.post(`/learnhub/community/${guideId}/react`),
+
+  uploadGuideImages: (formData: FormData) =>
+    api.post('/learnhub/user-guides/upload-images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  uploadGuideVideos: (formData: FormData) =>
+    api.post('/learnhub/user-guides/upload-videos', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 
   submitUserGuide: (data: any) => api.post('/learnhub/user-guides', data),
 

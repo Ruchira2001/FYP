@@ -53,10 +53,11 @@ exports.getGuideById = async (req, res, next) => {
     guide.views += 1;
     await guide.save();
 
-    // Check if saved by current user
+    // Check if saved/liked by current user
     const isSaved = req.user.savedGuides?.includes(guide._id) || false;
+    const isLiked = guide.likedBy?.some((id) => id.toString() === req.user._id.toString()) || false;
 
-    res.json({ success: true, data: { ...guide.toObject(), isSaved } });
+    res.json({ success: true, data: { ...guide.toObject(), isSaved, isLiked } });
   } catch (error) {
     next(error);
   }
@@ -188,6 +189,133 @@ exports.deleteUserGuide = async (req, res, next) => {
     }
 
     res.json({ success: true, message: 'Guide deleted' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Upload images for a user guide (Cloudinary)
+// @route   POST /api/learnhub/user-guides/upload-images
+exports.uploadGuideImages = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: 'No images uploaded' });
+    }
+    const urls = req.files.map((f) => f.path);
+    res.json({ success: true, urls });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Upload videos for a user guide (Cloudinary)
+// @route   POST /api/learnhub/user-guides/upload-videos
+exports.uploadGuideVideos = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: 'No videos uploaded' });
+    }
+    const urls = req.files.map((f) => f.path);
+    res.json({ success: true, urls });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all approved community user guides (from all users)
+// @route   GET /api/learnhub/community
+exports.getCommunityGuides = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const userId = req.user._id;
+
+    const [guides, total] = await Promise.all([
+      UserCropGuide.find({ status: 'approved' })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate('userId', 'name avatar'),
+      UserCropGuide.countDocuments({ status: 'approved' }),
+    ]);
+
+    const result = guides.map((g) => ({
+      ...g.toObject(),
+      likeCount: (g.reactions?.likes || []).length,
+      isLiked: (g.reactions?.likes || []).some(
+        (id) => id.toString() === userId.toString()
+      ),
+    }));
+
+    res.json({
+      success: true,
+      data: result,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Toggle like on an official CropGuide
+// @route   POST /api/learnhub/guides/:id/react
+exports.reactToGuide = async (req, res, next) => {
+  try {
+    const guide = await CropGuide.findById(req.params.id);
+    if (!guide) {
+      return res.status(404).json({ success: false, message: 'Guide not found' });
+    }
+
+    const userId = req.user._id;
+    const alreadyLiked = guide.likedBy.some((id) => id.toString() === userId.toString());
+
+    if (alreadyLiked) {
+      guide.likedBy.pull(userId);
+      guide.likes = Math.max(0, guide.likes - 1);
+    } else {
+      guide.likedBy.push(userId);
+      guide.likes += 1;
+    }
+    await guide.save();
+
+    res.json({
+      success: true,
+      isLiked: !alreadyLiked,
+      likeCount: guide.likes,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Toggle like on a community user guide
+// @route   POST /api/learnhub/community/:id/react
+exports.reactToUserGuide = async (req, res, next) => {
+  try {
+    const guide = await UserCropGuide.findById(req.params.id);
+    if (!guide) {
+      return res.status(404).json({ success: false, message: 'Guide not found' });
+    }
+
+    const userId = req.user._id;
+    if (!guide.reactions) guide.reactions = { likes: [] };
+
+    const alreadyLiked = guide.reactions.likes.some(
+      (id) => id.toString() === userId.toString()
+    );
+
+    if (alreadyLiked) {
+      guide.reactions.likes.pull(userId);
+    } else {
+      guide.reactions.likes.push(userId);
+    }
+    await guide.save();
+
+    res.json({
+      success: true,
+      isLiked: !alreadyLiked,
+      likeCount: guide.reactions.likes.length,
+    });
   } catch (error) {
     next(error);
   }

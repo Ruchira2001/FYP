@@ -34,6 +34,7 @@ const LearnHubStackNavigator = () => (
         <LearnHubStack.Screen name="CropDetails" component={CropDetails} />
         <LearnHubStack.Screen name="SavedLibrary" component={SavedLibrary} />
         <LearnHubStack.Screen name="OfflineDownloads" component={OfflineDownloads} />
+        <LearnHubStack.Screen name="AddCropGuide" component={AddCropGuide} />
     </LearnHubStack.Navigator>
 );
 

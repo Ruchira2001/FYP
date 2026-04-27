@@ -12,10 +12,7 @@ const userCropGuideSchema = new mongoose.Schema(
       required: true,
     },
     scientificName: String,
-    category: {
-      type: String,
-      required: true,
-    },
+    category: String,
     description: String,
     climate: String,
     soil: String,
@@ -24,7 +21,13 @@ const userCropGuideSchema = new mongoose.Schema(
     treatments: String,
     practices: String,
     videoLink: String,
+    videoLinks: [String],
+    videoUrls: [String],
     imageUrl: String,
+    images: [String],
+    reactions: {
+      likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    },
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],

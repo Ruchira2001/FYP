@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, FlatList } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, FlatList, Image, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Header, PrimaryButton, InputField, EmptyState, Chip } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { learnhubAPI } from '../../services/api';
@@ -21,10 +22,16 @@ type GuideForm = {
     diseases: string;
     treatments: string;
     practices: string;
-    videoLink: string;
+    videoLinks: string[];
+    videoUrls: string[];
+    images: string[];
     status: 'pending' | 'approved' | 'rejected';
     submittedAt: string;
 };
+
+const CATEGORIES = ['Vegetable', 'Fruit', 'Grain', 'Spice', 'Legume', 'Herb', 'Root Crop', 'Other'];
+const CLIMATES = ['Tropical', 'Subtropical', 'Temperate', 'Cool', 'Warm', 'Dry', 'Humid'];
+const SOIL_TYPES = ['Loamy', 'Sandy', 'Clay', 'Silty', 'Peaty', 'Sandy Loam', 'Red Earth', 'Alluvial'];
 
 const AddCropGuide: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -33,6 +40,14 @@ const AddCropGuide: React.FC = () => {
     const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
     const [history, setHistory] = useState<GuideForm[]>([]);
     const [loading, setLoading] = useState(false);
+    // Local image URIs picked from gallery (not yet uploaded)
+    const [localImages, setLocalImages] = useState<string[]>([]);
+    const [uploadingImages, setUploadingImages] = useState(false);
+    // Local video URIs picked from device (not yet uploaded)
+    const [localVideos, setLocalVideos] = useState<string[]>([]);
+    const [uploadingVideos, setUploadingVideos] = useState(false);
+    // Video link input buffer
+    const [videoLinkInput, setVideoLinkInput] = useState('');
 
     useEffect(() => {
         loadGuideHistory();
@@ -54,7 +69,9 @@ const AddCropGuide: React.FC = () => {
                 diseases: g.diseases || '',
                 treatments: g.treatments || '',
                 practices: g.practices || '',
-                videoLink: g.videoLink || '',
+                videoLinks: Array.isArray(g.videoLinks) ? g.videoLinks : (g.videoLink ? [g.videoLink] : []),
+                videoUrls: Array.isArray(g.videoUrls) ? g.videoUrls : [],
+                images: Array.isArray(g.images) ? g.images : (g.imageUrl ? [g.imageUrl] : []),
                 status: g.status || 'pending',
                 submittedAt: g.submittedAt || g.createdAt || '',
             })));
@@ -75,7 +92,9 @@ const AddCropGuide: React.FC = () => {
         diseases: '',
         treatments: '',
         practices: '',
-        videoLink: '',
+        videoLinks: [],
+        videoUrls: [],
+        images: [],
         status: 'pending',
         submittedAt: '',
     });
@@ -92,10 +111,15 @@ const AddCropGuide: React.FC = () => {
             diseases: '',
             treatments: '',
             practices: '',
-            videoLink: '',
+            videoLinks: [],
+            videoUrls: [],
+            images: [],
             status: 'pending',
             submittedAt: '',
         });
+        setLocalImages([]);
+        setLocalVideos([]);
+        setVideoLinkInput('');
     };
 
     const handleAddNew = () => {
@@ -105,8 +129,35 @@ const AddCropGuide: React.FC = () => {
 
     const handleEdit = (item: GuideForm) => {
         setFormData({ ...item });
+        setLocalImages(item.images || []);
+        // Already-uploaded video URLs go into localVideos display list
+        setLocalVideos(item.videoUrls || []);
+        setVideoLinkInput('');
         setViewMode('form');
     };
+
+    // Chip selector helper
+    const SelectChips = ({ label, options, value, onSelect }: {
+        label: string;
+        options: string[];
+        value: string;
+        onSelect: (v: string) => void;
+    }) => (
+        <View style={styles.inputContainer}>
+            <Text style={styles.label}>{label}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+                {options.map(opt => (
+                    <TouchableOpacity
+                        key={opt}
+                        onPress={() => onSelect(value === opt ? '' : opt)}
+                        style={[styles.chip, value === opt && styles.chipActive]}
+                    >
+                        <Text style={[styles.chipText, value === opt && styles.chipTextActive]}>{opt}</Text>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+        </View>
+    );
 
     const handleDelete = (id: string) => {
         Alert.alert(
@@ -117,38 +168,158 @@ const AddCropGuide: React.FC = () => {
                 {
                     text: t('common.delete'),
                     style: 'destructive',
-                    onPress: () => {
-                        setHistory(prev => prev.filter(item => item.id !== id));
+                    onPress: async () => {
+                        try {
+                            await learnhubAPI.deleteUserGuide(id);
+                            setHistory(prev => prev.filter(item => item.id !== id));
+                        } catch {
+                            setHistory(prev => prev.filter(item => item.id !== id));
+                        }
                     }
                 }
             ]
         );
     };
 
+    const pickImages = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Please allow access to your photo library to add images.');
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsMultipleSelection: true,
+            quality: 0.7,
+            selectionLimit: 5,
+        });
+        if (!result.canceled) {
+            const newUris = result.assets.map(a => a.uri);
+            setLocalImages(prev => [...prev, ...newUris].slice(0, 5));
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setLocalImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const pickVideos = async () => {
+        const totalVideos = localVideos.length;
+        if (totalVideos >= 5) {
+            Alert.alert('Limit reached', 'You can upload up to 5 videos.');
+            return;
+        }
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Please allow access to your photo library to add videos.');
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+            allowsMultipleSelection: true,
+            selectionLimit: 5 - totalVideos,
+            quality: 1,
+        });
+        if (!result.canceled) {
+            const newUris = result.assets.map(a => a.uri);
+            setLocalVideos(prev => [...prev, ...newUris].slice(0, 5));
+        }
+    };
+
+    const removeLocalVideo = (index: number) => {
+        setLocalVideos(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const addVideoLink = () => {
+        const url = videoLinkInput.trim();
+        if (!url) return;
+        if (!(url.startsWith('http://') || url.startsWith('https://'))) {
+            Alert.alert('Invalid URL', 'Please enter a valid URL starting with http:// or https://');
+            return;
+        }
+        if ((formData.videoLinks || []).length >= 5) {
+            Alert.alert('Limit reached', 'You can add up to 5 video links.');
+            return;
+        }
+        setFormData(prev => ({ ...prev, videoLinks: [...(prev.videoLinks || []), url] }));
+        setVideoLinkInput('');
+    };
+
+    const removeVideoLink = (index: number) => {
+        setFormData(prev => ({ ...prev, videoLinks: prev.videoLinks.filter((_, i) => i !== index) }));
+    };
+
     const handleSubmit = async () => {
-        if (!formData.name || !formData.description) {
+        if (!formData.name?.trim() || !formData.description?.trim()) {
             Alert.alert(t('common.error'), 'Please fill in at least the Crop Name and Description.');
             return;
         }
 
         setLoading(true);
         try {
-            if (formData.id) {
-                // Update existing
-                await learnhubAPI.updateUserGuide(formData.id, formData);
-                Alert.alert(t('common.success'), 'Guide updated successfully.');
-            } else {
-                // Add new
-                await learnhubAPI.submitUserGuide(formData);
-                Alert.alert(t('common.success'), 'New guide submitted successfully.');
+            // 1. Upload new local images
+            let uploadedImageUrls: string[] = formData.images || [];
+            const newLocalImages = localImages.filter(uri => !uri.startsWith('http'));
+            if (newLocalImages.length > 0) {
+                setUploadingImages(true);
+                const imgFormData = new FormData();
+                newLocalImages.forEach((uri, index) => {
+                    imgFormData.append('images', {
+                        uri,
+                        type: 'image/jpeg',
+                        name: `guide_image_${index}.jpg`,
+                    } as any);
+                });
+                const uploadRes = await learnhubAPI.uploadGuideImages(imgFormData);
+                const alreadyUploaded = localImages.filter(uri => uri.startsWith('http'));
+                uploadedImageUrls = [...alreadyUploaded, ...(uploadRes.data.urls || [])];
+                setUploadingImages(false);
             }
-            await loadGuideHistory();
-            setViewMode('list');
+
+            // 2. Upload new local videos
+            let uploadedVideoUrls: string[] = [];
+            const newLocalVideos = localVideos.filter(uri => !uri.startsWith('http'));
+            const alreadyUploadedVideos = localVideos.filter(uri => uri.startsWith('http'));
+            if (newLocalVideos.length > 0) {
+                setUploadingVideos(true);
+                const vidFormData = new FormData();
+                newLocalVideos.forEach((uri, index) => {
+                    const ext = uri.split('.').pop()?.split('?')[0] || 'mp4';
+                    vidFormData.append('videos', {
+                        uri,
+                        type: `video/${ext}`,
+                        name: `guide_video_${index}.${ext}`,
+                    } as any);
+                });
+                const vidRes = await learnhubAPI.uploadGuideVideos(vidFormData);
+                uploadedVideoUrls = [...alreadyUploadedVideos, ...(vidRes.data.urls || [])];
+                setUploadingVideos(false);
+            } else {
+                uploadedVideoUrls = alreadyUploadedVideos;
+            }
+
+            const payload = { ...formData, images: uploadedImageUrls, videoUrls: uploadedVideoUrls };
+
+            if (formData.id) {
+                await learnhubAPI.updateUserGuide(formData.id, payload);
+                resetForm();
+                await loadGuideHistory();
+                setViewMode('list');
+                Alert.alert('✅ Updated!', 'Your guide has been updated successfully.');
+            } else {
+                await learnhubAPI.submitUserGuide(payload);
+                resetForm();
+                await loadGuideHistory();
+                setViewMode('list');
+                Alert.alert('✅ Guide Submitted!', 'Your crop guide has been submitted and is pending review. You can see it in My Guides.');
+            }
         } catch (error) {
             console.error('Failed to submit guide:', error);
-            Alert.alert(t('common.error'), 'Failed to submit guide.');
+            Alert.alert(t('common.error'), 'Failed to submit guide. Please try again.');
         } finally {
             setLoading(false);
+            setUploadingImages(false);
+            setUploadingVideos(false);
         }
     };
 
@@ -265,12 +436,11 @@ const AddCropGuide: React.FC = () => {
                         icon="flask-outline"
                     />
 
-                    <InputField
+                    <SelectChips
                         label="Category"
-                        placeholder="e.g., Vegetable, Fruit"
+                        options={CATEGORIES}
                         value={formData.category}
-                        onChangeText={(text) => setFormData({ ...formData, category: text })}
-                        icon="grid-outline"
+                        onSelect={(v) => setFormData({ ...formData, category: v })}
                     />
 
                     <View style={styles.inputContainer}>
@@ -286,26 +456,19 @@ const AddCropGuide: React.FC = () => {
                         />
                     </View>
 
-                    <View style={styles.row}>
-                        <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
-                            <Text style={styles.label}>Climate</Text>
-                            <TextInput
-                                style={styles.textInput}
-                                placeholder="Warm/Cool"
-                                value={formData.climate}
-                                onChangeText={(text) => setFormData({ ...formData, climate: text })}
-                            />
-                        </View>
-                        <View style={[styles.inputContainer, { flex: 1, marginLeft: 8 }]}>
-                            <Text style={styles.label}>Soil Type</Text>
-                            <TextInput
-                                style={styles.textInput}
-                                placeholder="Loamy/Sandy"
-                                value={formData.soil}
-                                onChangeText={(text) => setFormData({ ...formData, soil: text })}
-                            />
-                        </View>
-                    </View>
+                    <SelectChips
+                        label="Climate"
+                        options={CLIMATES}
+                        value={formData.climate}
+                        onSelect={(v) => setFormData({ ...formData, climate: v })}
+                    />
+
+                    <SelectChips
+                        label="Soil Type"
+                        options={SOIL_TYPES}
+                        value={formData.soil}
+                        onSelect={(v) => setFormData({ ...formData, soil: v })}
+                    />
 
                     <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Details & Care</Text>
 
@@ -346,13 +509,100 @@ const AddCropGuide: React.FC = () => {
                     </View>
 
                     <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Media</Text>
-                    <InputField
-                        label="Video Link (Optional)"
-                        placeholder="https://youtube.com/..."
-                        value={formData.videoLink}
-                        onChangeText={(text) => setFormData({ ...formData, videoLink: text })}
-                        icon="videocam-outline"
-                    />
+
+                    {/* Image picker grid */}
+                    <Text style={styles.label}>Photos (up to 5)</Text>
+                    <View style={styles.imageGrid}>
+                        {localImages.map((uri, index) => (
+                            <View key={uri + index} style={styles.imageTile}>
+                                <Image source={{ uri }} style={styles.imageTileImg} />
+                                <TouchableOpacity
+                                    style={styles.imageTileRemove}
+                                    onPress={() => removeImage(index)}
+                                >
+                                    <Ionicons name="close-circle" size={20} color="#ef4444" />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                        {localImages.length < 5 && (
+                            <TouchableOpacity style={styles.addImageTile} onPress={pickImages}>
+                                <Ionicons name="add" size={28} color={COLORS.primary[500]} />
+                                <Text style={styles.addImageText}>Add Photo</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                    <Text style={styles.mediaHint}>
+                        {localImages.length}/5 photos selected
+                    </Text>
+
+                    {/* Video files from device */}
+                    <Text style={styles.label}>Videos from Device (up to 5)</Text>
+                    <View style={styles.imageGrid}>
+                        {localVideos.map((uri, index) => (
+                            <View key={uri + index} style={styles.imageTile}>
+                                <View style={styles.videoTileThumb}>
+                                    <Ionicons name="videocam" size={28} color="#ffffff" />
+                                    {uri.startsWith('http') ? (
+                                        <Text style={styles.videoTileLabel} numberOfLines={1}>Uploaded</Text>
+                                    ) : (
+                                        <Text style={styles.videoTileLabel} numberOfLines={1}>
+                                            {uri.split('/').pop()?.substring(0, 12) || 'Video'}
+                                        </Text>
+                                    )}
+                                </View>
+                                <TouchableOpacity
+                                    style={styles.imageTileRemove}
+                                    onPress={() => removeLocalVideo(index)}
+                                >
+                                    <Ionicons name="close-circle" size={20} color="#ef4444" />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                        {localVideos.length < 5 && (
+                            <TouchableOpacity style={styles.addVideoTile} onPress={pickVideos}>
+                                <Ionicons name="add-circle-outline" size={28} color={COLORS.primary[500]} />
+                                <Text style={styles.addImageText}>Add Video</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                    <Text style={styles.mediaHint}>
+                        {localVideos.length}/5 videos selected
+                    </Text>
+
+                    {/* Video links */}
+                    <Text style={styles.label}>Video Links (YouTube / URLs, up to 5)</Text>
+                    {(formData.videoLinks || []).map((link, index) => (
+                        <View key={index} style={styles.videoLinkRow}>
+                            <Ionicons name="logo-youtube" size={18} color="#ef4444" style={{ marginRight: 8 }} />
+                            <Text style={styles.videoLinkText} numberOfLines={1}>{link}</Text>
+                            <TouchableOpacity onPress={() => removeVideoLink(index)} style={styles.videoLinkRemove}>
+                                <Ionicons name="close-circle" size={18} color={COLORS.neutral[400]} />
+                            </TouchableOpacity>
+                        </View>
+                    ))}
+                    {(formData.videoLinks || []).length < 5 && (
+                        <View style={styles.videoLinkInputRow}>
+                            <TextInput
+                                style={styles.videoLinkInput}
+                                placeholder="https://youtube.com/watch?v=..."
+                                placeholderTextColor={COLORS.neutral[400]}
+                                value={videoLinkInput}
+                                onChangeText={setVideoLinkInput}
+                                autoCapitalize="none"
+                                keyboardType="url"
+                            />
+                            <TouchableOpacity
+                                style={[styles.videoAddBtn, !videoLinkInput.trim() && { opacity: 0.4 }]}
+                                onPress={addVideoLink}
+                                disabled={!videoLinkInput.trim()}
+                            >
+                                <Ionicons name="add" size={20} color="#ffffff" />
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    <Text style={styles.mediaHint}>
+                        {(formData.videoLinks || []).length}/5 video links added
+                    </Text>
                 </View>
             </ScrollView>
 
@@ -373,7 +623,12 @@ const AddCropGuide: React.FC = () => {
                         disabled={loading}
                     >
                         {loading ? (
-                            <Text style={styles.submitButtonText}>Saving...</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+                                <Text style={styles.submitButtonText}>
+                                    {uploadingVideos ? 'Uploading videos...' : uploadingImages ? 'Uploading images...' : 'Saving...'}
+                                </Text>
+                            </View>
                         ) : (
                             <Text style={styles.submitButtonText}>
                                 {formData.id ? 'Update Guide' : 'Submit Guide'}
@@ -579,6 +834,159 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#ffffff',
+    },
+    // Image grid for media section
+    imageGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 8,
+    },
+    imageTile: {
+        width: 90,
+        height: 90,
+        marginRight: 8,
+        marginBottom: 8,
+        borderRadius: 10,
+        overflow: 'visible',
+        position: 'relative',
+    },
+    imageTileImg: {
+        width: 90,
+        height: 90,
+        borderRadius: 10,
+        backgroundColor: COLORS.neutral[200],
+    },
+    imageTileRemove: {
+        position: 'absolute',
+        top: -6,
+        right: -6,
+        backgroundColor: '#ffffff',
+        borderRadius: 10,
+    },
+    addImageTile: {
+        width: 90,
+        height: 90,
+        marginRight: 8,
+        marginBottom: 8,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: COLORS.primary[300],
+        borderStyle: 'dashed',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: COLORS.primary[50],
+    },
+    addVideoTile: {
+        width: 90,
+        height: 90,
+        marginRight: 8,
+        marginBottom: 8,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: COLORS.primary[300],
+        borderStyle: 'dashed',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#fdf4ff',
+    },
+    videoTileThumb: {
+        width: 90,
+        height: 90,
+        borderRadius: 10,
+        backgroundColor: '#1f2937',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 6,
+    },
+    videoTileLabel: {
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.7)',
+        marginTop: 4,
+        textAlign: 'center',
+    },
+    addImageText: {
+        fontSize: 11,
+        color: COLORS.primary[500],
+        marginTop: 4,
+        fontWeight: '500',
+    },
+    mediaHint: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        marginBottom: 16,
+    },
+    // Chip selectors
+    chipsRow: {
+        flexDirection: 'row',
+        paddingVertical: 4,
+        gap: 8,
+    },
+    chip: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1.5,
+        borderColor: COLORS.neutral[200],
+        backgroundColor: '#ffffff',
+        marginRight: 8,
+    },
+    chipActive: {
+        borderColor: COLORS.primary[500],
+        backgroundColor: COLORS.primary[500],
+    },
+    chipText: {
+        fontSize: 13,
+        color: COLORS.neutral[600],
+        fontWeight: '500',
+    },
+    chipTextActive: {
+        color: '#ffffff',
+        fontWeight: '600',
+    },
+    // Video link management
+    videoLinkRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        marginBottom: 8,
+    },
+    videoLinkText: {
+        flex: 1,
+        fontSize: 13,
+        color: COLORS.neutral[700],
+    },
+    videoLinkRemove: {
+        marginLeft: 8,
+    },
+    videoLinkInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    videoLinkInput: {
+        flex: 1,
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 14,
+        color: COLORS.neutral[800],
+        marginRight: 8,
+    },
+    videoAddBtn: {
+        width: 42,
+        height: 42,
+        borderRadius: 10,
+        backgroundColor: COLORS.primary[500],
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
 

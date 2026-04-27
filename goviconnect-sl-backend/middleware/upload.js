@@ -42,6 +42,16 @@ const guideStorage = new CloudinaryStorage({
   },
 });
 
+// Cloudinary storage for guide videos
+const guideVideoStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'goviconnect/guide-videos',
+    resource_type: 'video',
+    allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
+  },
+});
+
 // Cloudinary storage for product images
 const productStorage = new CloudinaryStorage({
   cloudinary,
@@ -58,6 +68,15 @@ const imageFilter = (req, file, cb) => {
     cb(null, true);
   } else {
     cb(new Error('Only image files are allowed'), false);
+  }
+};
+
+// File filter - videos only
+const videoFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('video/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only video files are allowed'), false);
   }
 };
 
@@ -86,6 +105,18 @@ const uploadGuideImage = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 }).single('image');
 
+const uploadGuideImages = multer({
+  storage: guideStorage,
+  fileFilter: imageFilter,
+  limits: { fileSize: 10 * 1024 * 1024 },
+}).array('images', 5);
+
+const uploadGuideVideos = multer({
+  storage: guideVideoStorage,
+  fileFilter: videoFilter,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB per video
+}).array('videos', 5);
+
 const uploadProductImage = multer({
   storage: productStorage,
   fileFilter: imageFilter,
@@ -97,5 +128,7 @@ module.exports = {
   uploadAvatar,
   uploadChatImage,
   uploadGuideImage,
+  uploadGuideImages,
+  uploadGuideVideos,
   uploadProductImage,
 };
