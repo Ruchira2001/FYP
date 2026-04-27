@@ -218,6 +218,18 @@ exports.createChat = async (req, res, next) => {
       ]),
     });
 
+    // Notify expert in real-time so their chat list updates immediately
+    try {
+      const io = getIO();
+      io.emit('new_chat', {
+        chat: chat.toObject(),
+        expertId: expert._id.toString(),
+        farmerName: req.user.name,
+      });
+    } catch (socketErr) {
+      // Socket not initialized, skip real-time
+    }
+
     res.status(201).json({ success: true, data: chat });
   } catch (error) {
     next(error);

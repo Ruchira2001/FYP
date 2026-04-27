@@ -1,40 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip } from '../../components';
 import { COLORS, MEETING_STATUSES } from '../../utils/constants';
-import { Meeting } from '../../services/storage';
-import { meetingAPI } from '../../services/api';
+import { meetingAPI, chatAPI } from '../../services/api';
 import { formatDateTime } from '../../utils/validators';
 import { getSocket } from '../../services/socketService';
 
 type FilterType = 'all' | 'pending' | 'confirmed' | 'completed';
 
+interface MeetingItem {
+    id: string;
+    expertId: string;
+    expertName: string;
+    topic: string;
+    topicSi: string;
+    dateTime: string;
+    duration: number;
+    status: string;
+    notes?: string;
+    meetingLink?: string;
+    reminderSet: boolean;
+    source: string;
+}
+
 const MyMeetings: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
 
-    const [meetings, setMeetings] = useState<Meeting[]>([]);
+    const [meetings, setMeetings] = useState<MeetingItem[]>([]);
     const [filter, setFilter] = useState<FilterType>('all');
+    const [loading, setLoading] = useState(true);
+    const [togglingReminder, setTogglingReminder] = useState<string | null>(null);
+    const [openingChat, setOpeningChat] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadMeetings();
-
-        // Real-time: refresh when expert updates meeting status
-        const socket = getSocket();
-        if (socket) {
-            socket.on('meeting_updated', () => loadMeetings());
-        }
-
-        return () => {
-            if (socket) socket.off('meeting_updated');
-        };
-    }, []);
-
-    const loadMeetings = async () => {
+    const loadMeetings = useCallback(async () => {
         try {
             const res = await meetingAPI.getMyMeetings();
             const data = Array.isArray(res.data.data) ? res.data.data : [];
@@ -42,9 +45,8 @@ const MyMeetings: React.FC = () => {
                 id: m._id || m.id,
                 expertId: m.expert?._id || m.expertId || '',
                 expertName: m.expert?.name || m.expertName || '',
-                expertAvatar: m.expert?.avatar,
-                topic: m.topic || '',
-                topicSi: m.topicSi || m.topic || '',
+                topic: m.topic || m.sessionTitle || '',
+                topicSi: m.topicSi || m.topic || m.sessionTitle || '',
                 dateTime: m.dateTime || m.createdAt,
                 duration: m.duration || 30,
                 status: m.status || 'pending',
@@ -55,6 +57,68 @@ const MyMeetings: React.FC = () => {
             })));
         } catch (e) {
             console.error('Failed to load my meetings:', e);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadMeetings();
+
+        // Real-time: refresh when expert confirms / updates meeting
+        const socket = getSocket();
+        if (socket) {
+            socket.on('meeting_updated', loadMeetings);
+            socket.on('meeting_created', loadMeetings);
+        }
+        return () => {
+            if (socket) {
+                socket.off('meeting_updated', loadMeetings);
+                socket.off('meeting_created', loadMeetings);
+            }
+        };
+    }, [loadMeetings]);
+
+    // Toggle reminder via API — persists to DB
+    const handleToggleReminder = async (item: MeetingItem) => {
+        setTogglingReminder(item.id);
+        try {
+            const res = await meetingAPI.toggleReminder(item.id);
+            const updated = res.data.data;
+            setMeetings(prev =>
+                prev.map(m =>
+                    m.id === item.id ? { ...m, reminderSet: updated.reminderSet } : m
+                )
+            );
+            Alert.alert(
+                updated.reminderSet ? '🔔 Reminder Set' : '🔕 Reminder Removed',
+                updated.reminderSet
+                    ? 'You will be reminded before this meeting.'
+                    : 'Reminder has been removed.'
+            );
+        } catch (e: any) {
+            Alert.alert('Error', e?.response?.data?.message || 'Could not update reminder.');
+        } finally {
+            setTogglingReminder(null);
+        }
+    };
+
+    // Open or create chat with the meeting expert
+    const handleChatWithExpert = async (item: MeetingItem) => {
+        if (!item.expertId) {
+            Alert.alert('Error', 'Expert information not available.');
+            return;
+        }
+        setOpeningChat(item.id);
+        try {
+            const res = await chatAPI.createChat({ expertId: item.expertId });
+            const chat = res.data.data;
+            const chatId = chat._id || chat.id;
+            navigation.navigate('ChatDetail', { chatId, expertName: item.expertName });
+        } catch (e: any) {
+            Alert.alert('Error', e?.response?.data?.message || 'Could not open chat.');
+        } finally {
+            setOpeningChat(null);
         }
     };
 
@@ -69,78 +133,103 @@ const MyMeetings: React.FC = () => {
         { id: 'completed', label: t('meetings.completed') },
     ];
 
-    const renderMeeting = ({ item }: { item: Meeting }) => {
-        const statusConfig = MEETING_STATUSES[item.status];
+    const renderMeeting = ({ item }: { item: MeetingItem }) => {
+        const statusConfig = MEETING_STATUSES[item.status] || MEETING_STATUSES['pending'];
+        const isOpeningThisChat = openingChat === item.id;
+        const isTogglingThisReminder = togglingReminder === item.id;
 
         return (
-            <TouchableOpacity
-                style={styles.meetingCard}
-                onPress={() => { /* Perhaps navigate to MeetingDetails if applicable */ }}
-            >
-                <View style={styles.cardContent}>
-                    <View
-                        style={[
-                            styles.iconContainer,
-                            { backgroundColor: statusConfig.color + '20' }
-                        ]}
-                    >
+            <View style={styles.meetingCard}>
+                {/* Header: icon + topic + status */}
+                <View style={styles.cardHeader}>
+                    <View style={[styles.iconContainer, { backgroundColor: statusConfig.color + '20' }]}>
                         <Ionicons
                             name={item.source === 'chat_booking' ? 'chatbubble' : 'calendar'}
-                            size={24}
+                            size={22}
                             color={statusConfig.color}
                         />
                     </View>
-
-                    <View style={styles.detailsContainer}>
-                        <View style={styles.headerRow}>
-                            <Text style={styles.topic} numberOfLines={1}>
-                                {i18n.language === 'si' ? item.topicSi : item.topic}
-                            </Text>
-                            <View
-                                style={[
-                                    styles.statusBadge,
-                                    { backgroundColor: statusConfig.color + '20' }
-                                ]}
-                            >
-                                <Text style={[styles.statusText, { color: statusConfig.color }]}>
-                                    {i18n.language === 'si' ? statusConfig.labelSi : statusConfig.label}
-                                </Text>
-                            </View>
-                        </View>
-
-                        <Text style={styles.expertName}>
-                            {item.expertName}
+                    <View style={styles.headerTextBlock}>
+                        <Text style={styles.topic} numberOfLines={1}>
+                            {i18n.language === 'si' ? item.topicSi : item.topic}
                         </Text>
-
-                        <View style={styles.metaRow}>
-                            <Ionicons name="calendar-outline" size={14} color={COLORS.neutral[400]} />
-                            <Text style={styles.metaText}>
-                                {formatDateTime(item.dateTime, i18n.language)}
-                            </Text>
-                            <Text style={styles.durationText}>
-                                • {item.duration} min
-                            </Text>
-                        </View>
-
-                        {item.source === 'chat_booking' && (
-                            <View style={styles.sourceRow}>
-                                <Ionicons name="chatbubble-outline" size={12} color={COLORS.neutral[400]} />
-                                <Text style={styles.sourceText}>Booked from chat</Text>
-                            </View>
-                        )}
-
-                        {item.status === 'confirmed' && item.meetingLink ? (
-                            <TouchableOpacity
-                                style={styles.joinButton}
-                                onPress={() => Linking.openURL(item.meetingLink!).catch(() => Alert.alert('Error', 'Cannot open meeting link.'))}
-                            >
-                                <Ionicons name="videocam" size={14} color="#fff" />
-                                <Text style={styles.joinButtonText}>Join Meeting</Text>
-                            </TouchableOpacity>
-                        ) : null}
+                        <Text style={styles.expertName}>{item.expertName}</Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: statusConfig.color + '20' }]}>
+                        <Text style={[styles.statusText, { color: statusConfig.color }]}>
+                            {i18n.language === 'si' ? statusConfig.labelSi : statusConfig.label}
+                        </Text>
                     </View>
                 </View>
-            </TouchableOpacity>
+
+                {/* Date / Duration */}
+                <View style={styles.metaRow}>
+                    <Ionicons name="calendar-outline" size={13} color={COLORS.neutral[400]} />
+                    <Text style={styles.metaText}>{formatDateTime(item.dateTime, i18n.language)}</Text>
+                    <Ionicons name="time-outline" size={13} color={COLORS.neutral[400]} style={{ marginLeft: 10 }} />
+                    <Text style={styles.metaText}>{item.duration} min</Text>
+                </View>
+
+                {item.source === 'chat_booking' && (
+                    <View style={styles.sourceRow}>
+                        <Ionicons name="chatbubble-outline" size={12} color={COLORS.neutral[400]} />
+                        <Text style={styles.sourceText}>Booked from chat</Text>
+                    </View>
+                )}
+
+                {item.reminderSet && (
+                    <View style={styles.reminderActiveBadge}>
+                        <Ionicons name="notifications" size={12} color={COLORS.primary[600]} />
+                        <Text style={styles.reminderActiveBadgeText}>Reminder active</Text>
+                    </View>
+                )}
+
+                {/* Action buttons */}
+                <View style={styles.actionRow}>
+                    {/* Set / Remove Reminder */}
+                    <TouchableOpacity
+                        style={[styles.actionBtn, styles.reminderBtn, item.reminderSet && styles.reminderBtnActive]}
+                        onPress={() => handleToggleReminder(item)}
+                        disabled={isTogglingThisReminder}
+                    >
+                        {isTogglingThisReminder
+                            ? <ActivityIndicator size="small" color={item.reminderSet ? '#fff' : COLORS.primary[500]} />
+                            : <Ionicons name={item.reminderSet ? 'notifications' : 'notifications-outline'} size={14} color={item.reminderSet ? '#fff' : COLORS.primary[500]} />
+                        }
+                        <Text style={[styles.actionBtnText, item.reminderSet && styles.actionBtnTextWhite]}>
+                            {item.reminderSet ? 'Reminder On' : 'Set Reminder'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {/* Chat with Expert */}
+                    <TouchableOpacity
+                        style={[styles.actionBtn, styles.chatBtn]}
+                        onPress={() => handleChatWithExpert(item)}
+                        disabled={isOpeningThisChat}
+                    >
+                        {isOpeningThisChat
+                            ? <ActivityIndicator size="small" color={COLORS.secondary[600]} />
+                            : <Ionicons name="chatbubble-ellipses-outline" size={14} color={COLORS.secondary[600]} />
+                        }
+                        <Text style={[styles.actionBtnText, { color: COLORS.secondary[600] }]}>Chat</Text>
+                    </TouchableOpacity>
+
+                    {/* Join Meeting (confirmed + link) */}
+                    {item.status === 'confirmed' && item.meetingLink ? (
+                        <TouchableOpacity
+                            style={[styles.actionBtn, styles.joinBtn]}
+                            onPress={() =>
+                                Linking.openURL(item.meetingLink!).catch(() =>
+                                    Alert.alert('Error', 'Cannot open meeting link.')
+                                )
+                            }
+                        >
+                            <Ionicons name="videocam" size={14} color="#fff" />
+                            <Text style={[styles.actionBtnText, styles.actionBtnTextWhite]}>Join</Text>
+                        </TouchableOpacity>
+                    ) : null}
+                </View>
+            </View>
         );
     };
 
@@ -168,13 +257,19 @@ const MyMeetings: React.FC = () => {
                 </View>
             </View>
 
-            {filteredMeetings.length > 0 ? (
+            {loading ? (
+                <View style={styles.centered}>
+                    <ActivityIndicator size="large" color={COLORS.primary[500]} />
+                </View>
+            ) : filteredMeetings.length > 0 ? (
                 <FlatList
                     data={filteredMeetings}
                     renderItem={renderMeeting}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    onRefresh={loadMeetings}
+                    refreshing={false}
                 />
             ) : (
                 <EmptyState
@@ -194,6 +289,11 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.neutral[50],
     },
+    centered: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     filtersContainer: {
         paddingHorizontal: 16,
         paddingVertical: 12,
@@ -201,105 +301,137 @@ const styles = StyleSheet.create({
     filtersWrapper: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+        gap: 8,
     },
     listContent: {
         padding: 16,
-        paddingTop: 0,
+        paddingTop: 4,
     },
     meetingCard: {
         backgroundColor: '#ffffff',
-        borderRadius: 12,
-        padding: 16,
+        borderRadius: 14,
+        padding: 14,
         marginBottom: 12,
         borderWidth: 1,
         borderColor: COLORS.neutral[100],
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
+        shadowOpacity: 0.06,
         shadowRadius: 4,
-        elevation: 1,
+        elevation: 2,
     },
-    cardContent: {
+    cardHeader: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
+        alignItems: 'center',
+        marginBottom: 10,
     },
     iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
+        width: 44,
+        height: 44,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+        marginRight: 10,
+        flexShrink: 0,
     },
-    detailsContainer: {
+    headerTextBlock: {
         flex: 1,
-    },
-    headerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 4,
     },
     topic: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
         color: COLORS.neutral[800],
-        flex: 1,
+    },
+    expertName: {
+        fontSize: 13,
+        color: COLORS.primary[600],
+        marginTop: 1,
     },
     statusBadge: {
         paddingHorizontal: 8,
-        paddingVertical: 2,
+        paddingVertical: 3,
         borderRadius: 12,
         marginLeft: 8,
+        flexShrink: 0,
     },
     statusText: {
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    expertName: {
-        fontSize: 14,
-        color: COLORS.primary[600],
+        fontSize: 11,
+        fontWeight: '600',
     },
     metaRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 8,
+        marginBottom: 6,
     },
     metaText: {
         fontSize: 12,
         color: COLORS.neutral[500],
         marginLeft: 4,
     },
-    durationText: {
-        fontSize: 12,
-        color: COLORS.neutral[400],
-        marginLeft: 8,
-    },
     sourceRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 4,
+        marginBottom: 6,
     },
     sourceText: {
         fontSize: 12,
         color: COLORS.neutral[400],
         marginLeft: 4,
     },
-    joinButton: {
+    reminderActiveBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.primary[500],
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        backgroundColor: COLORS.primary[50],
+        paddingHorizontal: 8,
+        paddingVertical: 3,
         borderRadius: 8,
-        marginTop: 8,
         alignSelf: 'flex-start',
+        marginBottom: 8,
     },
-    joinButtonText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#ffffff',
+    reminderActiveBadgeText: {
+        fontSize: 11,
+        color: COLORS.primary[600],
         marginLeft: 4,
+        fontWeight: '500',
+    },
+    actionRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginTop: 4,
+        flexWrap: 'wrap',
+    },
+    actionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 8,
+        gap: 4,
+    },
+    actionBtnText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.primary[600],
+    },
+    actionBtnTextWhite: {
+        color: '#ffffff',
+    },
+    reminderBtn: {
+        borderWidth: 1.5,
+        borderColor: COLORS.primary[300],
+        backgroundColor: COLORS.primary[50],
+    },
+    reminderBtnActive: {
+        backgroundColor: COLORS.primary[500],
+        borderColor: COLORS.primary[500],
+    },
+    chatBtn: {
+        borderWidth: 1.5,
+        borderColor: COLORS.secondary[300],
+        backgroundColor: COLORS.secondary[50],
+    },
+    joinBtn: {
+        backgroundColor: COLORS.primary[500],
     },
 });
 

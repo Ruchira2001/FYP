@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip, PrimaryButton } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { formatDate, formatTime, getRelativeTime } from '../../../utils/validators';
-import { expertDashboardAPI } from '../../../services/api';
+import { expertDashboardAPI, chatAPI } from '../../../services/api';
 import { getSocket } from '../../../services/socketService';
 
 const MEETING_FILTERS = ['All', 'Upcoming', 'Personal', 'Group', 'Completed'];
@@ -35,6 +35,8 @@ const ExpertMeetings: React.FC = () => {
         d.setDate(1);
         return d;
     });
+
+    const [openingChat, setOpeningChat] = useState<string | null>(null);
 
     const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const DAY_NAMES = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -104,6 +106,7 @@ const ExpertMeetings: React.FC = () => {
                 status: m.status || 'pending',
                 dateTime: m.dateTime || m.date || '',
                 duration: m.duration || 60,
+                farmerId: m.farmer?._id || m.farmerId || '',
                 farmerName: m.farmer?.name || m.farmerName || '',
                 attendees: m.attendees || 0,
                 maxAttendees: m.maxAttendees || 20,
@@ -132,6 +135,27 @@ const ExpertMeetings: React.FC = () => {
             return { label: 'One-on-One', icon: 'person' as const, color: COLORS.secondary[500], bgColor: COLORS.secondary[50] };
         }
         return { label: 'Group Session', icon: 'people' as const, color: COLORS.primary[600], bgColor: COLORS.primary[50] };
+    };
+
+    const handleChatWithFarmer = async (meeting: any) => {
+        if (!meeting.farmerId) {
+            Alert.alert('Error', 'Farmer information not available.');
+            return;
+        }
+        setOpeningChat(meeting.id);
+        try {
+            // Expert looks up chat by farmer's userId
+            const res = await chatAPI.createChat({ expertId: meeting.farmerId });
+            const chat = res.data.data;
+            navigation.navigate('ExpertChatDetail', {
+                chatId: chat._id || chat.id,
+                farmerName: meeting.farmerName,
+            });
+        } catch (e: any) {
+            Alert.alert('Error', e?.response?.data?.message || 'Could not open chat.');
+        } finally {
+            setOpeningChat(null);
+        }
     };
 
     const handleCreateMeeting = async () => {
@@ -199,13 +223,23 @@ const ExpertMeetings: React.FC = () => {
                     {meeting.description}
                 </Text>
 
-                {/* Personal meeting farmer */}
+                {/* Personal meeting: farmer info + chat button */}
                 {meeting.type === 'personal' && meeting.farmerName && (
-                    <View style={styles.farmerInfoRow}>
-                        <View style={styles.farmerMiniAvatar}>
-                            <Text style={{ fontSize: 12 }}>👨‍🌾</Text>
+                    <View style={styles.farmerRow}>
+                        <View style={styles.farmerInfoRow}>
+                            <View style={styles.farmerMiniAvatar}>
+                                <Text style={{ fontSize: 12 }}>👨‍🌾</Text>
+                            </View>
+                            <Text style={styles.farmerInfoText}>{meeting.farmerName}</Text>
                         </View>
-                        <Text style={styles.farmerInfoText}>{meeting.farmerName}</Text>
+                        <TouchableOpacity
+                            style={styles.chatFarmerBtn}
+                            onPress={() => handleChatWithFarmer(meeting)}
+                            disabled={openingChat === meeting.id}
+                        >
+                            <Ionicons name="chatbubble-ellipses-outline" size={13} color={COLORS.secondary[600]} />
+                            <Text style={styles.chatFarmerBtnText}>Chat</Text>
+                        </TouchableOpacity>
                     </View>
                 )}
 
@@ -721,15 +755,37 @@ const styles = StyleSheet.create({
         lineHeight: 18,
         marginBottom: 10,
     },
+    farmerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
     farmerInfoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
         backgroundColor: COLORS.secondary[50],
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 8,
-        alignSelf: 'flex-start',
+        flex: 1,
+    },
+    chatFarmerBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: COLORS.secondary[300],
+        backgroundColor: COLORS.secondary[50],
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        gap: 4,
+        marginLeft: 8,
+    },
+    chatFarmerBtnText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.secondary[600],
     },
     farmerMiniAvatar: {
         width: 24,

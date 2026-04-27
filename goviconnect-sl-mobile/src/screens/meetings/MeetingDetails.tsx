@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Alert, StyleSheet, Linking, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, PrimaryButton } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { formatDate, formatTime } from '../../utils/validators';
-import { meetingAPI } from '../../services/api';
+import { meetingAPI, chatAPI } from '../../services/api';
 
 type ParamList = {
     MeetingDetails: { meetingId: string };
@@ -20,8 +20,11 @@ const MeetingDetails: React.FC = () => {
     const { t, i18n } = useTranslation();
 
     const [reminderSet, setReminderSet] = useState(false);
+    const [isRegistered, setIsRegistered] = useState(false);
     const [meeting, setMeeting] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [togglingReminder, setTogglingReminder] = useState(false);
+    const [openingChat, setOpeningChat] = useState(false);
 
     useEffect(() => {
         loadMeeting();
@@ -33,6 +36,7 @@ const MeetingDetails: React.FC = () => {
             const m = res.data.data;
             setMeeting({
                 id: m._id || m.id,
+                expertId: m.expert?._id || m.expertId || m.expertId?.toString() || '',
                 title: m.topic || m.title || '',
                 titleSi: m.topicSi || m.titleSi || m.topic || '',
                 expertName: m.expert?.name || m.expertName || '',
@@ -41,10 +45,13 @@ const MeetingDetails: React.FC = () => {
                 duration: m.duration || 60,
                 description: m.description || '',
                 descriptionSi: m.descriptionSi || m.description || '',
-                attendees: m.attendees?.length || 0,
+                attendees: m.attendees?.length || m.attendees || 0,
                 maxAttendees: m.maxAttendees || 50,
                 meetingLink: m.meetingLink,
+                reminderSet: m.reminderSet || false,
             });
+            setIsRegistered(m.isRegistered || false);
+            setReminderSet(m.isRegistered || false); // reminder ≈ registered for group sessions
         } catch (e) {
             console.error('Failed to load meeting:', e);
         } finally {
@@ -76,23 +83,65 @@ const MeetingDetails: React.FC = () => {
         );
     }
 
-    const handleSetReminder = () => {
-        setReminderSet(true);
-        Alert.alert(
-            t('meetings.reminder_set'),
-            'You will be notified 15 minutes before the meeting'
-        );
+    // Setting reminder for a group session = register for the session
+    // This makes it appear in the farmer's MyMeetings (pending)
+    const handleSetReminder = async () => {
+        setTogglingReminder(true);
+        try {
+            if (!isRegistered) {
+                // Register for the session → it will appear in MyMeetings as pending
+                await meetingAPI.registerForSession(meeting.id);
+                setIsRegistered(true);
+                setReminderSet(true);
+                setMeeting((prev: any) => ({ ...prev, attendees: prev.attendees + 1 }));
+                Alert.alert(
+                    '🔔 Reminder Set',
+                    'You are registered for this session. It will appear in My Meetings.'
+                );
+            } else {
+                // Already registered — just toggle reminder indicator locally
+                const newVal = !reminderSet;
+                setReminderSet(newVal);
+                Alert.alert(
+                    newVal ? '🔔 Reminder On' : '🔕 Reminder Off',
+                    newVal ? 'You will be reminded before the session.' : 'Reminder removed.'
+                );
+            }
+        } catch (e: any) {
+            Alert.alert('Error', e?.response?.data?.message || 'Could not set reminder.');
+        } finally {
+            setTogglingReminder(false);
+        }
     };
 
     const handleJoinMeeting = () => {
-        Alert.alert(
-            t('meetings.join_meeting'),
-            'Opening meeting link...',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Join', onPress: () => console.log('Joining meeting') },
-            ]
+        if (!meeting.meetingLink) {
+            Alert.alert('Error', 'No meeting link available yet.');
+            return;
+        }
+        Linking.openURL(meeting.meetingLink).catch(() =>
+            Alert.alert('Error', 'Cannot open meeting link.')
         );
+    };
+
+    const handleChatWithExpert = async () => {
+        if (!meeting.expertId) {
+            Alert.alert('Error', 'Expert information not available.');
+            return;
+        }
+        setOpeningChat(true);
+        try {
+            const res = await chatAPI.createChat({ expertId: meeting.expertId });
+            const chat = res.data.data;
+            navigation.navigate('ChatDetail', {
+                chatId: chat._id || chat.id,
+                expertName: meeting.expertName,
+            });
+        } catch (e: any) {
+            Alert.alert('Error', e?.response?.data?.message || 'Could not open chat.');
+        } finally {
+            setOpeningChat(false);
+        }
     };
 
     return (
@@ -175,8 +224,8 @@ const MeetingDetails: React.FC = () => {
                             <PrimaryButton
                                 title={reminderSet ? t('meetings.reminder_set') : t('meetings.set_reminder')}
                                 onPress={handleSetReminder}
-                                disabled={reminderSet}
-                                icon={reminderSet ? 'checkmark' : 'notifications-outline'}
+                                disabled={togglingReminder}
+                                icon={togglingReminder ? undefined : reminderSet ? 'notifications' : 'notifications-outline'}
                                 variant="outline"
                                 fullWidth
                             />
@@ -191,6 +240,19 @@ const MeetingDetails: React.FC = () => {
                             />
                         </View>
                     </View>
+
+                    {/* Chat with Expert */}
+                    <TouchableOpacity
+                        style={styles.chatExpertBtn}
+                        onPress={handleChatWithExpert}
+                        disabled={openingChat}
+                    >
+                        {openingChat
+                            ? <ActivityIndicator size="small" color={COLORS.secondary[600]} />
+                            : <Ionicons name="chatbubble-ellipses-outline" size={18} color={COLORS.secondary[600]} />
+                        }
+                        <Text style={styles.chatExpertBtnText}>Chat with Expert</Text>
+                    </TouchableOpacity>
 
                     {/* Tips */}
                     <View style={styles.tipsContainer}>
@@ -333,7 +395,24 @@ const styles = StyleSheet.create({
     },
     actionsContainer: {
         flexDirection: 'row',
+        marginBottom: 12,
+    },
+    chatExpertBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor: COLORS.secondary[300],
+        backgroundColor: COLORS.secondary[50],
+        borderRadius: 10,
+        paddingVertical: 12,
         marginBottom: 16,
+        gap: 6,
+    },
+    chatExpertBtnText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.secondary[600],
     },
     actionButtonWrapper: {
         flex: 1,

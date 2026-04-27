@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,6 +8,7 @@ import { Header, EmptyState, Chip } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { getRelativeTime } from '../../../utils/validators';
 import { chatAPI } from '../../../services/api';
+import { getSocket } from '../../../services/socketService';
 
 const CATEGORIES = ['All', 'Unread', 'Active Diagnosis', 'Recent'];
 
@@ -18,28 +19,48 @@ const ExpertChatsList: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [chats, setChats] = useState<any[]>([]);
 
-    useEffect(() => {
-        loadChats();
-    }, []);
-
-    const loadChats = async () => {
+    const loadChats = useCallback(async () => {
         try {
             const res = await chatAPI.getChats();
             const data = Array.isArray(res.data.data) ? res.data.data : [];
-            setChats(data.map((c: any) => ({
-                id: c._id || c.id,
-                farmerId: c.farmer?._id || c.farmerId,
-                farmerName: c.farmer?.name || c.farmerName || 'Farmer',
-                lastMessage: c.lastMessage?.content || '',
-                lastMessageTime: c.lastMessage?.createdAt || c.updatedAt,
-                unreadCount: c.unreadCount || 0,
-                hasActiveDiagnosis: c.hasActiveDiagnosis || false,
-                online: false,
-            })));
+            setChats(data.map((c: any) => {
+                // Participants: [{userType:'farmer',...},{userType:'expert',...}]
+                const farmer = c.participants?.find((p: any) => p.userType === 'farmer');
+                const unread = typeof c.unreadCount === 'object'
+                    ? (Object.values(c.unreadCount)[0] as number) || 0
+                    : c.unreadCount || 0;
+                return {
+                    id: c._id || c.id,
+                    farmerId: farmer?.userId || c.farmerId,
+                    farmerName: farmer?.name || c.farmerName || 'Farmer',
+                    lastMessage: c.lastMessage || '',
+                    lastMessageTime: c.lastMessageTime || c.updatedAt,
+                    unreadCount: unread,
+                    hasActiveDiagnosis: c.hasActiveDiagnosis || false,
+                    online: farmer?.isOnline || false,
+                };
+            }));
         } catch (e) {
             console.error('Failed to load expert chats:', e);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadChats();
+
+        // Real-time: new chat created by farmer, or new message received
+        const socket = getSocket();
+        if (socket) {
+            socket.on('new_chat', loadChats);
+            socket.on('new_message', loadChats);
+        }
+        return () => {
+            if (socket) {
+                socket.off('new_chat', loadChats);
+                socket.off('new_message', loadChats);
+            }
+        };
+    }, [loadChats]);
 
     const filteredChats = chats.filter(chat => {
         if (activeCategory === 'Unread') return chat.unreadCount > 0;
@@ -49,7 +70,7 @@ const ExpertChatsList: React.FC = () => {
 
     const totalUnread = chats.reduce((sum, c) => sum + c.unreadCount, 0);
 
-    const renderChat = ({ item }: { item: typeof expertData.farmerChats[0] }) => (
+    const renderChat = ({ item }: { item: any }) => (
         <TouchableOpacity
             onPress={() => navigation.navigate('ExpertChatDetail', { chatId: item.id, farmerName: item.farmerName })}
             style={styles.chatCard}
@@ -79,30 +100,15 @@ const ExpertChatsList: React.FC = () => {
                     </Text>
                 </View>
 
-                <Text style={styles.districtText}>
-                    <Ionicons name="location-outline" size={12} color={COLORS.neutral[400]} />
-                    {' '}{item.farmerDistrict}
-                </Text>
-
                 <View style={styles.messageRow}>
                     <Text style={styles.lastMessage} numberOfLines={1}>
-                        {i18n.language === 'si' ? item.lastMessageSi : item.lastMessage}
+                        {item.lastMessage || 'No messages yet'}
                     </Text>
-
                     {item.unreadCount > 0 && (
                         <View style={styles.unreadBadge}>
                             <Text style={styles.unreadText}>{item.unreadCount}</Text>
                         </View>
                     )}
-                </View>
-
-                {/* Farmer Crops */}
-                <View style={styles.cropTagsRow}>
-                    {item.farmerCrops.slice(0, 3).map((crop, idx) => (
-                        <View key={idx} style={styles.cropTag}>
-                            <Text style={styles.cropTagText}>{crop}</Text>
-                        </View>
-                    ))}
                 </View>
             </View>
         </TouchableOpacity>
