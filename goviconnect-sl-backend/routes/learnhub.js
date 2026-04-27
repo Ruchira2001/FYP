@@ -22,36 +22,36 @@ const {
 // Crop guides
 router.get('/guides', protect, getGuides);
 router.get('/guides/:id', protect, getGuideById);
-router.post('/guides/:id/react', protect, authorize('farmer'), reactToGuide);
+router.post('/guides/:id/react', protect, authorize('farmer', 'expert'), reactToGuide);
 
 // Saved guides
-router.get('/saved', protect, authorize('farmer'), getSavedGuides);
-router.post('/guides/:id/save', protect, authorize('farmer'), saveGuide);
-router.delete('/guides/:id/save', protect, authorize('farmer'), unsaveGuide);
+router.get('/saved', protect, authorize('farmer', 'expert'), getSavedGuides);
+router.post('/guides/:id/save', protect, authorize('farmer', 'expert'), saveGuide);
+router.delete('/guides/:id/save', protect, authorize('farmer', 'expert'), unsaveGuide);
 
 // Community (all approved user guides)
 router.get('/community', protect, getCommunityGuides);
 router.get('/community/by-crop/:cropId', protect, getCommunityGuidesByCrop);
-router.post('/community/:id/react', protect, authorize('farmer'), reactToUserGuide);
+router.post('/community/:id/react', protect, authorize('farmer', 'expert'), reactToUserGuide);
 
 // User-submitted guides
-router.post('/user-guides/upload-images', protect, authorize('farmer'), (req, res, next) => {
+router.post('/user-guides/upload-images', protect, authorize('farmer', 'expert'), (req, res, next) => {
   uploadGuideImages(req, res, (err) => {
     if (err) return next(err);
     next();
   });
 }, uploadGuideImagesHandler);
 
-router.post('/user-guides/upload-videos', protect, authorize('farmer'), (req, res, next) => {
+router.post('/user-guides/upload-videos', protect, authorize('farmer', 'expert'), (req, res, next) => {
   uploadGuideVideos(req, res, (err) => {
     if (err) return next(err);
     next();
   });
 }, uploadGuideVideosHandler);
 
-router.get('/user-guides', protect, authorize('farmer'), getUserGuides);
-router.post('/user-guides', protect, authorize('farmer'), submitUserGuide);
-router.put('/user-guides/:id', protect, authorize('farmer'), updateUserGuide);
-router.delete('/user-guides/:id', protect, authorize('farmer'), deleteUserGuide);
+router.get('/user-guides', protect, authorize('farmer', 'expert'), getUserGuides);
+router.post('/user-guides', protect, authorize('farmer', 'expert'), submitUserGuide);
+router.put('/user-guides/:id', protect, authorize('farmer', 'expert'), updateUserGuide);
+router.delete('/user-guides/:id', protect, authorize('farmer', 'expert'), deleteUserGuide);
 
 module.exports = router;
