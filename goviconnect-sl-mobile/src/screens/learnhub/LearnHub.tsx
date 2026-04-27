@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-    View, Text, ScrollView, TextInput, FlatList, TouchableOpacity,
+    View, Text, ScrollView, TextInput, FlatList, TouchableOpacity, Modal,
     StyleSheet, ActivityIndicator, Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -27,6 +27,7 @@ const LearnHub: React.FC = () => {
     const [myGuides, setMyGuides] = useState<any[]>([]);
     const [loadingCommunity, setLoadingCommunity] = useState(false);
     const [loadingMy, setLoadingMy] = useState(false);
+    const [selectedGuide, setSelectedGuide] = useState<any | null>(null);
 
     useFocusEffect(
         useCallback(() => {
@@ -119,7 +120,11 @@ const LearnHub: React.FC = () => {
     };
 
     const renderCommunityCard = ({ item }: { item: any }) => (
-        <View style={styles.communityCard}>
+        <TouchableOpacity
+            style={styles.communityCard}
+            activeOpacity={0.85}
+            onPress={() => setSelectedGuide(item)}
+        >
             {item.images && item.images.length > 0 ? (
                 <Image source={{ uri: item.images[0] }} style={styles.communityCardImage} />
             ) : (
@@ -148,7 +153,7 @@ const LearnHub: React.FC = () => {
                     </View>
                 </View>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
     const renderMyGuideCard = ({ item }: { item: any }) => {
@@ -290,7 +295,12 @@ const LearnHub: React.FC = () => {
                                         </Text>
                                     </View>
                                     {communityGuides.map((item) => (
-                                        <View key={item._id || item.id} style={styles.communityCard}>
+                                        <TouchableOpacity
+                                            key={item._id || item.id}
+                                            style={styles.communityCard}
+                                            activeOpacity={0.85}
+                                            onPress={() => setSelectedGuide(item)}
+                                        >
                                             {item.images && item.images.length > 0 ? (
                                                 <Image source={{ uri: item.images[0] }} style={styles.communityCardImage} />
                                             ) : (
@@ -319,7 +329,7 @@ const LearnHub: React.FC = () => {
                                                     </View>
                                                 </View>
                                             </View>
-                                        </View>
+                                        </TouchableOpacity>
                                     ))}
                                 </View>
                             ) : null
@@ -386,6 +396,75 @@ const LearnHub: React.FC = () => {
                     </TouchableOpacity>
                 </View>
             )}
+
+            <Modal
+                visible={!!selectedGuide}
+                animationType="slide"
+                transparent
+                onRequestClose={() => setSelectedGuide(null)}
+            >
+                <View style={styles.guideModalOverlay}>
+                    <View style={styles.guideModalSheet}>
+                        <View style={styles.guideModalHeader}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.guideModalTitle} numberOfLines={2}>
+                                    {selectedGuide?.name || 'Guide Details'}
+                                </Text>
+                                <Text style={styles.guideModalMeta} numberOfLines={1}>
+                                    {selectedGuide?.category || 'Farmer guide'}
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setSelectedGuide(null)}>
+                                <Ionicons name="close" size={22} color={COLORS.neutral[600]} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.guideModalContent}>
+                            {selectedGuide?.images?.[0] ? (
+                                <Image source={{ uri: selectedGuide.images[0] }} style={styles.guideModalImage} />
+                            ) : (
+                                <View style={[styles.guideModalImage, styles.guideModalImagePlaceholder]}>
+                                    <Text style={{ fontSize: 44 }}>🌿</Text>
+                                </View>
+                            )}
+
+                            <View style={styles.guideModalSection}>
+                                <Text style={styles.guideModalLabel}>Description</Text>
+                                <Text style={styles.guideModalText}>{selectedGuide?.description || 'No description provided.'}</Text>
+                            </View>
+
+                            <View style={styles.guideModalGrid}>
+                                <View style={styles.guideModalItem}>
+                                    <Text style={styles.guideModalLabel}>Author</Text>
+                                    <Text style={styles.guideModalText}>{selectedGuide?.userId?.name || 'Farmer'}</Text>
+                                </View>
+                                <View style={styles.guideModalItem}>
+                                    <Text style={styles.guideModalLabel}>Likes</Text>
+                                    <Text style={styles.guideModalText}>{selectedGuide?.likeCount || 0}</Text>
+                                </View>
+                            </View>
+
+                            {selectedGuide?.climate || selectedGuide?.soil || selectedGuide?.season ? (
+                                <View style={styles.guideModalSection}>
+                                    <Text style={styles.guideModalLabel}>Growing Details</Text>
+                                    {selectedGuide?.climate ? <Text style={styles.guideModalDetail}>Climate: {selectedGuide.climate}</Text> : null}
+                                    {selectedGuide?.soil ? <Text style={styles.guideModalDetail}>Soil: {selectedGuide.soil}</Text> : null}
+                                    {selectedGuide?.season ? <Text style={styles.guideModalDetail}>Season: {selectedGuide.season}</Text> : null}
+                                </View>
+                            ) : null}
+
+                            {selectedGuide?.diseases || selectedGuide?.treatments || selectedGuide?.practices ? (
+                                <View style={styles.guideModalSection}>
+                                    <Text style={styles.guideModalLabel}>Guide Notes</Text>
+                                    {selectedGuide?.diseases ? <Text style={styles.guideModalDetail}>Diseases: {selectedGuide.diseases}</Text> : null}
+                                    {selectedGuide?.treatments ? <Text style={styles.guideModalDetail}>Treatments: {selectedGuide.treatments}</Text> : null}
+                                    {selectedGuide?.practices ? <Text style={styles.guideModalDetail}>Practices: {selectedGuide.practices}</Text> : null}
+                                </View>
+                            ) : null}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -468,6 +547,98 @@ const styles = StyleSheet.create({
     communityCardAuthorText: { fontSize: 12, color: COLORS.neutral[500], marginLeft: 4 },
     communityCardLikes: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     communityCardLikeText: { fontSize: 12, color: COLORS.neutral[500] },
+    approvedGuidesSection: {
+        marginTop: 8,
+        marginBottom: 8,
+    },
+    approvedGuidesHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+        gap: 8,
+    },
+    approvedGuidesTitle: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: COLORS.neutral[900],
+    },
+    guideModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(15, 23, 42, 0.55)',
+        justifyContent: 'flex-end',
+    },
+    guideModalSheet: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 16,
+        maxHeight: '88%',
+    },
+    guideModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 14,
+    },
+    guideModalTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: COLORS.neutral[900],
+    },
+    guideModalMeta: {
+        marginTop: 4,
+        fontSize: 12,
+        color: COLORS.primary[600],
+        fontWeight: '600',
+    },
+    guideModalContent: {
+        paddingBottom: 10,
+    },
+    guideModalImage: {
+        width: '100%',
+        height: 180,
+        borderRadius: 18,
+        marginBottom: 14,
+        resizeMode: 'cover',
+    },
+    guideModalImagePlaceholder: {
+        backgroundColor: COLORS.primary[50],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    guideModalSection: {
+        marginBottom: 14,
+    },
+    guideModalLabel: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: COLORS.neutral[500],
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 6,
+    },
+    guideModalText: {
+        fontSize: 14,
+        lineHeight: 21,
+        color: COLORS.neutral[700],
+    },
+    guideModalGrid: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 14,
+    },
+    guideModalItem: {
+        flex: 1,
+        backgroundColor: COLORS.neutral[50],
+        borderRadius: 14,
+        padding: 12,
+    },
+    guideModalDetail: {
+        fontSize: 14,
+        color: COLORS.neutral[700],
+        marginBottom: 4,
+    },
     // My Guide card
     myGuideCard: {
         backgroundColor: '#ffffff',
