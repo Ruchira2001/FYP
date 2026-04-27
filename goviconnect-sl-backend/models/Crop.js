@@ -11,6 +11,7 @@ const cropSchema = new mongoose.Schema({
     required: true,
   },
   nameSi: String,
+  scientificName: String,
   category: {
     type: String,
     required: true,

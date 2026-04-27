@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, FlatList, Image, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, FlatList, Image, ActivityIndicator, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Header, PrimaryButton, InputField, EmptyState, Chip } from '../../components';
 import { COLORS } from '../../utils/constants';
-import { learnhubAPI } from '../../services/api';
+import { learnhubAPI, feedAPI } from '../../services/api';
 
 // Type definitions for the form
 type GuideForm = {
@@ -48,9 +48,24 @@ const AddCropGuide: React.FC = () => {
     const [uploadingVideos, setUploadingVideos] = useState(false);
     // Video link input buffer
     const [videoLinkInput, setVideoLinkInput] = useState('');
+    // Crop picker state
+    const [crops, setCrops] = useState<any[]>([]);
+    const [cropPickerVisible, setCropPickerVisible] = useState(false);
+    const [cropSearch, setCropSearch] = useState('');
+    // Voice hint state
+    const [voiceHint, setVoiceHint] = useState<string | null>(null);
+    // Text input refs for voice activation
+    const descriptionRef = useRef<any>(null);
+    const diseasesRef = useRef<any>(null);
+    const treatmentsRef = useRef<any>(null);
+    const practicesRef = useRef<any>(null);
+    const scientificNameRef = useRef<any>(null);
 
     useEffect(() => {
         loadGuideHistory();
+        feedAPI.getCrops()
+            .then((r: any) => setCrops(Array.isArray(r.data.data) ? r.data.data : []))
+            .catch(() => {});
     }, []);
 
     const loadGuideHistory = async () => {
@@ -249,6 +264,39 @@ const AddCropGuide: React.FC = () => {
         setFormData(prev => ({ ...prev, videoLinks: prev.videoLinks.filter((_, i) => i !== index) }));
     };
 
+    const mapCropCategory = (cat: string): string => {
+        const map: Record<string, string> = {
+            vegetables: 'Vegetable', fruits: 'Fruit', tea: 'Herb', paddy: 'Grain', spices: 'Spice',
+        };
+        return map[cat?.toLowerCase()] || (cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : '');
+    };
+
+    const showVoicePicker = (inputRef: React.RefObject<any>) => {
+        Alert.alert(
+            '🎤 Voice Typing Language',
+            'Select your language, then tap the 🎤 microphone on your keyboard to speak',
+            [
+                {
+                    text: '🇬🇧 English',
+                    onPress: () => {
+                        setVoiceHint('🇬🇧 English voice typing ready — tap 🎤 on keyboard');
+                        inputRef.current?.focus();
+                        setTimeout(() => setVoiceHint(null), 4000);
+                    },
+                },
+                {
+                    text: '🇱🇰 Sinhala (සිංහල)',
+                    onPress: () => {
+                        setVoiceHint('🇱🇰 Sinhala voice typing ready — tap 🎤 on keyboard');
+                        inputRef.current?.focus();
+                        setTimeout(() => setVoiceHint(null), 4000);
+                    },
+                },
+                { text: 'Cancel', style: 'cancel' },
+            ]
+        );
+    };
+
     const handleSubmit = async () => {
         if (!formData.name?.trim() || !formData.description?.trim()) {
             Alert.alert(t('common.error'), 'Please fill in at least the Crop Name and Description.');
@@ -409,6 +457,13 @@ const AddCropGuide: React.FC = () => {
                 onBackPress={() => setViewMode('list')}
             />
 
+            {voiceHint && (
+                <View style={styles.voiceHintBanner}>
+                    <Ionicons name="mic" size={16} color="#ffffff" style={{ marginRight: 8 }} />
+                    <Text style={styles.voiceHintText}>{voiceHint}</Text>
+                </View>
+            )}
+
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 <View style={styles.formContainer}>
                     <View style={styles.infoBox}>
@@ -421,20 +476,44 @@ const AddCropGuide: React.FC = () => {
                     <Text style={styles.sectionTitle}>Overview</Text>
 
                     <InputField
-                        label="Crop Name"
+                        label="Crop Name *"
                         placeholder="e.g., Red Onion"
                         value={formData.name}
                         onChangeText={(text) => setFormData({ ...formData, name: text })}
                         icon="leaf-outline"
+                        rightIcon="chevron-down"
+                        onRightIconPress={() => { setCropSearch(''); setCropPickerVisible(true); }}
                     />
+                    {crops.find(c => c.name === formData.name)?.nameSi ? (
+                        <Text style={[styles.cropSelectedHint, { marginTop: -10, marginBottom: 12 }]}>
+                            {crops.find(c => c.name === formData.name)?.nameSi}
+                        </Text>
+                    ) : (
+                        <TouchableOpacity
+                            onPress={() => { setCropSearch(''); setCropPickerVisible(true); }}
+                            style={{ marginTop: -10, marginBottom: 12 }}
+                        >
+                            <Text style={styles.cropPickerHint}>🌿 Tap to select from crop list</Text>
+                        </TouchableOpacity>
+                    )}
 
-                    <InputField
-                        label="Scientific Name"
-                        placeholder="e.g., Allium cepa"
-                        value={formData.scientificName}
-                        onChangeText={(text) => setFormData({ ...formData, scientificName: text })}
-                        icon="flask-outline"
-                    />
+                    {/* Scientific Name (auto-filled + editable with voice) */}
+                    <View style={styles.inputContainer}>
+                        <View style={styles.labelRow}>
+                            <Text style={styles.label}>Scientific Name</Text>
+                            <TouchableOpacity onPress={() => showVoicePicker(scientificNameRef)} style={styles.micBtn}>
+                                <Ionicons name="mic-outline" size={16} color={COLORS.primary[500]} />
+                            </TouchableOpacity>
+                        </View>
+                        <TextInput
+                            ref={scientificNameRef}
+                            style={styles.textInput}
+                            placeholder="e.g., Allium cepa"
+                            placeholderTextColor={COLORS.neutral[400]}
+                            value={formData.scientificName}
+                            onChangeText={(text) => setFormData({ ...formData, scientificName: text })}
+                        />
+                    </View>
 
                     <SelectChips
                         label="Category"
@@ -444,10 +523,17 @@ const AddCropGuide: React.FC = () => {
                     />
 
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Description</Text>
+                        <View style={styles.labelRow}>
+                            <Text style={styles.label}>Description</Text>
+                            <TouchableOpacity onPress={() => showVoicePicker(descriptionRef)} style={styles.micBtn}>
+                                <Ionicons name="mic-outline" size={16} color={COLORS.primary[500]} />
+                            </TouchableOpacity>
+                        </View>
                         <TextInput
+                            ref={descriptionRef}
                             style={styles.textArea}
                             placeholder="Brief overview..."
+                            placeholderTextColor={COLORS.neutral[400]}
                             value={formData.description}
                             onChangeText={(text) => setFormData({ ...formData, description: text })}
                             multiline
@@ -473,38 +559,62 @@ const AddCropGuide: React.FC = () => {
                     <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Details & Care</Text>
 
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Diseases (Comma separated)</Text>
+                        <View style={styles.labelRow}>
+                            <Text style={styles.label}>Diseases (Comma separated)</Text>
+                            <TouchableOpacity onPress={() => showVoicePicker(diseasesRef)} style={styles.micBtn}>
+                                <Ionicons name="mic-outline" size={16} color={COLORS.primary[500]} />
+                            </TouchableOpacity>
+                        </View>
                         <TextInput
+                            ref={diseasesRef}
                             style={styles.textArea}
                             placeholder="e.g. Blight, Rot..."
+                            placeholderTextColor={COLORS.neutral[400]}
                             value={formData.diseases}
                             onChangeText={(text) => setFormData({ ...formData, diseases: text })}
                             multiline
                             numberOfLines={2}
+                            textAlignVertical="top"
                         />
                     </View>
 
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Treatments & Prevention</Text>
+                        <View style={styles.labelRow}>
+                            <Text style={styles.label}>Treatments & Prevention</Text>
+                            <TouchableOpacity onPress={() => showVoicePicker(treatmentsRef)} style={styles.micBtn}>
+                                <Ionicons name="mic-outline" size={16} color={COLORS.primary[500]} />
+                            </TouchableOpacity>
+                        </View>
                         <TextInput
+                            ref={treatmentsRef}
                             style={styles.textArea}
                             placeholder="Describe treatments..."
+                            placeholderTextColor={COLORS.neutral[400]}
                             value={formData.treatments}
                             onChangeText={(text) => setFormData({ ...formData, treatments: text })}
                             multiline
                             numberOfLines={3}
+                            textAlignVertical="top"
                         />
                     </View>
 
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Best Practices</Text>
+                        <View style={styles.labelRow}>
+                            <Text style={styles.label}>Best Practices</Text>
+                            <TouchableOpacity onPress={() => showVoicePicker(practicesRef)} style={styles.micBtn}>
+                                <Ionicons name="mic-outline" size={16} color={COLORS.primary[500]} />
+                            </TouchableOpacity>
+                        </View>
                         <TextInput
+                            ref={practicesRef}
                             style={styles.textArea}
-                            placeholder="Describe pest practices..."
+                            placeholder="Describe best practices..."
+                            placeholderTextColor={COLORS.neutral[400]}
                             value={formData.practices}
                             onChangeText={(text) => setFormData({ ...formData, practices: text })}
                             multiline
                             numberOfLines={3}
+                            textAlignVertical="top"
                         />
                     </View>
 
@@ -637,6 +747,77 @@ const AddCropGuide: React.FC = () => {
                     </TouchableOpacity>
                 </View>
             </View>
+
+            {/* Crop Picker Modal */}
+            <Modal
+                visible={cropPickerVisible}
+                animationType="slide"
+                transparent
+                onRequestClose={() => { setCropPickerVisible(false); setCropSearch(''); }}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Select Crop</Text>
+                            <TouchableOpacity onPress={() => { setCropPickerVisible(false); setCropSearch(''); }}>
+                                <Ionicons name="close" size={24} color={COLORS.neutral[700]} />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.modalSearchBar}>
+                            <Ionicons name="search-outline" size={18} color={COLORS.neutral[400]} />
+                            <TextInput
+                                style={styles.modalSearchInput}
+                                placeholder="Search crop..."
+                                placeholderTextColor={COLORS.neutral[400]}
+                                value={cropSearch}
+                                onChangeText={setCropSearch}
+                                autoFocus
+                            />
+                        </View>
+                        <FlatList
+                            data={crops.filter(c =>
+                                cropSearch === '' ||
+                                c.name.toLowerCase().includes(cropSearch.toLowerCase()) ||
+                                (c.nameSi || '').includes(cropSearch)
+                            )}
+                            keyExtractor={item => item.cropId || item._id || item.name}
+                            keyboardShouldPersistTaps="handled"
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.cropPickerItem}
+                                    onPress={() => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            name: item.name,
+                                            scientificName: item.scientificName || prev.scientificName,
+                                            category: item.category ? mapCropCategory(item.category) : prev.category,
+                                        }));
+                                        setCropPickerVisible(false);
+                                        setCropSearch('');
+                                    }}
+                                >
+                                    <Text style={{ fontSize: 26, marginRight: 14 }}>{item.icon || '🌱'}</Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.cropPickerName}>{item.name}</Text>
+                                        {item.nameSi ? <Text style={styles.cropPickerNameSi}>{item.nameSi}</Text> : null}
+                                        {item.scientificName ? (
+                                            <Text style={styles.cropPickerSci}>{item.scientificName}</Text>
+                                        ) : null}
+                                    </View>
+                                    {formData.name === item.name && (
+                                        <Ionicons name="checkmark-circle" size={22} color={COLORS.primary[500]} />
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                            ListEmptyComponent={
+                                <View style={{ padding: 24, alignItems: 'center' }}>
+                                    <Text style={{ color: COLORS.neutral[400] }}>No crops found. Type your crop name above.</Text>
+                                </View>
+                            }
+                        />
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -987,6 +1168,111 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary[500],
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    // Voice & Crop picker styles
+    labelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
+    micBtn: {
+        padding: 6,
+        borderRadius: 8,
+        backgroundColor: COLORS.primary[50],
+    },
+    voiceHintBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.primary[600],
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+    },
+    voiceHintText: {
+        color: '#ffffff',
+        fontSize: 13,
+        fontWeight: '500',
+        flex: 1,
+    },
+    cropPickerHint: {
+        fontSize: 12,
+        color: COLORS.primary[500],
+        marginTop: 4,
+        marginLeft: 2,
+    },
+    cropSelectedHint: {
+        fontSize: 12,
+        color: COLORS.primary[600],
+        marginTop: 4,
+        marginLeft: 2,
+        fontStyle: 'italic',
+    },
+    // Modal styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContainer: {
+        backgroundColor: '#ffffff',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        maxHeight: '80%',
+        paddingBottom: 20,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: COLORS.neutral[800],
+    },
+    modalSearchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.neutral[50],
+        margin: 16,
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+    },
+    modalSearchInput: {
+        flex: 1,
+        marginLeft: 8,
+        fontSize: 15,
+        color: COLORS.neutral[800],
+    },
+    cropPickerItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[50],
+    },
+    cropPickerName: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+    },
+    cropPickerNameSi: {
+        fontSize: 13,
+        color: COLORS.neutral[500],
+        marginTop: 2,
+    },
+    cropPickerSci: {
+        fontSize: 12,
+        color: COLORS.primary[600],
+        fontStyle: 'italic',
+        marginTop: 2,
     },
 });
 
