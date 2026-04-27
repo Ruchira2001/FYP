@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Linking, FlatList } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -27,11 +27,13 @@ const CropDetails: React.FC = () => {
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
     const [guide, setGuide] = useState<any>(null);
+    const [communityGuides, setCommunityGuides] = useState<any[]>([]);
 
     const crop = cropsData.crops.find(c => c.id === cropId);
 
     useEffect(() => {
         loadGuide();
+        loadCommunityGuides();
     }, []);
 
     const loadGuide = async () => {
@@ -50,6 +52,15 @@ const CropDetails: React.FC = () => {
             const saved = Array.isArray(savedRes.data.data) ? savedRes.data.data : [];
             setIsSaved(saved.some((s: any) => (s._id || s.guideId) === cropId));
         } catch {}
+    };
+
+    const loadCommunityGuides = async () => {
+        try {
+            const res = await learnhubAPI.getCommunityGuidesByCrop(cropId);
+            setCommunityGuides(Array.isArray(res.data.data) ? res.data.data : []);
+        } catch (e) {
+            console.error('Community guides load error:', e);
+        }
     };
 
     const handleSave = async () => {
@@ -359,6 +370,42 @@ const CropDetails: React.FC = () => {
                 {activeTab === 'treatment' && renderTreatment()}
                 {activeTab === 'practices' && renderPractices()}
                 {activeTab === 'media' && renderMedia()}
+
+                {/* Community Guides Section */}
+                {communityGuides.length > 0 && (
+                    <View style={styles.communitySection}>
+                        <View style={styles.communitySectionHeader}>
+                            <Ionicons name="people" size={18} color={COLORS.primary[600]} />
+                            <Text style={styles.communitySectionTitle}>Farmer Guides ({communityGuides.length})</Text>
+                        </View>
+                        {communityGuides.map((item: any) => (
+                            <View key={item._id} style={styles.communityCard}>
+                                {item.images && item.images.length > 0 ? (
+                                    <Image source={{ uri: item.images[0] }} style={styles.communityCardImg} />
+                                ) : (
+                                    <View style={[styles.communityCardImg, styles.communityCardImgPlaceholder]}>
+                                        <Text style={{ fontSize: 28 }}>🌿</Text>
+                                    </View>
+                                )}
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.communityCardName} numberOfLines={1}>{item.name}</Text>
+                                    {item.description ? (
+                                        <Text style={styles.communityCardDesc} numberOfLines={2}>{item.description}</Text>
+                                    ) : null}
+                                    <View style={styles.communityCardFooter}>
+                                        <Ionicons name="person-circle-outline" size={14} color={COLORS.neutral[400]} />
+                                        <Text style={styles.communityCardAuthor}>
+                                            {item.userId?.name || 'Farmer'}
+                                        </Text>
+                                        <Ionicons name="heart" size={12} color="#ef4444" style={{ marginLeft: 10 }} />
+                                        <Text style={styles.communityCardLikes}>{item.likeCount || 0}</Text>
+                                    </View>
+                                </View>
+                            </View>
+                        ))}
+                    </View>
+                )}
+
                 <View style={{ height: 24 }} />
             </ScrollView>
         </View>
@@ -592,6 +639,69 @@ const styles = StyleSheet.create({
     },
     likeButtonActive: {
         backgroundColor: '#ef4444',
+    },
+    // Community guides section
+    communitySection: {
+        marginHorizontal: 16,
+        marginTop: 8,
+    },
+    communitySectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    communitySectionTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: COLORS.neutral[800],
+        marginLeft: 8,
+    },
+    communityCard: {
+        flexDirection: 'row',
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        alignItems: 'flex-start',
+    },
+    communityCardImg: {
+        width: 64,
+        height: 64,
+        borderRadius: 10,
+        marginRight: 12,
+        backgroundColor: COLORS.primary[50],
+    },
+    communityCardImgPlaceholder: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    communityCardName: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.neutral[800],
+        marginBottom: 4,
+    },
+    communityCardDesc: {
+        fontSize: 12,
+        color: COLORS.neutral[500],
+        lineHeight: 18,
+        marginBottom: 6,
+    },
+    communityCardFooter: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    communityCardAuthor: {
+        fontSize: 11,
+        color: COLORS.neutral[400],
+        marginLeft: 4,
+    },
+    communityCardLikes: {
+        fontSize: 11,
+        color: COLORS.neutral[400],
+        marginLeft: 4,
     },
 });
 

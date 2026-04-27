@@ -312,6 +312,9 @@ export const learnhubAPI = {
   getCommunityGuides: (params?: { page?: number; limit?: number }) =>
     api.get('/learnhub/community', { params }),
 
+  getCommunityGuidesByCrop: (cropId: string) =>
+    api.get(`/learnhub/community/by-crop/${encodeURIComponent(cropId)}`),
+
   reactToCommunityGuide: (guideId: string) =>
     api.post(`/learnhub/community/${guideId}/react`),
 

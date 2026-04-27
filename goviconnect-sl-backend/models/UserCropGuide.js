@@ -7,6 +7,9 @@ const userCropGuideSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    cropId: {
+      type: String,
+    },
     name: {
       type: String,
       required: true,

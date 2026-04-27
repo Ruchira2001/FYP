@@ -14,6 +14,7 @@ const {
   uploadGuideImages: uploadGuideImagesHandler,
   uploadGuideVideos: uploadGuideVideosHandler,
   getCommunityGuides,
+  getCommunityGuidesByCrop,
   reactToGuide,
   reactToUserGuide,
 } = require('../controllers/learnhubController');
@@ -30,6 +31,7 @@ router.delete('/guides/:id/save', protect, authorize('farmer'), unsaveGuide);
 
 // Community (all approved user guides)
 router.get('/community', protect, getCommunityGuides);
+router.get('/community/by-crop/:cropId', protect, getCommunityGuidesByCrop);
 router.post('/community/:id/react', protect, authorize('farmer'), reactToUserGuide);
 
 // User-submitted guides

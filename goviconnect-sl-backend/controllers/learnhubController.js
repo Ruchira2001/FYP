@@ -320,3 +320,36 @@ exports.reactToUserGuide = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get approved community guides for a specific crop (by cropId or name)
+// @route   GET /api/learnhub/community/by-crop/:cropId
+exports.getCommunityGuidesByCrop = async (req, res, next) => {
+  try {
+    const { cropId } = req.params;
+    const userId = req.user._id;
+
+    // Match by cropId field OR by name matching the cropId string (case-insensitive)
+    const guides = await UserCropGuide.find({
+      status: 'approved',
+      $or: [
+        { cropId: cropId },
+        { name: { $regex: new RegExp(`^${cropId}$`, 'i') } },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate('userId', 'name avatar');
+
+    const result = guides.map((g) => ({
+      ...g.toObject(),
+      likeCount: (g.reactions?.likes || []).length,
+      isLiked: (g.reactions?.likes || []).some(
+        (id) => id.toString() === userId.toString()
+      ),
+    }));
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};

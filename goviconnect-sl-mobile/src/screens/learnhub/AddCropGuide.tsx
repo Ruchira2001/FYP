@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, FlatList, Image, ActivityIndicator, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { SpeechAPI, useSpeechEvent, isSpeechAvailable } from '../../utils/speechRecognition';
 import { Header, PrimaryButton, InputField, EmptyState, Chip } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { learnhubAPI, feedAPI } from '../../services/api';
@@ -12,6 +13,7 @@ import { learnhubAPI, feedAPI } from '../../services/api';
 // Type definitions for the form
 type GuideForm = {
     id?: string;
+    cropId?: string;
     name: string;
     scientificName: string;
     category: string;
@@ -52,14 +54,64 @@ const AddCropGuide: React.FC = () => {
     const [crops, setCrops] = useState<any[]>([]);
     const [cropPickerVisible, setCropPickerVisible] = useState(false);
     const [cropSearch, setCropSearch] = useState('');
-    // Voice hint state
-    const [voiceHint, setVoiceHint] = useState<string | null>(null);
-    // Text input refs for voice activation
-    const descriptionRef = useRef<any>(null);
-    const diseasesRef = useRef<any>(null);
-    const treatmentsRef = useRef<any>(null);
-    const practicesRef = useRef<any>(null);
-    const scientificNameRef = useRef<any>(null);
+    // Voice typing state
+    const [voiceLang, setVoiceLang] = useState<'en-US' | 'si-LK'>('en-US');
+    const [voiceField, setVoiceField] = useState<keyof GuideForm | null>(null);
+    const [voiceListening, setVoiceListening] = useState(false);
+
+    // Voice recognition events (safe — no-op in Expo Go, works in dev builds)
+    useSpeechEvent('result', (event) => {
+        if (event.results && event.results.length > 0) {
+            const transcript = event.results[0]?.transcript || '';
+            if (transcript && voiceField) {
+                setFormData(prev => {
+                    const current = (prev[voiceField] as string) || '';
+                    return { ...prev, [voiceField]: current ? current + ' ' + transcript : transcript };
+                });
+            }
+        }
+        setVoiceListening(false);
+        setVoiceField(null);
+    });
+
+    useSpeechEvent('error', () => {
+        setVoiceListening(false);
+        setVoiceField(null);
+    });
+
+    useSpeechEvent('end', () => {
+        setVoiceListening(false);
+    });
+
+    const startVoice = async (field: keyof GuideForm) => {
+        if (!isSpeechAvailable()) {
+            Alert.alert(
+                'Voice Typing Unavailable',
+                'Voice typing requires a development build. You can still type manually or use your keyboard\'s built-in microphone button.',
+            );
+            return;
+        }
+        if (voiceListening) {
+            SpeechAPI.stop();
+            setVoiceListening(false);
+            setVoiceField(null);
+            return;
+        }
+        try {
+            const { granted } = await SpeechAPI.requestPermissionsAsync();
+            if (!granted) {
+                Alert.alert('Permission Required', 'Microphone access is needed for voice typing.');
+                return;
+            }
+            setVoiceField(field);
+            setVoiceListening(true);
+            SpeechAPI.start({ lang: voiceLang, interimResults: false, continuous: false });
+        } catch (e) {
+            setVoiceListening(false);
+            setVoiceField(null);
+            Alert.alert('Voice Error', 'Could not start voice recognition. Please try again.');
+        }
+    };
 
     useEffect(() => {
         loadGuideHistory();
@@ -74,6 +126,7 @@ const AddCropGuide: React.FC = () => {
             const data = Array.isArray(res.data.data) ? res.data.data : [];
             setHistory(data.map((g: any) => ({
                 id: g._id || g.id,
+                cropId: g.cropId || '',
                 name: g.name || '',
                 scientificName: g.scientificName || '',
                 category: g.category || '',
@@ -97,6 +150,7 @@ const AddCropGuide: React.FC = () => {
 
     // Form State
     const [formData, setFormData] = useState<GuideForm>({
+        cropId: '',
         name: '',
         scientificName: '',
         category: '',
@@ -116,6 +170,7 @@ const AddCropGuide: React.FC = () => {
 
     const resetForm = () => {
         setFormData({
+            cropId: '',
             name: '',
             scientificName: '',
             category: '',
@@ -269,32 +324,6 @@ const AddCropGuide: React.FC = () => {
             vegetables: 'Vegetable', fruits: 'Fruit', tea: 'Herb', paddy: 'Grain', spices: 'Spice',
         };
         return map[cat?.toLowerCase()] || (cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : '');
-    };
-
-    const showVoicePicker = (inputRef: React.RefObject<any>) => {
-        Alert.alert(
-            '🎤 Voice Typing Language',
-            'Select your language, then tap the 🎤 microphone on your keyboard to speak',
-            [
-                {
-                    text: '🇬🇧 English',
-                    onPress: () => {
-                        setVoiceHint('🇬🇧 English voice typing ready — tap 🎤 on keyboard');
-                        inputRef.current?.focus();
-                        setTimeout(() => setVoiceHint(null), 4000);
-                    },
-                },
-                {
-                    text: '🇱🇰 Sinhala (සිංහල)',
-                    onPress: () => {
-                        setVoiceHint('🇱🇰 Sinhala voice typing ready — tap 🎤 on keyboard');
-                        inputRef.current?.focus();
-                        setTimeout(() => setVoiceHint(null), 4000);
-                    },
-                },
-                { text: 'Cancel', style: 'cancel' },
-            ]
-        );
     };
 
     const handleSubmit = async () => {
@@ -457,10 +486,12 @@ const AddCropGuide: React.FC = () => {
                 onBackPress={() => setViewMode('list')}
             />
 
-            {voiceHint && (
+            {voiceListening && (
                 <View style={styles.voiceHintBanner}>
-                    <Ionicons name="mic" size={16} color="#ffffff" style={{ marginRight: 8 }} />
-                    <Text style={styles.voiceHintText}>{voiceHint}</Text>
+                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+                    <Text style={styles.voiceHintText}>
+                        Listening in {voiceLang === 'en-US' ? 'English' : 'Sinhala'}... Tap mic to stop
+                    </Text>
                 </View>
             )}
 
@@ -471,6 +502,24 @@ const AddCropGuide: React.FC = () => {
                         <Text style={styles.infoText}>
                             Fill in the details below. Tabs like Diseases and Treatments are included in the sections.
                         </Text>
+                    </View>
+
+                    {/* Voice language toggle */}
+                    <View style={styles.langToggleRow}>
+                        <Ionicons name="mic-outline" size={16} color={COLORS.neutral[500]} style={{ marginRight: 8 }} />
+                        <Text style={styles.langToggleLabel}>Voice language:</Text>
+                        <TouchableOpacity
+                            onPress={() => setVoiceLang('en-US')}
+                            style={[styles.langBtn, voiceLang === 'en-US' && styles.langBtnActive]}
+                        >
+                            <Text style={[styles.langBtnText, voiceLang === 'en-US' && styles.langBtnTextActive]}>EN</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => setVoiceLang('si-LK')}
+                            style={[styles.langBtn, voiceLang === 'si-LK' && styles.langBtnActive]}
+                        >
+                            <Text style={[styles.langBtnText, voiceLang === 'si-LK' && styles.langBtnTextActive]}>සිං</Text>
+                        </TouchableOpacity>
                     </View>
 
                     <Text style={styles.sectionTitle}>Overview</Text>
@@ -497,18 +546,12 @@ const AddCropGuide: React.FC = () => {
                         </TouchableOpacity>
                     )}
 
-                    {/* Scientific Name (auto-filled + editable with voice) */}
+                    {/* Scientific Name (auto-filled, manually editable, no voice) */}
                     <View style={styles.inputContainer}>
-                        <View style={styles.labelRow}>
-                            <Text style={styles.label}>Scientific Name</Text>
-                            <TouchableOpacity onPress={() => showVoicePicker(scientificNameRef)} style={styles.micBtn}>
-                                <Ionicons name="mic-outline" size={16} color={COLORS.primary[500]} />
-                            </TouchableOpacity>
-                        </View>
+                        <Text style={styles.label}>Scientific Name</Text>
                         <TextInput
-                            ref={scientificNameRef}
                             style={styles.textInput}
-                            placeholder="e.g., Allium cepa"
+                            placeholder="Auto-filled from crop selection"
                             placeholderTextColor={COLORS.neutral[400]}
                             value={formData.scientificName}
                             onChangeText={(text) => setFormData({ ...formData, scientificName: text })}
@@ -525,12 +568,11 @@ const AddCropGuide: React.FC = () => {
                     <View style={styles.inputContainer}>
                         <View style={styles.labelRow}>
                             <Text style={styles.label}>Description</Text>
-                            <TouchableOpacity onPress={() => showVoicePicker(descriptionRef)} style={styles.micBtn}>
-                                <Ionicons name="mic-outline" size={16} color={COLORS.primary[500]} />
+                            <TouchableOpacity onPress={() => startVoice('description')} style={[styles.micBtn, voiceField === 'description' && styles.micBtnActive]}>
+                                <Ionicons name={voiceField === 'description' ? 'mic' : 'mic-outline'} size={16} color={voiceField === 'description' ? '#ffffff' : COLORS.primary[500]} />
                             </TouchableOpacity>
                         </View>
                         <TextInput
-                            ref={descriptionRef}
                             style={styles.textArea}
                             placeholder="Brief overview..."
                             placeholderTextColor={COLORS.neutral[400]}
@@ -561,12 +603,11 @@ const AddCropGuide: React.FC = () => {
                     <View style={styles.inputContainer}>
                         <View style={styles.labelRow}>
                             <Text style={styles.label}>Diseases (Comma separated)</Text>
-                            <TouchableOpacity onPress={() => showVoicePicker(diseasesRef)} style={styles.micBtn}>
-                                <Ionicons name="mic-outline" size={16} color={COLORS.primary[500]} />
+                            <TouchableOpacity onPress={() => startVoice('diseases')} style={[styles.micBtn, voiceField === 'diseases' && styles.micBtnActive]}>
+                                <Ionicons name={voiceField === 'diseases' ? 'mic' : 'mic-outline'} size={16} color={voiceField === 'diseases' ? '#ffffff' : COLORS.primary[500]} />
                             </TouchableOpacity>
                         </View>
                         <TextInput
-                            ref={diseasesRef}
                             style={styles.textArea}
                             placeholder="e.g. Blight, Rot..."
                             placeholderTextColor={COLORS.neutral[400]}
@@ -581,12 +622,11 @@ const AddCropGuide: React.FC = () => {
                     <View style={styles.inputContainer}>
                         <View style={styles.labelRow}>
                             <Text style={styles.label}>Treatments & Prevention</Text>
-                            <TouchableOpacity onPress={() => showVoicePicker(treatmentsRef)} style={styles.micBtn}>
-                                <Ionicons name="mic-outline" size={16} color={COLORS.primary[500]} />
+                            <TouchableOpacity onPress={() => startVoice('treatments')} style={[styles.micBtn, voiceField === 'treatments' && styles.micBtnActive]}>
+                                <Ionicons name={voiceField === 'treatments' ? 'mic' : 'mic-outline'} size={16} color={voiceField === 'treatments' ? '#ffffff' : COLORS.primary[500]} />
                             </TouchableOpacity>
                         </View>
                         <TextInput
-                            ref={treatmentsRef}
                             style={styles.textArea}
                             placeholder="Describe treatments..."
                             placeholderTextColor={COLORS.neutral[400]}
@@ -601,12 +641,11 @@ const AddCropGuide: React.FC = () => {
                     <View style={styles.inputContainer}>
                         <View style={styles.labelRow}>
                             <Text style={styles.label}>Best Practices</Text>
-                            <TouchableOpacity onPress={() => showVoicePicker(practicesRef)} style={styles.micBtn}>
-                                <Ionicons name="mic-outline" size={16} color={COLORS.primary[500]} />
+                            <TouchableOpacity onPress={() => startVoice('practices')} style={[styles.micBtn, voiceField === 'practices' && styles.micBtnActive]}>
+                                <Ionicons name={voiceField === 'practices' ? 'mic' : 'mic-outline'} size={16} color={voiceField === 'practices' ? '#ffffff' : COLORS.primary[500]} />
                             </TouchableOpacity>
                         </View>
                         <TextInput
-                            ref={practicesRef}
                             style={styles.textArea}
                             placeholder="Describe best practices..."
                             placeholderTextColor={COLORS.neutral[400]}
@@ -788,6 +827,7 @@ const AddCropGuide: React.FC = () => {
                                     onPress={() => {
                                         setFormData(prev => ({
                                             ...prev,
+                                            cropId: item.cropId || item._id || '',
                                             name: item.name,
                                             scientificName: item.scientificName || prev.scientificName,
                                             category: item.category ? mapCropCategory(item.category) : prev.category,
@@ -1181,10 +1221,13 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         backgroundColor: COLORS.primary[50],
     },
+    micBtnActive: {
+        backgroundColor: COLORS.primary[500],
+    },
     voiceHintBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.primary[600],
+        backgroundColor: '#dc2626',
         paddingHorizontal: 16,
         paddingVertical: 10,
     },
@@ -1194,18 +1237,42 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         flex: 1,
     },
-    cropPickerHint: {
-        fontSize: 12,
-        color: COLORS.primary[500],
-        marginTop: 4,
-        marginLeft: 2,
+    langToggleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.neutral[50],
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
     },
-    cropSelectedHint: {
-        fontSize: 12,
-        color: COLORS.primary[600],
-        marginTop: 4,
-        marginLeft: 2,
-        fontStyle: 'italic',
+    langToggleLabel: {
+        fontSize: 13,
+        color: COLORS.neutral[600],
+        flex: 1,
+    },
+    langBtn: {
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[300],
+        marginLeft: 6,
+        backgroundColor: '#ffffff',
+    },
+    langBtnActive: {
+        backgroundColor: COLORS.primary[500],
+        borderColor: COLORS.primary[500],
+    },
+    langBtnText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: COLORS.neutral[600],
+    },
+    langBtnTextActive: {
+        color: '#ffffff',
     },
     // Modal styles
     modalOverlay: {

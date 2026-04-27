@@ -47,7 +47,8 @@
           "locationWhenInUsePermission": "Allow Goviconnect SL to access your location to show real-time weather for your area."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-speech-recognition"
     ],
     "scheme": "goviconnect"
   }
