@@ -30,12 +30,11 @@ const SavedLibrary: React.FC = () => {
         <View style={styles.itemContainer}>
             <CropCard
                 id={item._id || item.id}
-                name={item.title || item.name || ''}
-                nameSi={item.titleSi || item.nameSi || ''}
+                name={item.name || item.title || ''}
+                nameSi={item.nameSi || item.titleSi || ''}
                 category={item.category || ''}
-                emoji={item.icon || '🌱'}
-                color={item.color}
-                onPress={() => navigation.navigate('CropDetails', { cropId: item._id || item.id })}
+                thumbnail={item.images?.[0]}
+                onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item })}
                 isSaved={true}
                 isDownloaded={false}
                 locale={i18n.language}

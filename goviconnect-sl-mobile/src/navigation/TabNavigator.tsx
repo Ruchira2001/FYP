@@ -8,7 +8,7 @@ import { COLORS } from '../utils/constants';
 
 // Import screens
 import { Home } from '../screens/home';
-import { LearnHub, CropDetails, SavedLibrary, OfflineDownloads, AddCropGuide } from '../screens/learnhub';
+import { LearnHub, CropDetails, SavedLibrary, OfflineDownloads, AddCropGuide, FarmerGuideDetails } from '../screens/learnhub';
 import { AIHome, CropDoctorUpload, CropDoctorResult, DiagnosisHistory, PriceForm, PriceResult, PredictionHistory } from '../screens/ai';
 import { Meetings, MeetingDetails, MyMeetings } from '../screens/meetings';
 import { Profile, Settings, HelpFAQ, EditProfile } from '../screens/profile';
@@ -35,6 +35,7 @@ const LearnHubStackNavigator = () => (
         <LearnHubStack.Screen name="SavedLibrary" component={SavedLibrary} />
         <LearnHubStack.Screen name="OfflineDownloads" component={OfflineDownloads} />
         <LearnHubStack.Screen name="AddCropGuide" component={AddCropGuide} />
+        <LearnHubStack.Screen name="FarmerGuideDetails" component={FarmerGuideDetails} />
     </LearnHubStack.Navigator>
 );
 

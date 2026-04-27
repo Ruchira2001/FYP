@@ -42,25 +42,25 @@ const OfflineDownloads: React.FC = () => {
         );
     };
 
-    const renderItem = ({ item }: { item: SavedLearnHubItem }) => {
-        const crop = cropsData.crops.find(c => c.id === item.id);
-
+    const renderItem = ({ item }: { item: any }) => {
         return (
-            <View style={styles.itemContainer}>
-                <View
-                    style={[
-                        styles.iconContainer,
-                        { backgroundColor: (crop?.color || COLORS.primary[500]) + '20' }
-                    ]}
-                >
-                    <Text style={styles.icon}>{crop?.icon || '🌱'}</Text>
-                </View>
+            <TouchableOpacity 
+                style={styles.itemContainer}
+                onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item })}
+            >
+                {item.images?.[0] ? (
+                    <Image source={{ uri: item.images[0] }} style={styles.thumbnail} />
+                ) : (
+                    <View style={styles.iconContainer}>
+                        <Text style={styles.icon}>🌱</Text>
+                    </View>
+                )}
 
                 <View style={styles.textContainer}>
                     <Text style={styles.title}>
-                        {i18n.language === 'si' ? item.titleSi : item.title}
+                        {i18n.language === 'si' ? item.nameSi || item.titleSi || item.name : item.name || item.title}
                     </Text>
-                    <Text style={styles.subtitle}>{item.category}</Text>
+                    <Text style={styles.subtitle}>{item.category || 'Guide'}</Text>
                 </View>
 
                 <TouchableOpacity
@@ -69,7 +69,7 @@ const OfflineDownloads: React.FC = () => {
                 >
                     <Ionicons name="trash-outline" size={20} color={COLORS.error} />
                 </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
         );
     };
 
@@ -154,6 +154,13 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
+        marginRight: 12,
+        backgroundColor: COLORS.primary[50],
+    },
+    thumbnail: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
         marginRight: 12,
     },
     icon: {

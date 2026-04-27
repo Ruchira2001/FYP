@@ -21,7 +21,6 @@ const LearnHub: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('official');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
-    const [crops, setCrops] = useState<any[]>([]);
     const [savedIds, setSavedIds] = useState<string[]>([]);
     const [communityGuides, setCommunityGuides] = useState<any[]>([]);
     const [myGuides, setMyGuides] = useState<any[]>([]);
@@ -40,12 +39,10 @@ const LearnHub: React.FC = () => {
 
     const loadOfficialData = async () => {
         try {
-            const [cropsRes, savedRes, communityRes] = await Promise.all([
-                feedAPI.getCrops().catch(() => ({ data: { data: [] } })),
+            const [savedRes, communityRes] = await Promise.all([
                 learnhubAPI.getSavedGuides().catch(() => ({ data: { data: [] } })),
                 learnhubAPI.getCommunityGuides({}).catch(() => ({ data: { data: [] } })),
             ]);
-            setCrops(Array.isArray(cropsRes.data.data) ? cropsRes.data.data : []);
             const saved = Array.isArray(savedRes.data.data) ? savedRes.data.data : [];
             setSavedIds(saved.map((s: any) => s._id || s.id || s.guideId));
             const approvedGuides = Array.isArray(communityRes.data.data) ? communityRes.data.data : [];
@@ -125,11 +122,11 @@ const LearnHub: React.FC = () => {
         }
     };
 
-    const filteredCrops = crops.filter((crop: any) => {
-        const matchesCategory = selectedCategory === 'all' || crop.category === selectedCategory;
+    const filteredCommunityGuides = communityGuides.filter((guide: any) => {
+        const matchesCategory = selectedCategory === 'all' || guide.category === selectedCategory;
         const matchesSearch = searchQuery === '' ||
-            (crop.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (crop.nameSi || '').includes(searchQuery);
+            (guide.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (guide.description || '').toLowerCase().includes(searchQuery.toLowerCase());
         return matchesCategory && matchesSearch;
     });
 
@@ -139,26 +136,6 @@ const LearnHub: React.FC = () => {
         return { bg: '#fef9c3', text: '#a16207' };
     };
 
-    const renderCropItem = ({ item }: { item: any }) => {
-        const isSaved = savedIds.includes(item._id || item.id);
-        return (
-            <View style={styles.cropCardWrapper}>
-                <CropCard
-                    id={item._id || item.id}
-                    name={item.name || ''}
-                    nameSi={item.nameSi || ''}
-                    category={item.category || ''}
-                    emoji={item.icon || '🌱'}
-                    color={item.color || '#22c55e'}
-                    onPress={() => navigation.navigate('CropDetails', { cropId: item._id || item.id })}
-                    isSaved={isSaved}
-                    isDownloaded={false}
-                    locale={i18n.language}
-                    size="md"
-                />
-            </View>
-        );
-    };
 
     const renderFarmerGuideCard = (item: any) => {
         const guideId = item._id || item.id;
@@ -170,7 +147,7 @@ const LearnHub: React.FC = () => {
                 key={guideId}
                 style={styles.farmerGuideTile}
                 activeOpacity={0.85}
-                onPress={() => setSelectedGuide(item)}
+                onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item })}
             >
                 {item.images && item.images.length > 0 ? (
                     <Image source={{ uri: item.images[0] }} style={styles.farmerGuideThumb} />
@@ -320,8 +297,8 @@ const LearnHub: React.FC = () => {
                     </View>
 
                     <FlatList
-                        data={filteredCrops}
-                        renderItem={renderCropItem}
+                        data={filteredCommunityGuides}
+                        renderItem={renderCommunityCard}
                         keyExtractor={(item) => item._id || item.id}
                         numColumns={2}
                         contentContainerStyle={styles.listContent}
@@ -333,21 +310,6 @@ const LearnHub: React.FC = () => {
                                 title={t('empty_states.no_results')}
                                 description={t('empty_states.no_results_desc')}
                             />
-                        }
-                        ListFooterComponent={
-                            communityGuides.length > 0 ? (
-                                <View style={styles.approvedGuidesSection}>
-                                    <View style={styles.approvedGuidesHeader}>
-                                        <Ionicons name="people" size={18} color={COLORS.primary[600]} />
-                                        <Text style={styles.approvedGuidesTitle}>
-                                            Approved Farmer Guides ({communityGuides.length})
-                                        </Text>
-                                    </View>
-                                    <View style={styles.approvedGuidesGrid}>
-                                        {communityGuides.map((item) => renderFarmerGuideCard(item))}
-                                    </View>
-                                </View>
-                            ) : null
                         }
                     />
                 </>
@@ -414,85 +376,6 @@ const LearnHub: React.FC = () => {
                 </View>
             )}
 
-            <Modal
-                visible={!!selectedGuide}
-                animationType="slide"
-                transparent
-                onRequestClose={() => setSelectedGuide(null)}
-            >
-                <View style={styles.guideModalOverlay}>
-                    <View style={styles.guideModalSheet}>
-                        <View style={styles.guideModalHeader}>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.guideModalTitle} numberOfLines={2}>
-                                    {selectedGuide?.name || 'Guide Details'}
-                                </Text>
-                                <Text style={styles.guideModalMeta} numberOfLines={1}>
-                                    {selectedGuide?.category || 'Farmer guide'}
-                                </Text>
-                            </View>
-                            <TouchableOpacity onPress={() => setSelectedGuide(null)}>
-                                <Ionicons name="close" size={22} color={COLORS.neutral[600]} />
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.guideModalContent}>
-                            {selectedGuide?.images?.[0] ? (
-                                <Image source={{ uri: selectedGuide.images[0] }} style={styles.guideModalImage} />
-                            ) : (
-                                <View style={[styles.guideModalImage, styles.guideModalImagePlaceholder]}>
-                                    <Text style={{ fontSize: 44 }}>🌿</Text>
-                                </View>
-                            )}
-
-                            <View style={styles.guideModalSection}>
-                                <Text style={styles.guideModalLabel}>Description</Text>
-                                <Text style={styles.guideModalText}>{selectedGuide?.description || 'No description provided.'}</Text>
-                            </View>
-
-                            <View style={styles.guideModalGrid}>
-                                <View style={styles.guideModalItem}>
-                                    <Text style={styles.guideModalLabel}>Author</Text>
-                                    <Text style={styles.guideModalText}>{selectedGuide?.userId?.name || 'Farmer'}</Text>
-                                </View>
-                                <View style={styles.guideModalItem}>
-                                    <Text style={styles.guideModalLabel}>Likes</Text>
-                                    <TouchableOpacity
-                                        onPress={() => handleGuideReaction(selectedGuide?._id || selectedGuide?.id)}
-                                        disabled={reactingGuideIds.includes(selectedGuide?._id || selectedGuide?.id)}
-                                        style={styles.guideModalReactionBtn}
-                                    >
-                                        <Ionicons
-                                            name={selectedGuide?.isLiked ? 'heart' : 'heart-outline'}
-                                            size={18}
-                                            color={selectedGuide?.isLiked ? '#ef4444' : COLORS.neutral[500]}
-                                        />
-                                        <Text style={styles.guideModalText}>{selectedGuide?.likeCount || 0}</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
-                            {selectedGuide?.climate || selectedGuide?.soil || selectedGuide?.season ? (
-                                <View style={styles.guideModalSection}>
-                                    <Text style={styles.guideModalLabel}>Growing Details</Text>
-                                    {selectedGuide?.climate ? <Text style={styles.guideModalDetail}>Climate: {selectedGuide.climate}</Text> : null}
-                                    {selectedGuide?.soil ? <Text style={styles.guideModalDetail}>Soil: {selectedGuide.soil}</Text> : null}
-                                    {selectedGuide?.season ? <Text style={styles.guideModalDetail}>Season: {selectedGuide.season}</Text> : null}
-                                </View>
-                            ) : null}
-
-                            {selectedGuide?.diseases || selectedGuide?.treatments || selectedGuide?.practices ? (
-                                <View style={styles.guideModalSection}>
-                                    <Text style={styles.guideModalLabel}>Guide Notes</Text>
-                                    {selectedGuide?.diseases ? <Text style={styles.guideModalDetail}>Diseases: {selectedGuide.diseases}</Text> : null}
-                                    {selectedGuide?.treatments ? <Text style={styles.guideModalDetail}>Treatments: {selectedGuide.treatments}</Text> : null}
-                                    {selectedGuide?.practices ? <Text style={styles.guideModalDetail}>Practices: {selectedGuide.practices}</Text> : null}
-                                </View>
-                            ) : null}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
         </View>
     );
 };
@@ -725,6 +608,26 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         marginTop: 2,
+    },
+    guideModalActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 4,
+    },
+    guideModalActionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: COLORS.neutral[100],
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    guideModalActionText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.neutral[600],
     },
     guideModalDetail: {
         fontSize: 14,
