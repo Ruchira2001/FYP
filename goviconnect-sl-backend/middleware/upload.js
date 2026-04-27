@@ -37,7 +37,7 @@ const guideStorage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'goviconnect/guides',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
     transformation: [{ width: 1024, height: 768, crop: 'limit' }],
   },
 });
@@ -48,7 +48,7 @@ const guideVideoStorage = new CloudinaryStorage({
   params: {
     folder: 'goviconnect/guide-videos',
     resource_type: 'video',
-    allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
+    allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v', '3gp'],
   },
 });
 

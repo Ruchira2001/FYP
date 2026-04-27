@@ -334,48 +334,72 @@ const AddCropGuide: React.FC = () => {
 
         setLoading(true);
         try {
-            // 1. Upload new local images
-            let uploadedImageUrls: string[] = formData.images || [];
+            // 1. Upload new local images while preserving only currently-selected existing ones
+            let uploadedImageUrls: string[] = localImages.filter((uri) => uri.startsWith('http'));
             const newLocalImages = localImages.filter(uri => !uri.startsWith('http'));
             if (newLocalImages.length > 0) {
-                setUploadingImages(true);
-                const imgFormData = new FormData();
-                newLocalImages.forEach((uri, index) => {
-                    imgFormData.append('images', {
-                        uri,
-                        type: 'image/jpeg',
-                        name: `guide_image_${index}.jpg`,
-                    } as any);
-                });
-                const uploadRes = await learnhubAPI.uploadGuideImages(imgFormData);
-                const alreadyUploaded = localImages.filter(uri => uri.startsWith('http'));
-                uploadedImageUrls = [...alreadyUploaded, ...(uploadRes.data.urls || [])];
-                setUploadingImages(false);
+                try {
+                    setUploadingImages(true);
+                    const imgFormData = new FormData();
+                    newLocalImages.forEach((uri, index) => {
+                        const ext = uri.split('.').pop()?.split('?')[0] || 'jpg';
+                        imgFormData.append('images', {
+                            uri,
+                            type: `image/${ext.toLowerCase()}`,
+                            name: `guide_image_${index}.${ext}`,
+                        } as any);
+                    });
+                    const uploadRes = await learnhubAPI.uploadGuideImages(imgFormData);
+                    uploadedImageUrls = [...uploadedImageUrls, ...(uploadRes.data.urls || [])];
+                } catch (uploadError: any) {
+                    const uploadMessage = uploadError?.response?.data?.message || 'Image upload failed. Saving guide without new images.';
+                    Alert.alert('Upload Warning', uploadMessage);
+                } finally {
+                    setUploadingImages(false);
+                }
             }
 
-            // 2. Upload new local videos
-            let uploadedVideoUrls: string[] = [];
+            // 2. Upload new local videos while preserving only currently-selected existing ones
+            let uploadedVideoUrls: string[] = localVideos.filter(uri => uri.startsWith('http'));
             const newLocalVideos = localVideos.filter(uri => !uri.startsWith('http'));
-            const alreadyUploadedVideos = localVideos.filter(uri => uri.startsWith('http'));
             if (newLocalVideos.length > 0) {
-                setUploadingVideos(true);
-                const vidFormData = new FormData();
-                newLocalVideos.forEach((uri, index) => {
-                    const ext = uri.split('.').pop()?.split('?')[0] || 'mp4';
-                    vidFormData.append('videos', {
-                        uri,
-                        type: `video/${ext}`,
-                        name: `guide_video_${index}.${ext}`,
-                    } as any);
-                });
-                const vidRes = await learnhubAPI.uploadGuideVideos(vidFormData);
-                uploadedVideoUrls = [...alreadyUploadedVideos, ...(vidRes.data.urls || [])];
-                setUploadingVideos(false);
-            } else {
-                uploadedVideoUrls = alreadyUploadedVideos;
+                try {
+                    setUploadingVideos(true);
+                    const vidFormData = new FormData();
+                    newLocalVideos.forEach((uri, index) => {
+                        const ext = uri.split('.').pop()?.split('?')[0] || 'mp4';
+                        vidFormData.append('videos', {
+                            uri,
+                            type: `video/${ext.toLowerCase()}`,
+                            name: `guide_video_${index}.${ext}`,
+                        } as any);
+                    });
+                    const vidRes = await learnhubAPI.uploadGuideVideos(vidFormData);
+                    uploadedVideoUrls = [...uploadedVideoUrls, ...(vidRes.data.urls || [])];
+                } catch (uploadError: any) {
+                    const uploadMessage = uploadError?.response?.data?.message || 'Video upload failed. Saving guide without new videos.';
+                    Alert.alert('Upload Warning', uploadMessage);
+                } finally {
+                    setUploadingVideos(false);
+                }
             }
 
-            const payload = { ...formData, images: uploadedImageUrls, videoUrls: uploadedVideoUrls };
+            const payload = {
+                cropId: formData.cropId,
+                name: formData.name,
+                scientificName: formData.scientificName,
+                category: formData.category,
+                description: formData.description,
+                climate: formData.climate,
+                soil: formData.soil,
+                season: formData.season,
+                diseases: formData.diseases,
+                treatments: formData.treatments,
+                practices: formData.practices,
+                videoLinks: formData.videoLinks,
+                videoUrls: uploadedVideoUrls,
+                images: uploadedImageUrls,
+            };
 
             if (formData.id) {
                 await learnhubAPI.updateUserGuide(formData.id, payload);
@@ -390,9 +414,10 @@ const AddCropGuide: React.FC = () => {
                 setViewMode('list');
                 Alert.alert('✅ Guide Submitted!', 'Your crop guide has been submitted and is pending review. You can see it in My Guides.');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to submit guide:', error);
-            Alert.alert(t('common.error'), 'Failed to submit guide. Please try again.');
+            const apiMessage = error?.response?.data?.message;
+            Alert.alert(t('common.error'), apiMessage || 'Failed to submit guide. Please try again.');
         } finally {
             setLoading(false);
             setUploadingImages(false);
@@ -964,7 +989,13 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: COLORS.neutral[200],
     },
+    actionBtnDisabled: {
+        opacity: 0.5,
+    },
     // Form Styles
+    actionBtnTextDisabled: {
+        color: COLORS.neutral[400],
+    },
     content: {
         flex: 1,
     },

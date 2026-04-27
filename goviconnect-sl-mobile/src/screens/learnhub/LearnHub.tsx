@@ -28,6 +28,7 @@ const LearnHub: React.FC = () => {
     const [loadingCommunity, setLoadingCommunity] = useState(false);
     const [loadingMy, setLoadingMy] = useState(false);
     const [selectedGuide, setSelectedGuide] = useState<any | null>(null);
+    const [reactingGuideIds, setReactingGuideIds] = useState<string[]>([]);
 
     useFocusEffect(
         useCallback(() => {
@@ -84,6 +85,46 @@ const LearnHub: React.FC = () => {
         if (tab === 'myguides' && myGuides.length === 0) loadMyGuides();
     };
 
+    const patchGuide = (guideId: string, patch: (guide: any) => any) => {
+        setCommunityGuides((prev) => prev.map((guide) => {
+            const id = guide._id || guide.id;
+            return id === guideId ? patch(guide) : guide;
+        }));
+
+        setSelectedGuide((prev) => {
+            if (!prev) return prev;
+            const id = prev._id || prev.id;
+            return id === guideId ? patch(prev) : prev;
+        });
+    };
+
+    const handleGuideReaction = async (guideId: string) => {
+        if (!guideId || reactingGuideIds.includes(guideId)) return;
+
+        const current = communityGuides.find((guide) => (guide._id || guide.id) === guideId);
+        if (!current) return;
+
+        const wasLiked = !!current.isLiked;
+        const previousCount = Number(current.likeCount || 0);
+        const optimisticCount = wasLiked ? Math.max(0, previousCount - 1) : previousCount + 1;
+
+        patchGuide(guideId, (guide) => ({ ...guide, isLiked: !wasLiked, likeCount: optimisticCount }));
+        setReactingGuideIds((prev) => [...prev, guideId]);
+
+        try {
+            const res = await learnhubAPI.reactToCommunityGuide(guideId);
+            patchGuide(guideId, (guide) => ({
+                ...guide,
+                isLiked: !!res.data.isLiked,
+                likeCount: Number(res.data.likeCount || 0),
+            }));
+        } catch {
+            patchGuide(guideId, (guide) => ({ ...guide, isLiked: wasLiked, likeCount: previousCount }));
+        } finally {
+            setReactingGuideIds((prev) => prev.filter((id) => id !== guideId));
+        }
+    };
+
     const filteredCrops = crops.filter((crop: any) => {
         const matchesCategory = selectedCategory === 'all' || crop.category === selectedCategory;
         const matchesSearch = searchQuery === '' ||
@@ -119,42 +160,50 @@ const LearnHub: React.FC = () => {
         );
     };
 
-    const renderCommunityCard = ({ item }: { item: any }) => (
-        <TouchableOpacity
-            style={styles.communityCard}
-            activeOpacity={0.85}
-            onPress={() => setSelectedGuide(item)}
-        >
-            {item.images && item.images.length > 0 ? (
-                <Image source={{ uri: item.images[0] }} style={styles.communityCardImage} />
-            ) : (
-                <View style={[styles.communityCardImage, styles.communityCardImagePlaceholder]}>
-                    <Text style={{ fontSize: 32 }}>🌿</Text>
-                </View>
-            )}
-            <View style={styles.communityCardBody}>
-                <Text style={styles.communityCardName} numberOfLines={1}>{item.name}</Text>
-                {item.category ? (
-                    <Text style={styles.communityCardCategory}>{item.category}</Text>
-                ) : null}
-                <Text style={styles.communityCardDesc} numberOfLines={2}>
-                    {item.description || 'No description provided.'}
-                </Text>
-                <View style={styles.communityCardFooter}>
-                    <View style={styles.communityCardAuthor}>
-                        <Ionicons name="person-circle-outline" size={16} color={COLORS.neutral[400]} />
-                        <Text style={styles.communityCardAuthorText} numberOfLines={1}>
-                            {item.userId?.name || 'Farmer'}
-                        </Text>
+    const renderFarmerGuideCard = (item: any) => {
+        const guideId = item._id || item.id;
+        const isReacting = reactingGuideIds.includes(guideId);
+        const isLiked = !!item.isLiked;
+
+        return (
+            <TouchableOpacity
+                key={guideId}
+                style={styles.farmerGuideTile}
+                activeOpacity={0.85}
+                onPress={() => setSelectedGuide(item)}
+            >
+                {item.images && item.images.length > 0 ? (
+                    <Image source={{ uri: item.images[0] }} style={styles.farmerGuideThumb} />
+                ) : (
+                    <View style={[styles.farmerGuideThumb, styles.farmerGuideThumbPlaceholder]}>
+                        <Text style={{ fontSize: 28 }}>🌿</Text>
                     </View>
-                    <View style={styles.communityCardLikes}>
-                        <Ionicons name="heart" size={14} color="#ef4444" />
-                        <Text style={styles.communityCardLikeText}>{item.likeCount || 0}</Text>
-                    </View>
+                )}
+
+                <View style={styles.farmerGuideTopRow}>
+                    <Text style={styles.farmerGuideCategory} numberOfLines={1}>{item.category || 'Guide'}</Text>
+                    <TouchableOpacity
+                        onPress={() => handleGuideReaction(guideId)}
+                        disabled={isReacting}
+                        style={styles.farmerGuideReactBtn}
+                    >
+                        <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={16} color={isLiked ? '#ef4444' : COLORS.neutral[500]} />
+                        <Text style={styles.farmerGuideReactCount}>{item.likeCount || 0}</Text>
+                    </TouchableOpacity>
                 </View>
-            </View>
-        </TouchableOpacity>
-    );
+
+                <Text style={styles.farmerGuideTitle} numberOfLines={1}>{item.name || 'Farmer Guide'}</Text>
+                <Text style={styles.farmerGuideDesc} numberOfLines={2}>{item.description || 'No description provided.'}</Text>
+
+                <View style={styles.farmerGuideAuthorRow}>
+                    <Ionicons name="person-circle-outline" size={15} color={COLORS.neutral[400]} />
+                    <Text style={styles.farmerGuideAuthorText} numberOfLines={1}>{item.userId?.name || 'Farmer'}</Text>
+                </View>
+            </TouchableOpacity>
+        );
+    };
+
+    const renderCommunityCard = ({ item }: { item: any }) => renderFarmerGuideCard(item);
 
     const renderMyGuideCard = ({ item }: { item: any }) => {
         const sc = getStatusColor(item.status);
@@ -294,43 +343,9 @@ const LearnHub: React.FC = () => {
                                             Approved Farmer Guides ({communityGuides.length})
                                         </Text>
                                     </View>
-                                    {communityGuides.map((item) => (
-                                        <TouchableOpacity
-                                            key={item._id || item.id}
-                                            style={styles.communityCard}
-                                            activeOpacity={0.85}
-                                            onPress={() => setSelectedGuide(item)}
-                                        >
-                                            {item.images && item.images.length > 0 ? (
-                                                <Image source={{ uri: item.images[0] }} style={styles.communityCardImage} />
-                                            ) : (
-                                                <View style={[styles.communityCardImage, styles.communityCardImagePlaceholder]}>
-                                                    <Text style={{ fontSize: 32 }}>🌿</Text>
-                                                </View>
-                                            )}
-                                            <View style={styles.communityCardBody}>
-                                                <Text style={styles.communityCardName} numberOfLines={1}>{item.name}</Text>
-                                                {item.category ? (
-                                                    <Text style={styles.communityCardCategory}>{item.category}</Text>
-                                                ) : null}
-                                                <Text style={styles.communityCardDesc} numberOfLines={2}>
-                                                    {item.description || 'No description provided.'}
-                                                </Text>
-                                                <View style={styles.communityCardFooter}>
-                                                    <View style={styles.communityCardAuthor}>
-                                                        <Ionicons name="person-circle-outline" size={16} color={COLORS.neutral[400]} />
-                                                        <Text style={styles.communityCardAuthorText} numberOfLines={1}>
-                                                            {item.userId?.name || 'Farmer'}
-                                                        </Text>
-                                                    </View>
-                                                    <View style={styles.communityCardLikes}>
-                                                        <Ionicons name="heart" size={14} color="#ef4444" />
-                                                        <Text style={styles.communityCardLikeText}>{item.likeCount || 0}</Text>
-                                                    </View>
-                                                </View>
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))}
+                                    <View style={styles.approvedGuidesGrid}>
+                                        {communityGuides.map((item) => renderFarmerGuideCard(item))}
+                                    </View>
                                 </View>
                             ) : null
                         }
@@ -356,7 +371,9 @@ const LearnHub: React.FC = () => {
                             data={communityGuides}
                             renderItem={renderCommunityCard}
                             keyExtractor={(item) => item._id || item.id}
+                            numColumns={2}
                             contentContainerStyle={{ padding: 16 }}
+                            columnWrapperStyle={styles.columnWrapper}
                             showsVerticalScrollIndicator={false}
                         />
                     )}
@@ -440,7 +457,18 @@ const LearnHub: React.FC = () => {
                                 </View>
                                 <View style={styles.guideModalItem}>
                                     <Text style={styles.guideModalLabel}>Likes</Text>
-                                    <Text style={styles.guideModalText}>{selectedGuide?.likeCount || 0}</Text>
+                                    <TouchableOpacity
+                                        onPress={() => handleGuideReaction(selectedGuide?._id || selectedGuide?.id)}
+                                        disabled={reactingGuideIds.includes(selectedGuide?._id || selectedGuide?.id)}
+                                        style={styles.guideModalReactionBtn}
+                                    >
+                                        <Ionicons
+                                            name={selectedGuide?.isLiked ? 'heart' : 'heart-outline'}
+                                            size={18}
+                                            color={selectedGuide?.isLiked ? '#ef4444' : COLORS.neutral[500]}
+                                        />
+                                        <Text style={styles.guideModalText}>{selectedGuide?.likeCount || 0}</Text>
+                                    </TouchableOpacity>
                                 </View>
                             </View>
 
@@ -520,33 +548,86 @@ const styles = StyleSheet.create({
     columnWrapper: { justifyContent: 'space-between' },
     cropCardWrapper: { width: '48%', marginBottom: 16 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 60 },
-    // Community card
-    communityCard: {
+    farmerGuideTile: {
+        width: '48%',
         backgroundColor: '#ffffff',
-        borderRadius: 14,
-        marginBottom: 14,
-        overflow: 'hidden',
+        borderRadius: 16,
+        padding: 10,
+        marginBottom: 16,
         borderWidth: 1,
         borderColor: COLORS.neutral[200],
         elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
     },
-    communityCardImage: { width: '100%', height: 140, resizeMode: 'cover' },
-    communityCardImagePlaceholder: {
-        alignItems: 'center', justifyContent: 'center',
+    farmerGuideThumb: {
+        width: '100%',
+        height: 96,
+        borderRadius: 12,
+        resizeMode: 'cover',
+        marginBottom: 8,
+    },
+    farmerGuideThumbPlaceholder: {
+        alignItems: 'center',
+        justifyContent: 'center',
         backgroundColor: COLORS.primary[50],
     },
-    communityCardBody: { padding: 12 },
-    communityCardName: { fontSize: 16, fontWeight: '700', color: COLORS.neutral[900] },
-    communityCardCategory: { fontSize: 12, color: COLORS.primary[600], marginTop: 2, marginBottom: 4 },
-    communityCardDesc: { fontSize: 13, color: COLORS.neutral[600], lineHeight: 18 },
-    communityCardFooter: {
-        flexDirection: 'row', justifyContent: 'space-between',
-        alignItems: 'center', marginTop: 8,
+    farmerGuideTopRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 6,
+        gap: 8,
     },
-    communityCardAuthor: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    communityCardAuthorText: { fontSize: 12, color: COLORS.neutral[500], marginLeft: 4 },
-    communityCardLikes: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    communityCardLikeText: { fontSize: 12, color: COLORS.neutral[500] },
+    farmerGuideCategory: {
+        fontSize: 11,
+        color: COLORS.primary[700],
+        backgroundColor: COLORS.primary[50],
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 999,
+        overflow: 'hidden',
+        flex: 1,
+    },
+    farmerGuideReactBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 6,
+        paddingVertical: 4,
+        borderRadius: 999,
+        backgroundColor: COLORS.neutral[100],
+    },
+    farmerGuideReactCount: {
+        fontSize: 11,
+        color: COLORS.neutral[600],
+        fontWeight: '600',
+    },
+    farmerGuideTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: COLORS.neutral[900],
+        marginBottom: 4,
+    },
+    farmerGuideDesc: {
+        fontSize: 12,
+        color: COLORS.neutral[600],
+        lineHeight: 16,
+        marginBottom: 8,
+        minHeight: 32,
+    },
+    farmerGuideAuthorRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    farmerGuideAuthorText: {
+        fontSize: 11,
+        color: COLORS.neutral[500],
+        flex: 1,
+    },
     approvedGuidesSection: {
         marginTop: 8,
         marginBottom: 8,
@@ -561,6 +642,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '800',
         color: COLORS.neutral[900],
+    },
+    approvedGuidesGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
     },
     guideModalOverlay: {
         flex: 1,
@@ -633,6 +719,12 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.neutral[50],
         borderRadius: 14,
         padding: 12,
+    },
+    guideModalReactionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 2,
     },
     guideModalDetail: {
         fontSize: 14,

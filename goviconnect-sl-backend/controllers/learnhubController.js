@@ -2,6 +2,37 @@ const CropGuide = require('../models/CropGuide');
 const UserCropGuide = require('../models/UserCropGuide');
 const User = require('../models/User');
 
+const normalizeText = (value) => {
+  if (typeof value !== 'string') return '';
+  return value.trim();
+};
+
+const normalizeStringArray = (value) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+};
+
+const buildUserGuidePayload = (body = {}) => ({
+  cropId: normalizeText(body.cropId),
+  name: normalizeText(body.name),
+  scientificName: normalizeText(body.scientificName),
+  category: normalizeText(body.category),
+  description: normalizeText(body.description),
+  climate: normalizeText(body.climate),
+  soil: normalizeText(body.soil),
+  season: normalizeText(body.season),
+  diseases: normalizeText(body.diseases),
+  treatments: normalizeText(body.treatments),
+  practices: normalizeText(body.practices),
+  videoLink: normalizeText(body.videoLink),
+  videoLinks: normalizeStringArray(body.videoLinks),
+  videoUrls: normalizeStringArray(body.videoUrls),
+  imageUrl: normalizeText(body.imageUrl),
+  images: normalizeStringArray(body.images),
+});
+
 // @desc    Get all crop guides
 // @route   GET /api/learnhub/guides
 exports.getGuides = async (req, res, next) => {
@@ -123,8 +154,14 @@ exports.getSavedGuides = async (req, res, next) => {
 // @route   POST /api/learnhub/user-guides
 exports.submitUserGuide = async (req, res, next) => {
   try {
+    const payload = buildUserGuidePayload(req.body);
+
+    if (!payload.name) {
+      return res.status(400).json({ success: false, message: 'Guide name is required' });
+    }
+
     const guide = await UserCropGuide.create({
-      ...req.body,
+      ...payload,
       userId: req.user._id,
       status: 'pending',
     });
@@ -161,12 +198,15 @@ exports.updateUserGuide = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Guide not found' });
     }
 
-    if (guide.status === 'approved') {
-      return res.status(400).json({ success: false, message: 'Cannot edit an approved guide' });
+    const updates = buildUserGuidePayload(req.body);
+
+    if (!updates.name) {
+      return res.status(400).json({ success: false, message: 'Guide name is required' });
     }
 
-    Object.assign(guide, req.body);
+    Object.assign(guide, updates);
     guide.status = 'pending'; // Reset to pending after edit
+    guide.rejectionReason = undefined;
     await guide.save();
 
     res.json({ success: true, data: guide });
