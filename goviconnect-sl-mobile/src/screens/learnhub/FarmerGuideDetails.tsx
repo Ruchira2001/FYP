@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, ScrollView, TouchableOpacity, Image, StyleSheet,
-    ActivityIndicator, Share, Alert
+    ActivityIndicator, Share, Alert, Dimensions
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -145,11 +145,28 @@ const FarmerGuideDetails: React.FC = () => {
             />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                {guide.images?.[0] ? (
-                    <Image source={{ uri: guide.images[0] }} style={styles.mainImage} />
+                {guide.images && guide.images.length > 0 ? (
+                    <ScrollView 
+                        horizontal 
+                        pagingEnabled 
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.imageScroll}
+                    >
+                        {guide.images.map((img: string, idx: number) => (
+                            <Image key={idx} source={{ uri: img }} style={styles.mainImage} />
+                        ))}
+                    </ScrollView>
                 ) : (
                     <View style={styles.imagePlaceholder}>
                         <Text style={{ fontSize: 64 }}>🌿</Text>
+                    </View>
+                )}
+                
+                {guide.images && guide.images.length > 1 && (
+                    <View style={styles.paginationDots}>
+                        {guide.images.map((_: any, i: number) => (
+                            <View key={i} style={styles.dot} />
+                        ))}
                     </View>
                 )}
 
@@ -267,16 +284,44 @@ const FarmerGuideDetails: React.FC = () => {
                             )}
                         </View>
                     ) : null}
+
+                    {/* Videos Section */}
+                    {((guide.videoUrls && guide.videoUrls.length > 0) || guide.videoLink) && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Videos & Tutorials</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                                {guide.videoLink && (
+                                    <TouchableOpacity style={styles.videoCard} onPress={() => Alert.alert('Play Video', 'Opening video link...')}>
+                                        <View style={styles.videoThumb}>
+                                            <Ionicons name="play-circle" size={40} color="#fff" />
+                                        </View>
+                                        <Text style={styles.videoTitle}>Tutorial Link</Text>
+                                    </TouchableOpacity>
+                                )}
+                                {(guide.videoUrls || []).map((url: string, idx: number) => (
+                                    <TouchableOpacity key={idx} style={styles.videoCard} onPress={() => Alert.alert('Play Video', 'Loading video stream...')}>
+                                        <View style={[styles.videoThumb, { backgroundColor: COLORS.neutral[800] }]}>
+                                            <Ionicons name="play-circle" size={40} color="#fff" />
+                                        </View>
+                                        <Text style={styles.videoTitle}>Video {idx + 1}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </View>
     );
 };
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.neutral[50] },
     scrollContent: { paddingBottom: 40 },
-    mainImage: { width: '100%', height: 250, resizeMode: 'cover' },
+    imageScroll: { height: 250 },
+    mainImage: { width: SCREEN_WIDTH, height: 250, resizeMode: 'cover' },
     imagePlaceholder: { 
         width: '100%', height: 250, backgroundColor: COLORS.primary[50],
         alignItems: 'center', justifyContent: 'center' 
@@ -405,6 +450,41 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: COLORS.neutral[500],
         marginBottom: 4,
+    },
+    paginationDots: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 6,
+        position: 'absolute',
+        top: 220,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        padding: 4,
+        borderRadius: 10,
+    },
+    dot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#fff',
+    },
+    videoCard: {
+        width: 140,
+    },
+    videoThumb: {
+        width: 140,
+        height: 80,
+        backgroundColor: COLORS.neutral[200],
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 6,
+    },
+    videoTitle: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.neutral[700],
     },
 });
 

@@ -164,6 +164,21 @@ const LearnHub: React.FC = () => {
                     </View>
                 )}
 
+                {/* Media Indicators */}
+                <View style={styles.mediaIndicators}>
+                    {item.images && item.images.length > 1 && (
+                        <View style={styles.mediaBadge}>
+                            <Ionicons name="images" size={12} color="#fff" />
+                            <Text style={styles.mediaBadgeText}>{item.images.length}</Text>
+                        </View>
+                    )}
+                    {((item.videoUrls && item.videoUrls.length > 0) || item.videoLink) && (
+                        <View style={[styles.mediaBadge, { backgroundColor: 'rgba(239, 68, 68, 0.8)' }]}>
+                            <Ionicons name="play" size={12} color="#fff" />
+                        </View>
+                    )}
+                </View>
+
                 {/* Status Badges */}
                 <View style={styles.statusBadges}>
                     {isSaved && (
@@ -497,6 +512,27 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 2,
+    },
+    mediaIndicators: {
+        position: 'absolute',
+        bottom: 110, // Above the text area
+        right: 12,
+        flexDirection: 'row',
+        gap: 6,
+    },
+    mediaBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        gap: 4,
+    },
+    mediaBadgeText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: 'bold',
     },
     farmerGuideTopRow: {
         flexDirection: 'row',
