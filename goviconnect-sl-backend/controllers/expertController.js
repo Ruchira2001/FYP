@@ -334,7 +334,8 @@ exports.getExpertMeetings = async (req, res, next) => {
   try {
     const meetings = await Meeting.find({ expertId: req.user._id })
       .sort({ dateTime: -1 })
-      .populate('farmerId', 'name district avatar');
+      .populate('farmerId', 'name district avatar')
+      .populate('registeredUsers', 'name district avatar');
 
     res.json({ success: true, data: meetings });
   } catch (error) {
@@ -413,6 +414,30 @@ exports.updateMeeting = async (req, res, next) => {
     }
 
     res.json({ success: true, data: meeting });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete a meeting
+// @route   DELETE /api/experts/me/meetings/:id
+exports.deleteMeeting = async (req, res, next) => {
+  try {
+    const meeting = await Meeting.findOneAndDelete({
+      _id: req.params.id,
+      expertId: req.user._id,
+    });
+
+    if (!meeting) {
+      return res.status(404).json({ success: false, message: 'Meeting not found' });
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('meeting_deleted', { meetingId: req.params.id });
+    }
+
+    res.json({ success: true, message: 'Meeting deleted successfully' });
   } catch (error) {
     next(error);
   }

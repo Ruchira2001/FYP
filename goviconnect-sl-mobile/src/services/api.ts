@@ -424,6 +424,9 @@ export const expertDashboardAPI = {
 
   updateMeeting: (id: string, data: any) =>
     api.put(`/experts/me/meetings/${id}`, data),
+
+  deleteMeeting: (id: string) =>
+    api.delete(`/experts/me/meetings/${id}`),
 };
 
 // ═══════════════════════════════════════════════════════════════

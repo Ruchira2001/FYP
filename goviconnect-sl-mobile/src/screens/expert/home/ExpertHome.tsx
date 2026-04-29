@@ -107,7 +107,7 @@ const ExpertHome: React.FC = () => {
             icon: 'library' as const,
             iconColor: COLORS.secondary[600],
             iconBgColor: COLORS.secondary[50],
-            onPress: () => navigation.navigate('ExpertKnowledgeBase'),
+            onPress: () => navigation.navigate('ExpertLearnHubTab'),
         },
         {
             id: 'chats',

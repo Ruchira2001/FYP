@@ -16,6 +16,7 @@ const {
   getExpertMeetings,
   createMeeting,
   updateMeeting,
+  deleteMeeting,
   listExperts,
   getExpertById,
   registerAsExpert,
@@ -49,6 +50,7 @@ router.put('/me/knowledge/:id', protect, authorize('expert'), updateKnowledgeArt
 router.get('/me/meetings', protect, authorize('expert'), getExpertMeetings);
 router.post('/me/meetings', protect, authorize('expert'), createMeeting);
 router.put('/me/meetings/:id', protect, authorize('expert'), updateMeeting);
+router.delete('/me/meetings/:id', protect, authorize('expert'), deleteMeeting);
 
 // Public expert listing (for farmers to browse) — must be AFTER /me/* routes
 router.get('/', protect, listExperts);
