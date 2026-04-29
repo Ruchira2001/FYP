@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShop } from '../../../context/ShopContext';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
-import { Header } from '../../../components';
+import { Header, AppNotify } from '../../../components';
 import { shopAPI } from '../../../services/api';
 
 const ShopProfile: React.FC = () => {
@@ -34,7 +34,7 @@ const ShopProfile: React.FC = () => {
     // Quick shortcuts
     const shortcuts = [
         { id: 'products', label: 'Products', icon: 'leaf' as const, color: COLORS.primary[600], bgColor: COLORS.primary[50], onPress: () => navigation.navigate('ProductsTab') },
-        { id: 'add-product', label: 'Add Product', icon: 'add-circle' as const, color: COLORS.success, bgColor: '#dcfce7', onPress: () => Alert.alert('Add Product', 'Add new product feature coming soon.') },
+        { id: 'add-product', label: 'Add Product', icon: 'add-circle' as const, color: COLORS.success, bgColor: '#dcfce7', onPress: () => navigation.navigate('ProductsTab') },
         { id: 'manage-stock', label: 'Stock', icon: 'cube' as const, color: COLORS.info, bgColor: '#dbeafe', onPress: () => navigation.navigate('ProductsTab') },
         { id: 'orders', label: 'Orders', icon: 'receipt' as const, color: COLORS.warning, bgColor: '#fef3c7', onPress: () => { } },
     ];
@@ -45,10 +45,7 @@ const ShopProfile: React.FC = () => {
         { id: 'help', icon: 'help-circle-outline', label: 'Help & FAQ', onPress: () => navigation.navigate('HelpFAQ') },
         {
             id: 'logout', icon: 'log-out-outline', label: 'Logout', color: COLORS.error, onPress: () => {
-                Alert.alert('Logout', 'Are you sure you want to logout?', [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Logout', style: 'destructive', onPress: logout },
-                ]);
+                AppNotify.confirm('Logout', 'Are you sure you want to logout?', logout, { confirmLabel: 'Logout', destructive: true });
             }
         },
     ];

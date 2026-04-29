@@ -446,6 +446,8 @@ export const shopAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
+  addProductData: (data: any) => api.post('/shop/products', data),
+
   updateProduct: (id: string, data: any) =>
     api.put(`/shop/products/${id}`, data),
 

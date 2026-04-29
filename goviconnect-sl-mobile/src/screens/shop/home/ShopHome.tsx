@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, Dimensions, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -103,7 +103,7 @@ const ShopHome: React.FC = () => {
             icon: 'add-circle' as const,
             iconColor: COLORS.success,
             iconBgColor: '#dcfce7',
-            onPress: () => Alert.alert('Add Product', 'Add new product feature coming soon.'),
+            onPress: () => navigation.navigate('ProductsTab'),
         },
         {
             id: 'low-stock',

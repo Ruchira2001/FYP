@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, PrimaryButton, InputField } from '../../../components';
+import { Header, PrimaryButton, InputField, AppNotify } from '../../../components';
 import { COLORS } from '../../../utils/constants';
 import { useShop } from '../../../context/ShopContext';
 import { userAPI } from '../../../services/api';
@@ -31,7 +31,7 @@ const ShopEditProfile: React.FC = () => {
 
     const handleSave = async () => {
         if (!name.trim()) {
-            Alert.alert(t('common.error'), 'Shop name is required');
+            AppNotify.toast('Shop name is required.', 'error');
             return;
         }
 
@@ -53,11 +53,10 @@ const ShopEditProfile: React.FC = () => {
                 type: updated.type || shopType,
             });
 
-            Alert.alert(t('common.success'), 'Profile updated successfully', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            AppNotify.toast('Profile updated successfully!', 'success');
+            navigation.goBack();
         } catch (error) {
-            Alert.alert(t('common.error'), 'Failed to update profile');
+            AppNotify.toast('Failed to update profile.', 'error');
         } finally {
             setIsLoading(false);
         }
