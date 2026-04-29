@@ -109,5 +109,7 @@ export const approveUserGuide = (id: string) =>
   api.put(`/user-guides/${id}/approve`);
 export const rejectUserGuide = (id: string, reason: string) =>
   api.put(`/user-guides/${id}/reject`, { reason });
+export const deleteUserGuidePerm = (id: string) =>
+  api.delete(`/user-guides/${id}`);
 
 export default api;

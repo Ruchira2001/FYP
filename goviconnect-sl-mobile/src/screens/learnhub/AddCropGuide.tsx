@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, FlatList, Image, ActivityIndicator, Modal } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,11 +37,11 @@ const SOIL_TYPES = ['Loamy', 'Sandy', 'Clay', 'Silty', 'Peaty', 'Sandy Loam', 'R
 
 const AddCropGuide: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
+    const route = useRoute<RouteProp<any>>();
+    const editGuide = route.params?.guide;
     const { t } = useTranslation();
 
-    const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
     const [editingGuideId, setEditingGuideId] = useState<string | null>(null);
-    const [history, setHistory] = useState<GuideForm[]>([]);
     const [loading, setLoading] = useState(false);
     // Local image URIs picked from gallery (not yet uploaded)
     const [localImages, setLocalImages] = useState<string[]>([]);
@@ -115,39 +115,36 @@ const AddCropGuide: React.FC = () => {
     };
 
     useEffect(() => {
-        loadGuideHistory();
         feedAPI.getCrops()
             .then((r: any) => setCrops(Array.isArray(r.data.data) ? r.data.data : []))
             .catch(() => {});
-    }, []);
-
-    const loadGuideHistory = async () => {
-        try {
-            const res = await learnhubAPI.getUserGuides();
-            const data = Array.isArray(res.data.data) ? res.data.data : [];
-            setHistory(data.map((g: any) => ({
-                id: g._id || g.id,
-                cropId: g.cropId || '',
-                name: g.name || g.title || '',
-                scientificName: g.scientificName || '',
-                category: g.category || '',
-                description: g.description || '',
-                climate: g.climate || '',
-                soil: g.soil || '',
-                season: g.season || '',
-                diseases: g.diseases || '',
-                treatments: g.treatments || '',
-                practices: g.practices || '',
-                videoLinks: Array.isArray(g.videoLinks) ? g.videoLinks : (g.videoLink ? [g.videoLink] : []),
-                videoUrls: Array.isArray(g.videoUrls) ? g.videoUrls : [],
-                images: Array.isArray(g.images) ? g.images : (g.imageUrl ? [g.imageUrl] : []),
-                status: g.status || 'pending',
-                submittedAt: g.submittedAt || g.createdAt || '',
-            })));
-        } catch (e) {
-            console.error('Failed to load guide history:', e);
+            
+        if (editGuide) {
+            setEditingGuideId(editGuide._id || editGuide.id || null);
+            setFormData({
+                id: editGuide._id || editGuide.id,
+                cropId: editGuide.cropId || '',
+                name: editGuide.name || editGuide.title || '',
+                scientificName: editGuide.scientificName || '',
+                category: editGuide.category || '',
+                description: editGuide.description || '',
+                climate: editGuide.climate || '',
+                soil: editGuide.soil || '',
+                season: editGuide.season || '',
+                diseases: editGuide.diseases || '',
+                treatments: editGuide.treatments || '',
+                practices: editGuide.practices || '',
+                videoLinks: Array.isArray(editGuide.videoLinks) ? editGuide.videoLinks : (editGuide.videoLink ? [editGuide.videoLink] : []),
+                videoUrls: Array.isArray(editGuide.videoUrls) ? editGuide.videoUrls : [],
+                images: Array.isArray(editGuide.images) ? editGuide.images : (editGuide.imageUrl ? [editGuide.imageUrl] : []),
+                status: editGuide.status || 'pending',
+                submittedAt: editGuide.submittedAt || editGuide.createdAt || '',
+            });
+            setLocalImages(Array.isArray(editGuide.images) ? editGuide.images : (editGuide.imageUrl ? [editGuide.imageUrl] : []));
+            setLocalVideos(Array.isArray(editGuide.videoUrls) ? editGuide.videoUrls : []);
+            setVideoLinkInput('');
         }
-    };
+    }, [editGuide]);
 
     // Form State
     const [formData, setFormData] = useState<GuideForm>({
@@ -194,21 +191,6 @@ const AddCropGuide: React.FC = () => {
         setVideoLinkInput('');
     };
 
-    const handleAddNew = () => {
-        resetForm();
-        setViewMode('form');
-    };
-
-    const handleEdit = (item: GuideForm) => {
-        setEditingGuideId(item.id || null);
-        setFormData({ ...item, id: item.id });
-        setLocalImages(item.images || []);
-        // Already-uploaded video URLs go into localVideos display list
-        setLocalVideos(item.videoUrls || []);
-        setVideoLinkInput('');
-        setViewMode('form');
-    };
-
     // Chip selector helper
     const SelectChips = ({ label, options, value, onSelect }: {
         label: string;
@@ -231,28 +213,6 @@ const AddCropGuide: React.FC = () => {
             </ScrollView>
         </View>
     );
-
-    const handleDelete = (id: string) => {
-        Alert.alert(
-            t('common.delete'),
-            'Are you sure you want to delete this guide?',
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('common.delete'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await learnhubAPI.deleteUserGuide(id);
-                            setHistory(prev => prev.filter(item => item.id !== id));
-                        } catch {
-                            setHistory(prev => prev.filter(item => item.id !== id));
-                        }
-                    }
-                }
-            ]
-        );
-    };
 
     const pickImages = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -406,16 +366,12 @@ const AddCropGuide: React.FC = () => {
 
             if (editingGuideId) {
                 await learnhubAPI.updateUserGuide(editingGuideId, payload);
-                resetForm();
-                await loadGuideHistory();
-                setViewMode('list');
                 Alert.alert('✅ Updated!', 'Your guide has been updated successfully.');
+                navigation.goBack();
             } else {
                 await learnhubAPI.submitUserGuide(payload);
-                resetForm();
-                await loadGuideHistory();
-                setViewMode('list');
                 Alert.alert('✅ Guide Submitted!', 'Your crop guide has been submitted and is pending review. You can see it in My Guides.');
+                navigation.goBack();
             }
         } catch (error: any) {
             console.error('Failed to submit guide:', error);
@@ -428,90 +384,13 @@ const AddCropGuide: React.FC = () => {
         }
     };
 
-    const renderHistoryItem = ({ item }: { item: GuideForm }) => (
-        <View style={styles.historyCard}>
-            <View style={styles.historyHeader}>
-                <View style={styles.iconPlaceholder}>
-                    <Text style={{ fontSize: 24 }}>🌿</Text>
-                </View>
-                <View style={styles.historyInfo}>
-                    <Text style={styles.historyTitle}>{item.name}</Text>
-                    <Text style={styles.historyDate}>{item.submittedAt}</Text>
-                </View>
-                <View style={[
-                    styles.statusBadge,
-                    item.status === 'approved' ? styles.statusApproved :
-                        item.status === 'rejected' ? styles.statusRejected : styles.statusPending
-                ]}>
-                    <Text style={[
-                        styles.statusText,
-                        item.status === 'approved' ? styles.textApproved :
-                            item.status === 'rejected' ? styles.textRejected : styles.textPending
-                    ]}>
-                        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                    </Text>
-                </View>
-            </View>
-
-            <View style={styles.historyActions}>
-                <TouchableOpacity onPress={() => handleEdit(item)} style={styles.actionBtn}>
-                    <Ionicons name="pencil" size={18} color={COLORS.primary[600]} />
-                    <Text style={styles.actionBtnText}>Edit</Text>
-                </TouchableOpacity>
-                <View style={styles.divider} />
-                <TouchableOpacity onPress={() => handleDelete(item.id!)} style={styles.actionBtn}>
-                    <Ionicons name="trash" size={18} color={COLORS.error} />
-                    <Text style={[styles.actionBtnText, { color: COLORS.error }]}>Delete</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-
-    if (viewMode === 'list') {
-        return (
-            <View style={styles.container}>
-                <Header
-                    title="My Crop Guides"
-                    showBack
-                    onBackPress={() => navigation.goBack()}
-                />
-
-                <View style={styles.listContent}>
-                    <FlatList
-                        data={history}
-                        renderItem={renderHistoryItem}
-                        keyExtractor={item => item.id!}
-                        contentContainerStyle={{ padding: 16 }}
-                        ListEmptyComponent={
-                            <EmptyState
-                                icon="document-text-outline"
-                                title="No Guides Added"
-                                description="You haven't submitted any crop guides yet."
-                            />
-                        }
-                    />
-                </View>
-
-                <View style={styles.fabContainer}>
-                    <TouchableOpacity
-                        style={styles.fab}
-                        onPress={handleAddNew}
-                    >
-                        <Ionicons name="add" size={30} color="#ffffff" />
-                        <Text style={styles.fabText}>Add New Guide</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        );
-    }
-
     // Form View
     return (
         <View style={styles.container}>
             <Header
                 title={formData.id ? "Edit Guide" : "New Crop Guide"}
                 showBack
-                onBackPress={() => setViewMode('list')}
+                onBackPress={() => navigation.goBack()}
             />
 
             {voiceListening && (

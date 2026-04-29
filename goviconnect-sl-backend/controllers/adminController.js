@@ -675,3 +675,13 @@ exports.rejectUserGuide = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+exports.deleteUserGuidePerm = async (req, res) => {
+  try {
+    const guide = await UserCropGuide.findByIdAndDelete(req.params.id);
+    if (!guide) return res.status(404).json({ success: false, message: 'Guide not found' });
+    res.json({ success: true, message: 'Guide permanently deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

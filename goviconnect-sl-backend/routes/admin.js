@@ -95,5 +95,6 @@ router.get('/orders', admin.getOrders);
 router.get('/user-guides', admin.getUserGuides);
 router.put('/user-guides/:id/approve', admin.approveUserGuide);
 router.put('/user-guides/:id/reject', admin.rejectUserGuide);
+router.delete('/user-guides/:id', admin.deleteUserGuidePerm);
 
 module.exports = router;

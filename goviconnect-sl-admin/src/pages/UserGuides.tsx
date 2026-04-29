@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getUserGuides, approveUserGuide, rejectUserGuide } from '../services/api';
+import { getUserGuides, approveUserGuide, rejectUserGuide, deleteUserGuidePerm } from '../services/api';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import Modal from '../components/Modal';
-import { Eye, Check, XCircle } from 'lucide-react';
+import { Eye, Check, XCircle, Trash2 } from 'lucide-react';
 
 interface UGuide {
   _id: string;
@@ -65,36 +65,15 @@ export default function UserGuides() {
     }
   };
 
-  const columns = [
-    { key: 'name', label: 'Name' },
-    { key: 'category', label: 'Category' },
-    {
-      key: 'userId',
-      label: 'Author',
-      render: (g: UGuide) => g.userId?.name || '-',
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (g: UGuide) => {
-        const colors: Record<string, string> = {
-          pending: 'bg-yellow-100 text-yellow-700',
-          approved: 'bg-green-100 text-green-700',
-          rejected: 'bg-red-100 text-red-700',
-        };
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[g.status] || 'bg-gray-100 text-gray-700'}`}>
-            {g.status}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'createdAt',
-      label: 'Submitted',
-      render: (g: UGuide) => new Date(g.createdAt).toLocaleDateString(),
-    },
-  ];
+  const handleDeletePerm = async (id: string) => {
+    if (!confirm('Permanently delete this guide? This cannot be undone.')) return;
+    try {
+      await deleteUserGuidePerm(id);
+      load();
+    } catch {
+      alert('Delete failed');
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -109,11 +88,42 @@ export default function UserGuides() {
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
+          <option value="delete_requested">Delete Requested</option>
         </select>
       </div>
 
       <DataTable
-        columns={columns}
+        columns={[
+          { key: 'name', label: 'Name' },
+          { key: 'category', label: 'Category' },
+          {
+            key: 'userId',
+            label: 'Author',
+            render: (g: UGuide) => g.userId?.name || '-',
+          },
+          {
+            key: 'status',
+            label: 'Status',
+            render: (g: UGuide) => {
+              const colors: Record<string, string> = {
+                pending: 'bg-yellow-100 text-yellow-700',
+                approved: 'bg-green-100 text-green-700',
+                rejected: 'bg-red-100 text-red-700',
+                delete_requested: 'bg-purple-100 text-purple-700',
+              };
+              return (
+                <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${colors[g.status] || 'bg-gray-100 text-gray-700'}`}>
+                  {g.status.replace('_', ' ')}
+                </span>
+              );
+            },
+          },
+          {
+            key: 'createdAt',
+            label: 'Submitted',
+            render: (g: UGuide) => new Date(g.createdAt).toLocaleDateString(),
+          },
+        ]}
         data={items}
         loading={loading}
         actions={(item) => (
@@ -130,6 +140,10 @@ export default function UserGuides() {
                 </button>
               </>
             )}
+            {item.status === 'delete_requested' && (
+              <button onClick={() => handleDeletePerm(item._id)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100"><Trash2 size={12} /> Confirm Delete</button>
+            )}
+            <button onClick={() => handleDeletePerm(item._id)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100" title="Delete Permanently"><Trash2 size={12} /></button>
           </div>
         )}
       />

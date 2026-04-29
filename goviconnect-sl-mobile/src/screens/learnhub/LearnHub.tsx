@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
     View, Text, ScrollView, TextInput, FlatList, TouchableOpacity, Modal,
-    StyleSheet, ActivityIndicator, Image,
+    StyleSheet, ActivityIndicator, Image, Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -218,6 +218,33 @@ const LearnHub: React.FC = () => {
 
     const renderCommunityCard = ({ item }: { item: any }) => renderFarmerGuideCard(item);
 
+    const handleDeleteMyGuide = (id: string) => {
+        Alert.alert(
+            t('common.delete', 'Delete Guide'),
+            'Are you sure you want to request deletion for this guide? An admin must approve the request.',
+            [
+                { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+                {
+                    text: t('common.delete', 'Request Delete'),
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const res = await learnhubAPI.deleteUserGuide(id);
+                            // It returns the updated guide with 'delete_requested' status
+                            setMyGuides(prev => prev.map(item =>
+                                (item.id || item._id) === id ? { ...item, status: 'delete_requested' } : item
+                            ));
+                            Alert.alert('Requested', res.data.message || 'Delete request sent to admin.');
+                        } catch (e) {
+                            console.error('Delete error', e);
+                            Alert.alert('Error', 'Failed to request deletion');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const renderMyGuideCard = ({ item }: { item: any }) => {
         const sc = getStatusColor(item.status);
         return (
@@ -239,10 +266,21 @@ const LearnHub: React.FC = () => {
                     <Text style={styles.myGuideCardDesc} numberOfLines={2}>
                         {item.description || 'No description.'}
                     </Text>
-                    <View style={[styles.myGuideStatusBadge, { backgroundColor: sc.bg }]}>
-                        <Text style={[styles.myGuideStatusText, { color: sc.text }]}>
-                            {(item.status || 'pending').charAt(0).toUpperCase() + (item.status || 'pending').slice(1)}
-                        </Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                        <View style={[styles.myGuideStatusBadge, { backgroundColor: sc.bg }]}>
+                            <Text style={[styles.myGuideStatusText, { color: sc.text }]}>
+                                {(item.status || 'pending').charAt(0).toUpperCase() + (item.status || 'pending').slice(1)}
+                            </Text>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <TouchableOpacity onPress={() => navigation.navigate('AddCropGuide', { guide: item })} activeOpacity={0.7} style={{ padding: 4 }}>
+                                <Ionicons name="pencil" size={20} color={COLORS.primary[600]} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => handleDeleteMyGuide(item._id || item.id)} activeOpacity={0.7} style={{ padding: 4 }}>
+                                <Ionicons name="trash" size={20} color={COLORS.error} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </View>

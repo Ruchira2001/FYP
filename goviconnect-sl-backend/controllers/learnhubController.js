@@ -271,20 +271,21 @@ exports.updateUserGuide = async (req, res, next) => {
   }
 };
 
-// @desc    Delete user guide
+// @desc    Request to delete user guide (requires admin approval)
 // @route   DELETE /api/learnhub/user-guides/:id
 exports.deleteUserGuide = async (req, res, next) => {
   try {
-    const guide = await UserCropGuide.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user._id,
-    });
+    const guide = await UserCropGuide.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { status: 'delete_requested' },
+      { new: true }
+    );
 
     if (!guide) {
       return res.status(404).json({ success: false, message: 'Guide not found' });
     }
 
-    res.json({ success: true, message: 'Guide deleted' });
+    res.json({ success: true, message: 'Delete request sent to admin', data: guide });
   } catch (error) {
     next(error);
   }

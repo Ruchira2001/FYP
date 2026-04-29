@@ -6,18 +6,29 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import Constants from 'expo-constants';
 
 // ─── Configuration ───────────────────────────────────────────
-// Change this to your backend URL
-// For local development with Android emulator: http://10.0.2.2:5000
-// For local development with iOS simulator: http://localhost:5000
-// For physical device on same WiFi: http://<your-local-ip>:5000
+// Automatically detects the dev machine's IP from the Expo dev server.
+// No manual IP changes needed — works on any network.
+const getDevHost = (): string => {
+  // expo-constants exposes the Expo dev server host (e.g. "192.168.x.x:8081")
+  const hostUri =
+    Constants.expoConfig?.hostUri ??
+    (Constants as any).manifest?.debuggerHost ??
+    (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
+  if (hostUri) {
+    return hostUri.split(':')[0]; // strip the port, keep just the IP
+  }
+  return 'localhost'; // fallback for emulators / simulators
+};
+
 const BASE_URL = __DEV__
-  ? 'http://10.16.133.10:5000/api'   // Physical device on same WiFi
+  ? `http://${getDevHost()}:5000/api`
   : 'https://your-production-url.com/api';
 
 const SOCKET_URL = __DEV__
-  ? 'http://10.16.133.10:5000'
+  ? `http://${getDevHost()}:5000`
   : 'https://your-production-url.com';
 
 // ─── Storage Keys ────────────────────────────────────────────

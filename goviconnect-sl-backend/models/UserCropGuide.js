@@ -33,7 +33,7 @@ const userCropGuideSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
+      enum: ['pending', 'approved', 'rejected', 'delete_requested'],
       default: 'pending',
     },
     rejectionReason: String,
