@@ -12,8 +12,19 @@ import { Header, Chip, CropCard, EmptyState } from '../../components';
 import { COLORS, CROP_CATEGORIES } from '../../utils/constants';
 import { learnhubAPI, feedAPI } from '../../services/api';
 import { getSavedLearnHub } from '../../services/storage';
+import cropsData from '../../data/crops.json';
 
 type TabType = 'official' | 'community' | 'myguides';
+
+const getCropIcon = (name: string, cropId?: string): string => {
+    const lowerName = (name || '').toLowerCase();
+    const crop = (cropsData as any).crops.find((c: any) =>
+        c.name.toLowerCase() === lowerName ||
+        c.id === cropId ||
+        c.id === lowerName
+    );
+    return crop?.icon || '🌿';
+};
 
 const LearnHub: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -160,7 +171,7 @@ const LearnHub: React.FC = () => {
                     <Image source={{ uri: item.images[0] }} style={styles.farmerGuideThumb} />
                 ) : (
                     <View style={styles.farmerGuidePlaceholder}>
-                        <Text style={{ fontSize: 24 }}>🌿</Text>
+                        <Text style={{ fontSize: 36 }}>{getCropIcon(item.name, item.cropId)}</Text>
                     </View>
                 )}
 
@@ -297,7 +308,7 @@ const LearnHub: React.FC = () => {
                     { key: 'official', label: 'Official' },
                     { key: 'community', label: 'Community' },
                     { key: 'myguides', label: 'My Guides' },
-                ] as { key: TabType; label: string }[]).map(tab => (
+                ].filter(tab => tab.key !== 'community') as { key: TabType; label: string }[]).map(tab => (
                     <TouchableOpacity
                         key={tab.key}
                         style={[styles.tabItem, activeTab === tab.key && styles.tabItemActive]}

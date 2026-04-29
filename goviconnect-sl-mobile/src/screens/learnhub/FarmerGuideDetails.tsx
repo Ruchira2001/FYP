@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, ScrollView, TouchableOpacity, Image, StyleSheet,
-    ActivityIndicator, Share, Alert, Dimensions
+    ActivityIndicator, Share, Alert, Dimensions, Linking
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,6 +11,17 @@ import { Header } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { learnhubAPI } from '../../services/api';
 import { saveLearnHubItem, getSavedLearnHub } from '../../services/storage';
+import cropsData from '../../data/crops.json';
+
+const getCropIcon = (name: string, cropId?: string): string => {
+    const lowerName = (name || '').toLowerCase();
+    const crop = (cropsData as any).crops.find((c: any) =>
+        c.name.toLowerCase() === lowerName ||
+        c.id === cropId ||
+        c.id === lowerName
+    );
+    return crop?.icon || '🌿';
+};
 
 type ParamList = {
     FarmerGuideDetails: { guide: any };
@@ -139,9 +150,12 @@ const FarmerGuideDetails: React.FC = () => {
             <Header 
                 title={guide.name || 'Guide Details'} 
                 showBack 
-                onBackPress={() => navigation.goBack()} 
-                rightIcon="share-social-outline"
-                onRightPress={handleShare}
+                onBackPress={() => navigation.goBack()}
+                rightContent={
+                    <TouchableOpacity onPress={handleShare} style={{ padding: 8 }}>
+                        <Ionicons name="share-social-outline" size={22} color={COLORS.neutral[700]} />
+                    </TouchableOpacity>
+                }
             />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -158,7 +172,7 @@ const FarmerGuideDetails: React.FC = () => {
                     </ScrollView>
                 ) : (
                     <View style={styles.imagePlaceholder}>
-                        <Text style={{ fontSize: 64 }}>🌿</Text>
+                        <Text style={{ fontSize: 64 }}>{getCropIcon(guide.name, guide.cropId)}</Text>
                     </View>
                 )}
                 
@@ -285,30 +299,106 @@ const FarmerGuideDetails: React.FC = () => {
                         </View>
                     ) : null}
 
-                    {/* Videos Section */}
-                    {((guide.videoUrls && guide.videoUrls.length > 0) || guide.videoLink) && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Videos & Tutorials</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-                                {guide.videoLink && (
-                                    <TouchableOpacity style={styles.videoCard} onPress={() => Alert.alert('Play Video', 'Opening video link...')}>
-                                        <View style={styles.videoThumb}>
-                                            <Ionicons name="play-circle" size={40} color="#fff" />
+                    {/* Combined Media Section: Images + Videos */}
+                    {(() => {
+                        const hasImages = guide.images && guide.images.length > 0;
+                        const hasVideos = (guide.videoUrls && guide.videoUrls.length > 0) ||
+                            (guide.videoLinks && guide.videoLinks.length > 0) ||
+                            guide.videoLink;
+
+                        if (!hasImages && !hasVideos) return null;
+
+                        const openVideo = (url: string) => {
+                            if (!url) return;
+                            Linking.canOpenURL(url)
+                                .then(supported => {
+                                    if (supported) Linking.openURL(url);
+                                    else Alert.alert('Cannot Open', 'Unable to open this video URL.');
+                                })
+                                .catch(() => Alert.alert('Error', 'Failed to open video.'));
+                        };
+
+                        return (
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Media</Text>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={{ gap: 12 }}
+                                >
+                                    {/* Image thumbnails */}
+                                    {hasImages && guide.images.map((img: string, idx: number) => (
+                                        <View key={`img-${idx}`} style={styles.mediaCard}>
+                                            <Image
+                                                source={{ uri: img }}
+                                                style={styles.mediaThumb}
+                                                resizeMode="cover"
+                                            />
+                                            <View style={styles.mediaLabelRow}>
+                                                <Ionicons name="image-outline" size={12} color={COLORS.neutral[500]} />
+                                                <Text style={styles.mediaLabel}>Photo {idx + 1}</Text>
+                                            </View>
                                         </View>
-                                        <Text style={styles.videoTitle}>Tutorial Link</Text>
-                                    </TouchableOpacity>
-                                )}
-                                {(guide.videoUrls || []).map((url: string, idx: number) => (
-                                    <TouchableOpacity key={idx} style={styles.videoCard} onPress={() => Alert.alert('Play Video', 'Loading video stream...')}>
-                                        <View style={[styles.videoThumb, { backgroundColor: COLORS.neutral[800] }]}>
-                                            <Ionicons name="play-circle" size={40} color="#fff" />
-                                        </View>
-                                        <Text style={styles.videoTitle}>Video {idx + 1}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        </View>
-                    )}
+                                    ))}
+
+                                    {/* Uploaded video files */}
+                                    {(guide.videoUrls || []).map((url: string, idx: number) => (
+                                        <TouchableOpacity
+                                            key={`vurl-${idx}`}
+                                            style={styles.mediaCard}
+                                            onPress={() => openVideo(url)}
+                                            activeOpacity={0.8}
+                                        >
+                                            <View style={[styles.mediaThumb, styles.videoMediaThumb]}>
+                                                <Ionicons name="play-circle" size={36} color="#fff" />
+                                            </View>
+                                            <View style={styles.mediaLabelRow}>
+                                                <Ionicons name="videocam-outline" size={12} color="#ef4444" />
+                                                <Text style={styles.mediaLabel}>Video {idx + 1}</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+
+                                    {/* YouTube / external video links */}
+                                    {(guide.videoLinks || []).map((url: string, idx: number) => (
+                                        <TouchableOpacity
+                                            key={`vlink-${idx}`}
+                                            style={styles.mediaCard}
+                                            onPress={() => openVideo(url)}
+                                            activeOpacity={0.8}
+                                        >
+                                            <View style={[styles.mediaThumb, styles.youtubeMediaThumb]}>
+                                                <Ionicons name="logo-youtube" size={32} color="#fff" />
+                                            </View>
+                                            <View style={styles.mediaLabelRow}>
+                                                <Ionicons name="link-outline" size={12} color="#ef4444" />
+                                                <Text style={styles.mediaLabel} numberOfLines={1}>
+                                                    {url.includes('youtube') ? 'YouTube' : `Link ${idx + 1}`}
+                                                </Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+
+                                    {/* Legacy single video link */}
+                                    {guide.videoLink && (
+                                        <TouchableOpacity
+                                            style={styles.mediaCard}
+                                            onPress={() => openVideo(guide.videoLink)}
+                                            activeOpacity={0.8}
+                                        >
+                                            <View style={[styles.mediaThumb, styles.youtubeMediaThumb]}>
+                                                <Ionicons name="play-circle" size={36} color="#fff" />
+                                            </View>
+                                            <View style={styles.mediaLabelRow}>
+                                                <Ionicons name="link-outline" size={12} color="#ef4444" />
+                                                <Text style={styles.mediaLabel}>Tutorial</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    )}
+                                </ScrollView>
+                            </View>
+                        );
+                    })()}
                 </View>
             </ScrollView>
         </View>
@@ -485,6 +575,38 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
         color: COLORS.neutral[700],
+    },
+    // Combined media section styles
+    mediaCard: {
+        width: 130,
+    },
+    mediaThumb: {
+        width: 130,
+        height: 90,
+        borderRadius: 12,
+        marginBottom: 6,
+        overflow: 'hidden',
+    },
+    videoMediaThumb: {
+        backgroundColor: COLORS.neutral[800],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    youtubeMediaThumb: {
+        backgroundColor: '#ef4444',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    mediaLabelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    mediaLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: COLORS.neutral[600],
+        flex: 1,
     },
 });
 

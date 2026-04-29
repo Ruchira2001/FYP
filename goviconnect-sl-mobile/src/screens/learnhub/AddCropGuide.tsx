@@ -566,67 +566,72 @@ const AddCropGuide: React.FC = () => {
 
                     <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Media</Text>
 
-                    {/* Image picker grid */}
-                    <Text style={styles.label}>Photos (up to 5)</Text>
-                    <View style={styles.imageGrid}>
-                        {localImages.map((uri, index) => (
-                            <View key={uri + index} style={styles.imageTile}>
-                                <Image source={{ uri }} style={styles.imageTileImg} />
-                                <TouchableOpacity
-                                    style={styles.imageTileRemove}
-                                    onPress={() => removeImage(index)}
-                                >
-                                    <Ionicons name="close-circle" size={20} color="#ef4444" />
+                    {/* Combined Photos & Videos horizontal scroll */}
+                    <View style={styles.mediaRowHeader}>
+                        <Text style={styles.label}>Photos & Videos</Text>
+                        <View style={styles.mediaRowActions}>
+                            {localImages.length < 5 && (
+                                <TouchableOpacity style={styles.mediaActionBtn} onPress={pickImages}>
+                                    <Ionicons name="image-outline" size={16} color={COLORS.primary[600]} />
+                                    <Text style={styles.mediaActionText}>Photo</Text>
                                 </TouchableOpacity>
-                            </View>
-                        ))}
-                        {localImages.length < 5 && (
-                            <TouchableOpacity style={styles.addImageTile} onPress={pickImages}>
-                                <Ionicons name="add" size={28} color={COLORS.primary[500]} />
-                                <Text style={styles.addImageText}>Add Photo</Text>
-                            </TouchableOpacity>
-                        )}
+                            )}
+                            {localVideos.length < 5 && (
+                                <TouchableOpacity style={[styles.mediaActionBtn, { backgroundColor: '#fef2f2' }]} onPress={pickVideos}>
+                                    <Ionicons name="videocam-outline" size={16} color="#ef4444" />
+                                    <Text style={[styles.mediaActionText, { color: '#ef4444' }]}>Video</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </View>
-                    <Text style={styles.mediaHint}>
-                        {localImages.length}/5 photos selected
-                    </Text>
 
-                    {/* Video files from device */}
-                    <Text style={styles.label}>Videos from Device (up to 5)</Text>
-                    <View style={styles.imageGrid}>
-                        {localVideos.map((uri, index) => (
-                            <View key={uri + index} style={styles.imageTile}>
-                                <View style={styles.videoTileThumb}>
-                                    <Ionicons name="videocam" size={28} color="#ffffff" />
-                                    {uri.startsWith('http') ? (
-                                        <Text style={styles.videoTileLabel} numberOfLines={1}>Uploaded</Text>
-                                    ) : (
-                                        <Text style={styles.videoTileLabel} numberOfLines={1}>
-                                            {uri.split('/').pop()?.substring(0, 12) || 'Video'}
-                                        </Text>
-                                    )}
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mediaSideScroll}>
+                        {/* Image thumbnails */}
+                        {localImages.map((uri, index) => (
+                            <View key={`img-${uri}-${index}`} style={styles.mediaTile}>
+                                <Image source={{ uri }} style={styles.mediaTileImg} />
+                                <View style={styles.mediaTileTypeBadge}>
+                                    <Ionicons name="image" size={10} color="#fff" />
                                 </View>
-                                <TouchableOpacity
-                                    style={styles.imageTileRemove}
-                                    onPress={() => removeLocalVideo(index)}
-                                >
+                                <TouchableOpacity style={styles.mediaTileRemove} onPress={() => removeImage(index)}>
                                     <Ionicons name="close-circle" size={20} color="#ef4444" />
                                 </TouchableOpacity>
                             </View>
                         ))}
-                        {localVideos.length < 5 && (
-                            <TouchableOpacity style={styles.addVideoTile} onPress={pickVideos}>
-                                <Ionicons name="add-circle-outline" size={28} color={COLORS.primary[500]} />
-                                <Text style={styles.addImageText}>Add Video</Text>
-                            </TouchableOpacity>
+
+                        {/* Video thumbnails */}
+                        {localVideos.map((uri, index) => (
+                            <View key={`vid-${uri}-${index}`} style={styles.mediaTile}>
+                                <View style={styles.mediaTileVideoThumb}>
+                                    <Ionicons name="videocam" size={28} color="#ffffff" />
+                                    <Text style={styles.mediaTileVideoLabel} numberOfLines={1}>
+                                        {uri.startsWith('http') ? 'Uploaded' : (uri.split('/').pop()?.substring(0, 10) || 'Video')}
+                                    </Text>
+                                </View>
+                                <View style={[styles.mediaTileTypeBadge, { backgroundColor: '#ef4444' }]}>
+                                    <Ionicons name="videocam" size={10} color="#fff" />
+                                </View>
+                                <TouchableOpacity style={styles.mediaTileRemove} onPress={() => removeLocalVideo(index)}>
+                                    <Ionicons name="close-circle" size={20} color="#ef4444" />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+
+                        {/* Empty state placeholder */}
+                        {localImages.length === 0 && localVideos.length === 0 && (
+                            <View style={styles.mediaEmptyTile}>
+                                <Ionicons name="images-outline" size={28} color={COLORS.neutral[400]} />
+                                <Text style={styles.mediaEmptyText}>No media yet</Text>
+                            </View>
                         )}
-                    </View>
+                    </ScrollView>
+
                     <Text style={styles.mediaHint}>
-                        {localVideos.length}/5 videos selected
+                        {localImages.length}/5 photos · {localVideos.length}/5 videos
                     </Text>
 
                     {/* Video links */}
-                    <Text style={styles.label}>Video Links (YouTube / URLs, up to 5)</Text>
+                    <Text style={[styles.label, { marginTop: 12 }]}>Video Links (YouTube / URLs, up to 5)</Text>
                     {(formData.videoLinks || []).map((link, index) => (
                         <View key={index} style={styles.videoLinkRow}>
                             <Ionicons name="logo-youtube" size={18} color="#ef4444" style={{ marginRight: 8 }} />
@@ -1253,6 +1258,94 @@ const styles = StyleSheet.create({
         color: COLORS.primary[600],
         fontStyle: 'italic',
         marginTop: 2,
+    },
+    // Combined media row
+    mediaRowHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
+    mediaRowActions: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    mediaActionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: COLORS.primary[50],
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 20,
+    },
+    mediaActionText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.primary[600],
+    },
+    mediaSideScroll: {
+        flexDirection: 'row',
+        paddingVertical: 6,
+        gap: 10,
+    },
+    mediaTile: {
+        width: 96,
+        height: 96,
+        borderRadius: 12,
+        overflow: 'visible',
+        position: 'relative',
+    },
+    mediaTileImg: {
+        width: 96,
+        height: 96,
+        borderRadius: 12,
+        backgroundColor: COLORS.neutral[200],
+    },
+    mediaTileVideoThumb: {
+        width: 96,
+        height: 96,
+        borderRadius: 12,
+        backgroundColor: '#1f2937',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 6,
+    },
+    mediaTileVideoLabel: {
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.75)',
+        marginTop: 4,
+        textAlign: 'center',
+    },
+    mediaTileTypeBadge: {
+        position: 'absolute',
+        bottom: 6,
+        left: 6,
+        backgroundColor: COLORS.primary[600],
+        borderRadius: 6,
+        padding: 3,
+    },
+    mediaTileRemove: {
+        position: 'absolute',
+        top: -6,
+        right: -6,
+        backgroundColor: '#ffffff',
+        borderRadius: 10,
+    },
+    mediaEmptyTile: {
+        width: 160,
+        height: 96,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: COLORS.neutral[200],
+        borderStyle: 'dashed',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+    mediaEmptyText: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
     },
 });
 
