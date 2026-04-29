@@ -29,11 +29,11 @@ MODEL_PATH = os.path.join(MODEL_DIR, 'plant_disease_model.keras')
 LABELS_PATH = os.path.join(os.path.dirname(__file__), 'labels.json')
 
 IMG_SIZE = 224
-BATCH_SIZE = 8
-EPOCHS = 1
+BATCH_SIZE = 32
+EPOCHS = 20
 LEARNING_RATE = 0.001
 FINE_TUNE_LEARNING_RATE = 0.0001
-FINE_TUNE_EPOCHS = 1
+FINE_TUNE_EPOCHS = 10
 
 
 def create_data_generators():
