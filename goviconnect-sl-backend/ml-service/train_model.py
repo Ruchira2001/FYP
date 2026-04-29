@@ -21,19 +21,19 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 
 # --------- Configuration ---------
-DATASET_DIR = 'dataset'
+DATASET_DIR = os.path.join(os.path.dirname(__file__), 'dataset')
 TRAIN_DIR = os.path.join(DATASET_DIR, 'train')
 VAL_DIR = os.path.join(DATASET_DIR, 'val')
-MODEL_DIR = 'model'
+MODEL_DIR = os.path.join(os.path.dirname(__file__), 'model')
 MODEL_PATH = os.path.join(MODEL_DIR, 'plant_disease_model.h5')
-LABELS_PATH = 'labels.json'
+LABELS_PATH = os.path.join(os.path.dirname(__file__), 'labels.json')
 
 IMG_SIZE = 224
-BATCH_SIZE = 32
-EPOCHS = 30
+BATCH_SIZE = 8
+EPOCHS = 1
 LEARNING_RATE = 0.001
 FINE_TUNE_LEARNING_RATE = 0.0001
-FINE_TUNE_EPOCHS = 10
+FINE_TUNE_EPOCHS = 1
 
 
 def create_data_generators():

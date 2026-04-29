@@ -1,29 +1,9 @@
 {
   "classes": [
-    "Tomato___Bacterial_spot",
-    "Tomato___Early_blight",
-    "Tomato___Late_blight",
-    "Tomato___Leaf_Mold",
-    "Tomato___Septoria_leaf_spot",
-    "Tomato___Spider_mites",
-    "Tomato___Target_Spot",
-    "Tomato___Yellow_Leaf_Curl_Virus",
-    "Tomato___mosaic_virus",
-    "Tomato___healthy",
-    "Pepper___Bacterial_spot",
-    "Pepper___healthy",
-    "Potato___Early_blight",
-    "Potato___Late_blight",
-    "Potato___healthy",
     "Rice___Brown_Spot",
     "Rice___Leaf_Blast",
-    "Rice___Neck_Blast",
-    "Rice___healthy",
-    "Tea___Blister_Blight",
-    "Tea___Grey_Blight",
-    "Tea___healthy",
-    "Chili___Anthracnose",
-    "Chili___Leaf_Curl",
-    "Chili___healthy"
+    "Tomato___Bacterial_spot",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight"
   ]
 }
