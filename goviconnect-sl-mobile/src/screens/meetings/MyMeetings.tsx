@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, EmptyState, Chip } from '../../components';
+import { Header, EmptyState, Chip, AppNotify } from '../../components';
 import { COLORS, MEETING_STATUSES } from '../../utils/constants';
 import { meetingAPI, chatAPI } from '../../services/api';
 import { formatDateTime } from '../../utils/validators';
@@ -90,14 +90,14 @@ const MyMeetings: React.FC = () => {
                     m.id === item.id ? { ...m, reminderSet: updated.reminderSet } : m
                 )
             );
-            Alert.alert(
-                updated.reminderSet ? '🔔 Reminder Set' : '🔕 Reminder Removed',
+            AppNotify.toast(
                 updated.reminderSet
                     ? 'You will be reminded before this meeting.'
-                    : 'Reminder has been removed.'
+                    : 'Reminder has been removed.',
+                updated.reminderSet ? 'success' : 'info'
             );
         } catch (e: any) {
-            Alert.alert('Error', e?.response?.data?.message || 'Could not update reminder.');
+            AppNotify.toast(e?.response?.data?.message || 'Could not update reminder.', 'error');
         } finally {
             setTogglingReminder(null);
         }
@@ -106,7 +106,7 @@ const MyMeetings: React.FC = () => {
     // Open or create chat with the meeting expert
     const handleChatWithExpert = async (item: MeetingItem) => {
         if (!item.expertId) {
-            Alert.alert('Error', 'Expert information not available.');
+            AppNotify.toast('Expert information not available.', 'warning');
             return;
         }
         setOpeningChat(item.id);
@@ -116,7 +116,7 @@ const MyMeetings: React.FC = () => {
             const chatId = chat._id || chat.id;
             navigation.navigate('ChatDetail', { chatId, expertName: item.expertName });
         } catch (e: any) {
-            Alert.alert('Error', e?.response?.data?.message || 'Could not open chat.');
+            AppNotify.toast(e?.response?.data?.message || 'Could not open chat.', 'error');
         } finally {
             setOpeningChat(null);
         }
@@ -220,7 +220,7 @@ const MyMeetings: React.FC = () => {
                             style={[styles.actionBtn, styles.joinBtn]}
                             onPress={() =>
                                 Linking.openURL(item.meetingLink!).catch(() =>
-                                    Alert.alert('Error', 'Cannot open meeting link.')
+                                    AppNotify.toast('Cannot open meeting link.', 'error')
                                 )
                             }
                         >

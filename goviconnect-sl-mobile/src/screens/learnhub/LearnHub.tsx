@@ -1,14 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import {
     View, Text, ScrollView, TextInput, FlatList, TouchableOpacity, Modal,
-    StyleSheet, ActivityIndicator, Image, Alert
+    StyleSheet, ActivityIndicator, Image
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, Chip, CropCard, EmptyState } from '../../components';
+import { Header, Chip, CropCard, EmptyState, AppNotify } from '../../components';
 import { COLORS, CROP_CATEGORIES } from '../../utils/constants';
 import { learnhubAPI, feedAPI } from '../../services/api';
 import { getSavedLearnHub } from '../../services/storage';
@@ -230,29 +230,22 @@ const LearnHub: React.FC = () => {
     const renderCommunityCard = ({ item }: { item: any }) => renderFarmerGuideCard(item);
 
     const handleDeleteMyGuide = (id: string) => {
-        Alert.alert(
+        AppNotify.confirm(
             t('common.delete', 'Delete Guide'),
             'Are you sure you want to request deletion for this guide? An admin must approve the request.',
-            [
-                { text: t('common.cancel', 'Cancel'), style: 'cancel' },
-                {
-                    text: t('common.delete', 'Request Delete'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const res = await learnhubAPI.deleteUserGuide(id);
-                            // It returns the updated guide with 'delete_requested' status
-                            setMyGuides(prev => prev.map(item =>
-                                (item.id || item._id) === id ? { ...item, status: 'delete_requested' } : item
-                            ));
-                            Alert.alert('Requested', res.data.message || 'Delete request sent to admin.');
-                        } catch (e) {
-                            console.error('Delete error', e);
-                            Alert.alert('Error', 'Failed to request deletion');
-                        }
-                    }
+            async () => {
+                try {
+                    const res = await learnhubAPI.deleteUserGuide(id);
+                    setMyGuides(prev => prev.map(item =>
+                        (item.id || item._id) === id ? { ...item, status: 'delete_requested' } : item
+                    ));
+                    AppNotify.toast(res.data.message || 'Delete request sent to admin.', 'success');
+                } catch (e) {
+                    console.error('Delete error', e);
+                    AppNotify.toast('Failed to request deletion', 'error');
                 }
-            ]
+            },
+            { confirmLabel: 'Request Delete', destructive: true }
         );
     };
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, ScrollView, TouchableOpacity, StyleSheet,
-    ActivityIndicator, Alert,
+    ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { Header } from '../../components';
+import { Header, AppNotify } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { expertsAPI, chatAPI, meetingAPI } from '../../services/api';
 import { formatDateTime } from '../../utils/validators';
@@ -38,7 +38,7 @@ const ExpertProfileView: React.FC = () => {
             const res = await expertsAPI.getExpertById(expertId);
             setExpert(res.data.data || res.data);
         } catch (e) {
-            Alert.alert('Error', 'Failed to load expert profile.');
+            AppNotify.toast('Failed to load expert profile.', 'error');
         } finally {
             setLoading(false);
         }
@@ -74,7 +74,7 @@ const ExpertProfileView: React.FC = () => {
                 expertName: expert?.name || expertName || '',
             });
         } catch (e: any) {
-            Alert.alert('Error', e?.response?.data?.message || 'Could not open chat.');
+            AppNotify.toast(e?.response?.data?.message || 'Could not open chat.', 'error');
         } finally {
             setOpeningChat(false);
         }

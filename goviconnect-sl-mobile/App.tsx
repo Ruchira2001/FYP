@@ -10,6 +10,7 @@ import { AppProvider } from './src/context';
 import { ExpertProvider } from './src/context/ExpertContext';
 import { ShopProvider } from './src/context/ShopContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import { AppNotifyHost } from './src/components';
 
 // Ignore specific warnings (optional)
 LogBox.ignoreLogs([
@@ -44,6 +45,7 @@ export default function App() {
                                 />
                                 <NavigationContainer>
                                     <AppNavigator />
+                                    <AppNotifyHost />
                                 </NavigationContainer>
                             </ShopProvider>
                         </ExpertProvider>

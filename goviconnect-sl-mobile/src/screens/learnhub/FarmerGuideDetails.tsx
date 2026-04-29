@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, ScrollView, TouchableOpacity, Image, StyleSheet,
-    ActivityIndicator, Share, Alert, Dimensions, Linking
+    ActivityIndicator, Share, Dimensions, Linking
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header } from '../../components';
+import { Header, AppNotify } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { learnhubAPI } from '../../services/api';
 import { saveLearnHubItem, getSavedLearnHub } from '../../services/storage';
@@ -109,13 +109,13 @@ const FarmerGuideDetails: React.FC = () => {
 
     const handleDownload = async () => {
         if (isDownloaded) {
-            Alert.alert('Info', 'This guide is already available offline');
+            AppNotify.toast('This guide is already available offline', 'info');
             return;
         }
         try {
             const id = guide._id || guide.id;
             if (!id) {
-                Alert.alert('Error', 'Cannot download: Guide ID is missing');
+                AppNotify.toast('Cannot download: Guide ID is missing', 'error');
                 return;
             }
             await saveLearnHubItem({
@@ -125,13 +125,13 @@ const FarmerGuideDetails: React.FC = () => {
                 category: guide.category,
                 savedAt: new Date().toISOString(),
                 isDownloaded: true,
-                data: guide // Store full object
+                data: guide
             });
             setIsDownloaded(true);
-            Alert.alert('Success', 'Guide downloaded for offline access');
+            AppNotify.toast('Guide downloaded for offline access', 'success');
         } catch (e) {
             console.error('Download error:', e);
-            Alert.alert('Error', 'Failed to download guide');
+            AppNotify.toast('Failed to download guide', 'error');
         }
     };
 
@@ -313,9 +313,9 @@ const FarmerGuideDetails: React.FC = () => {
                             Linking.canOpenURL(url)
                                 .then(supported => {
                                     if (supported) Linking.openURL(url);
-                                    else Alert.alert('Cannot Open', 'Unable to open this video URL.');
+                                    else AppNotify.toast('Unable to open this video URL.', 'warning');
                                 })
-                                .catch(() => Alert.alert('Error', 'Failed to open video.'));
+                                .catch(() => AppNotify.toast('Failed to open video.', 'error'));
                         };
 
                         return (

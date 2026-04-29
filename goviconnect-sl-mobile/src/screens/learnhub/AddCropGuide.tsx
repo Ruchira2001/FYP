@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, FlatList, Image, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, FlatList, Image, ActivityIndicator, Modal } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { SpeechAPI, useSpeechEvent, isSpeechAvailable } from '../../utils/speechRecognition';
-import { Header, PrimaryButton, InputField, EmptyState, Chip } from '../../components';
+import { Header, PrimaryButton, InputField, EmptyState, Chip, AppNotify } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { learnhubAPI, feedAPI } from '../../services/api';
 
@@ -86,9 +86,9 @@ const AddCropGuide: React.FC = () => {
 
     const startVoice = async (field: keyof GuideForm) => {
         if (!isSpeechAvailable()) {
-            Alert.alert(
-                'Voice Typing Unavailable',
-                'Voice typing requires a development build. You can still type manually or use your keyboard\'s built-in microphone button.',
+            AppNotify.toast(
+                'Voice typing requires a development build. You can still type manually.',
+                'info'
             );
             return;
         }
@@ -101,7 +101,7 @@ const AddCropGuide: React.FC = () => {
         try {
             const { granted } = await SpeechAPI.requestPermissionsAsync();
             if (!granted) {
-                Alert.alert('Permission Required', 'Microphone access is needed for voice typing.');
+                AppNotify.toast('Microphone access is needed for voice typing.', 'warning');
                 return;
             }
             setVoiceField(field);
@@ -110,7 +110,7 @@ const AddCropGuide: React.FC = () => {
         } catch (e) {
             setVoiceListening(false);
             setVoiceField(null);
-            Alert.alert('Voice Error', 'Could not start voice recognition. Please try again.');
+            AppNotify.toast('Could not start voice recognition. Please try again.', 'error');
         }
     };
 
@@ -217,7 +217,7 @@ const AddCropGuide: React.FC = () => {
     const pickImages = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('Permission needed', 'Please allow access to your photo library to add images.');
+            AppNotify.toast('Please allow access to your photo library to add images.', 'warning');
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -239,12 +239,12 @@ const AddCropGuide: React.FC = () => {
     const pickVideos = async () => {
         const totalVideos = localVideos.length;
         if (totalVideos >= 5) {
-            Alert.alert('Limit reached', 'You can upload up to 5 videos.');
+            AppNotify.toast('You can upload up to 5 videos.', 'warning');
             return;
         }
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('Permission needed', 'Please allow access to your photo library to add videos.');
+            AppNotify.toast('Please allow access to your photo library to add videos.', 'warning');
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -267,11 +267,11 @@ const AddCropGuide: React.FC = () => {
         const url = videoLinkInput.trim();
         if (!url) return;
         if (!(url.startsWith('http://') || url.startsWith('https://'))) {
-            Alert.alert('Invalid URL', 'Please enter a valid URL starting with http:// or https://');
+            AppNotify.toast('Please enter a valid URL starting with http:// or https://', 'error');
             return;
         }
         if ((formData.videoLinks || []).length >= 5) {
-            Alert.alert('Limit reached', 'You can add up to 5 video links.');
+            AppNotify.toast('You can add up to 5 video links.', 'warning');
             return;
         }
         setFormData(prev => ({ ...prev, videoLinks: [...(prev.videoLinks || []), url] }));
@@ -291,7 +291,7 @@ const AddCropGuide: React.FC = () => {
 
     const handleSubmit = async () => {
         if (!formData.name?.trim() || !formData.description?.trim()) {
-            Alert.alert(t('common.error'), 'Please fill in at least the Crop Name and Description.');
+            AppNotify.toast('Please fill in at least the Crop Name and Description.', 'error');
             return;
         }
 
@@ -316,7 +316,7 @@ const AddCropGuide: React.FC = () => {
                     uploadedImageUrls = [...uploadedImageUrls, ...(uploadRes.data.urls || [])];
                 } catch (uploadError: any) {
                     const uploadMessage = uploadError?.response?.data?.message || 'Image upload failed. Saving guide without new images.';
-                    Alert.alert('Upload Warning', uploadMessage);
+                    AppNotify.toast(uploadMessage, 'warning');
                 } finally {
                     setUploadingImages(false);
                 }
@@ -341,7 +341,7 @@ const AddCropGuide: React.FC = () => {
                     uploadedVideoUrls = [...uploadedVideoUrls, ...(vidRes.data.urls || [])];
                 } catch (uploadError: any) {
                     const uploadMessage = uploadError?.response?.data?.message || 'Video upload failed. Saving guide without new videos.';
-                    Alert.alert('Upload Warning', uploadMessage);
+                    AppNotify.toast(uploadMessage, 'warning');
                 } finally {
                     setUploadingVideos(false);
                 }
@@ -366,17 +366,17 @@ const AddCropGuide: React.FC = () => {
 
             if (editingGuideId) {
                 await learnhubAPI.updateUserGuide(editingGuideId, payload);
-                Alert.alert('✅ Updated!', 'Your guide has been updated successfully.');
+                AppNotify.toast('Your guide has been updated successfully.', 'success');
                 navigation.goBack();
             } else {
                 await learnhubAPI.submitUserGuide(payload);
-                Alert.alert('✅ Guide Submitted!', 'Your crop guide has been submitted and is pending review. You can see it in My Guides.');
+                AppNotify.toast('Guide submitted! It is pending review — check My Guides.', 'success');
                 navigation.goBack();
             }
         } catch (error: any) {
             console.error('Failed to submit guide:', error);
             const apiMessage = error?.response?.data?.message;
-            Alert.alert(t('common.error'), apiMessage || 'Failed to submit guide. Please try again.');
+            AppNotify.toast(apiMessage || 'Failed to submit guide. Please try again.', 'error');
         } finally {
             setLoading(false);
             setUploadingImages(false);

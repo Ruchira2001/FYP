@@ -1,4 +1,5 @@
 // Export all components
+export { AppNotify, AppNotifyHost } from './AppNotify';
 export { default as Header } from './Header';
 export { default as PrimaryButton } from './PrimaryButton';
 export { default as ActionCard } from './ActionCard';

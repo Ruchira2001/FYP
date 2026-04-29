@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, PrimaryButton, InputField } from '../../components';
+import { Header, PrimaryButton, InputField, AppNotify } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { meetingAPI } from '../../services/api';
 import { queueService } from '../../services/queueService';
@@ -34,7 +34,7 @@ const BookMeetingFromChat: React.FC = () => {
 
     const handleBookMeeting = async () => {
         if (!topic.trim()) {
-            Alert.alert('Error', 'Please enter a topic for the meeting');
+            AppNotify.toast('Please enter a topic for the meeting', 'error');
             return;
         }
 
@@ -52,7 +52,7 @@ const BookMeetingFromChat: React.FC = () => {
             setBooked(true);
         } catch (error) {
             console.error('Booking error:', error);
-            Alert.alert('Error', 'Failed to book meeting. Please try again.');
+            AppNotify.toast('Failed to book meeting. Please try again.', 'error');
         } finally {
             setLoading(false);
         }

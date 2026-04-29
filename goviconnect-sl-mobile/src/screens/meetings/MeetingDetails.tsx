@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Alert, StyleSheet, Linking, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Linking, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, PrimaryButton } from '../../components';
+import { Header, PrimaryButton, AppNotify } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { formatDate, formatTime } from '../../utils/validators';
 import { meetingAPI, chatAPI } from '../../services/api';
@@ -94,21 +94,15 @@ const MeetingDetails: React.FC = () => {
                 setIsRegistered(true);
                 setReminderSet(true);
                 setMeeting((prev: any) => ({ ...prev, attendees: prev.attendees + 1 }));
-                Alert.alert(
-                    '🔔 Reminder Set',
-                    'You are registered for this session. It will appear in My Meetings.'
-                );
+                AppNotify.toast('You are registered for this session. It will appear in My Meetings.', 'success');
             } else {
                 // Already registered — just toggle reminder indicator locally
                 const newVal = !reminderSet;
                 setReminderSet(newVal);
-                Alert.alert(
-                    newVal ? '🔔 Reminder On' : '🔕 Reminder Off',
-                    newVal ? 'You will be reminded before the session.' : 'Reminder removed.'
-                );
+                AppNotify.toast(newVal ? 'You will be reminded before the session.' : 'Reminder removed.', newVal ? 'success' : 'info');
             }
         } catch (e: any) {
-            Alert.alert('Error', e?.response?.data?.message || 'Could not set reminder.');
+            AppNotify.toast(e?.response?.data?.message || 'Could not set reminder.', 'error');
         } finally {
             setTogglingReminder(false);
         }
@@ -116,17 +110,17 @@ const MeetingDetails: React.FC = () => {
 
     const handleJoinMeeting = () => {
         if (!meeting.meetingLink) {
-            Alert.alert('Error', 'No meeting link available yet.');
+            AppNotify.toast('No meeting link available yet.', 'warning');
             return;
         }
         Linking.openURL(meeting.meetingLink).catch(() =>
-            Alert.alert('Error', 'Cannot open meeting link.')
+            AppNotify.toast('Cannot open meeting link.', 'error')
         );
     };
 
     const handleChatWithExpert = async () => {
         if (!meeting.expertId) {
-            Alert.alert('Error', 'Expert information not available.');
+            AppNotify.toast('Expert information not available.', 'warning');
             return;
         }
         setOpeningChat(true);
@@ -138,7 +132,7 @@ const MeetingDetails: React.FC = () => {
                 expertName: meeting.expertName,
             });
         } catch (e: any) {
-            Alert.alert('Error', e?.response?.data?.message || 'Could not open chat.');
+            AppNotify.toast(e?.response?.data?.message || 'Could not open chat.', 'error');
         } finally {
             setOpeningChat(false);
         }

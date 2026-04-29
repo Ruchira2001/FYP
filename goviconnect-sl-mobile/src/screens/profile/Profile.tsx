@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header } from '../../components';
+import { Header, AppNotify } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { useApp } from '../../context';
 import cropsData from '../../data/crops.json';
@@ -31,23 +31,14 @@ const Profile: React.FC = () => {
     };
 
     const handleLogout = () => {
-        Alert.alert(
+        AppNotify.confirm(
             t('profile.logout'),
             t('profile.logout_confirm'),
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('profile.logout'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        await logout();
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'Auth' }],
-                        });
-                    }
-                },
-            ]
+            async () => {
+                await logout();
+                navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
+            },
+            { confirmLabel: t('profile.logout'), destructive: true }
         );
     };
 
