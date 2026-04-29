@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { COLORS } from '../utils/constants';
+import { expertsAPI } from '../services/api';
 
 // Import screens
 import { Home } from '../screens/home';
@@ -88,6 +89,17 @@ const TabBadge: React.FC<{ count: number }> = ({ count }) => {
 // Main Tab Navigator
 const TabNavigator: React.FC = () => {
     const { t } = useTranslation();
+    const [expertCount, setExpertCount] = useState(0);
+
+    useEffect(() => {
+        expertsAPI.listExperts()
+            .then(res => {
+                const data = Array.isArray(res.data.data) ? res.data.data : [];
+                const activeCount = data.filter((e: any) => e.isActive !== false).length;
+                setExpertCount(activeCount);
+            })
+            .catch(() => {});
+    }, []);
 
     return (
         <Tab.Navigator
@@ -125,7 +137,7 @@ const TabNavigator: React.FC = () => {
                             {focused && <View style={styles.activeIndicator} />}
                             <Ionicons name={iconName} size={22} color={color} />
                             {route.name === 'AITab' && <TabBadge count={3} />}
-                            {route.name === 'MeetingsTab' && <TabBadge count={1} />}
+                            {route.name === 'MeetingsTab' && <TabBadge count={expertCount} />}
                         </View>
                     );
                 },

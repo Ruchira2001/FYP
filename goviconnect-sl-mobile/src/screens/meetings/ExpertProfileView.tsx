@@ -8,7 +8,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Header } from '../../components';
 import { COLORS } from '../../utils/constants';
-import { expertsAPI, chatAPI } from '../../services/api';
+import { expertsAPI, chatAPI, meetingAPI } from '../../services/api';
+import { formatDateTime } from '../../utils/validators';
+import { useTranslation } from 'react-i18next';
 
 type ParamList = {
     ExpertProfileView: { expertId: string; expertName?: string };
@@ -19,12 +21,16 @@ const ExpertProfileView: React.FC = () => {
     const route = useRoute<RouteProp<ParamList, 'ExpertProfileView'>>();
     const { expertId, expertName } = route.params;
 
+    const { i18n } = useTranslation();
     const [expert, setExpert] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [openingChat, setOpeningChat] = useState(false);
+    const [sessions, setSessions] = useState<any[]>([]);
+    const [loadingSessions, setLoadingSessions] = useState(false);
 
     useEffect(() => {
         loadExpert();
+        loadExpertSessions();
     }, []);
 
     const loadExpert = async () => {
@@ -35,6 +41,24 @@ const ExpertProfileView: React.FC = () => {
             Alert.alert('Error', 'Failed to load expert profile.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadExpertSessions = async () => {
+        setLoadingSessions(true);
+        try {
+            const res = await meetingAPI.getSessions();
+            const all = Array.isArray(res.data.data) ? res.data.data : [];
+            // Filter sessions belonging to this expert
+            const mine = all.filter((s: any) => {
+                const sid = s.expertId?._id || s.expertId?.id || s.expertId;
+                return sid === expertId;
+            });
+            setSessions(mine);
+        } catch (e) {
+            console.error('Failed to load expert sessions:', e);
+        } finally {
+            setLoadingSessions(false);
         }
     };
 
@@ -208,6 +232,79 @@ const ExpertProfileView: React.FC = () => {
                     </View>
                 ) : null}
 
+                {/* Sessions held by this expert */}
+                <View style={styles.section}>
+                    <View style={styles.sectionTitleRow}>
+                        <Ionicons name="videocam-outline" size={18} color={COLORS.primary[500]} />
+                        <Text style={styles.sectionTitle}>Sessions</Text>
+                        {!loadingSessions && (
+                            <View style={styles.sessionCountBadge}>
+                                <Text style={styles.sessionCountText}>{sessions.length}</Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {loadingSessions ? (
+                        <ActivityIndicator size="small" color={COLORS.primary[400]} style={{ marginVertical: 12 }} />
+                    ) : sessions.length === 0 ? (
+                        <View style={styles.noSessionsRow}>
+                            <Ionicons name="calendar-outline" size={22} color={COLORS.neutral[300]} />
+                            <Text style={styles.noSessionsText}>No upcoming sessions</Text>
+                        </View>
+                    ) : (
+                        sessions.map((s: any) => {
+                            const sid = s._id || s.id;
+                            const title = i18n.language === 'si'
+                                ? (s.topicSi || s.topic || '')
+                                : (s.topic || s.title || '');
+                            const isPast = new Date(s.dateTime) < new Date();
+                            return (
+                                <TouchableOpacity
+                                    key={sid}
+                                    style={styles.sessionCard}
+                                    activeOpacity={0.85}
+                                    onPress={() => navigation.navigate('MeetingDetails', { meetingId: sid })}
+                                >
+                                    <View style={[styles.sessionIconBox, isPast && styles.sessionIconBoxPast]}>
+                                        <Ionicons
+                                            name={isPast ? 'checkmark-circle' : 'videocam'}
+                                            size={20}
+                                            color={isPast ? COLORS.neutral[400] : COLORS.primary[600]}
+                                        />
+                                    </View>
+                                    <View style={styles.sessionInfo}>
+                                        <Text style={styles.sessionTitle} numberOfLines={2}>{title}</Text>
+                                        <View style={styles.sessionMetaRow}>
+                                            <Ionicons name="calendar-outline" size={12} color={COLORS.neutral[400]} />
+                                            <Text style={styles.sessionMetaText}>
+                                                {formatDateTime(s.dateTime, i18n.language)}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.sessionMetaRow}>
+                                            <Ionicons name="time-outline" size={12} color={COLORS.neutral[400]} />
+                                            <Text style={styles.sessionMetaText}>{s.duration || 60} min</Text>
+                                            {(s.registeredUsers?.length !== undefined) && (
+                                                <>
+                                                    <Ionicons name="people-outline" size={12} color={COLORS.neutral[400]} style={{ marginLeft: 10 }} />
+                                                    <Text style={styles.sessionMetaText}>
+                                                        {s.registeredUsers?.length || 0} registered
+                                                    </Text>
+                                                </>
+                                            )}
+                                        </View>
+                                        {isPast && (
+                                            <View style={styles.pastBadge}>
+                                                <Text style={styles.pastBadgeText}>Completed</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={16} color={COLORS.neutral[300]} />
+                                </TouchableOpacity>
+                            );
+                        })
+                    )}
+                </View>
+
                 <View style={{ height: 100 }} />
             </ScrollView>
 
@@ -361,6 +458,54 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     bulletText: { flex: 1, fontSize: 14, color: COLORS.neutral[700], lineHeight: 20 },
+
+    /* Sessions section */
+    sessionCountBadge: {
+        marginLeft: 'auto',
+        backgroundColor: COLORS.primary[100],
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+    },
+    sessionCountText: { fontSize: 12, fontWeight: '700', color: COLORS.primary[700] },
+    noSessionsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 14,
+        justifyContent: 'center',
+    },
+    noSessionsText: { fontSize: 14, color: COLORS.neutral[400] },
+    sessionCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+        gap: 12,
+    },
+    sessionIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        backgroundColor: COLORS.primary[50],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    sessionIconBoxPast: { backgroundColor: COLORS.neutral[100] },
+    sessionInfo: { flex: 1 },
+    sessionTitle: { fontSize: 13, fontWeight: '600', color: COLORS.neutral[800], marginBottom: 4 },
+    sessionMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
+    sessionMetaText: { fontSize: 11, color: COLORS.neutral[400] },
+    pastBadge: {
+        alignSelf: 'flex-start',
+        backgroundColor: COLORS.neutral[100],
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 8,
+        marginTop: 4,
+    },
+    pastBadgeText: { fontSize: 10, fontWeight: '600', color: COLORS.neutral[500] },
 
     chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     specChip: {
