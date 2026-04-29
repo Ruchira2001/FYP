@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput, Alert, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, EmptyState, Chip, PrimaryButton } from '../../../components';
+import { Header, EmptyState, Chip, PrimaryButton, AppNotify } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { formatDate, formatTime, getRelativeTime } from '../../../utils/validators';
 import { expertDashboardAPI, chatAPI } from '../../../services/api';
@@ -139,7 +139,7 @@ const ExpertMeetings: React.FC = () => {
 
     const handleChatWithFarmer = async (meeting: any) => {
         if (!meeting.farmerId) {
-            Alert.alert('Error', 'Farmer information not available.');
+            AppNotify.toast('Farmer information not available.', 'error');
             return;
         }
         setOpeningChat(meeting.id);
@@ -152,7 +152,7 @@ const ExpertMeetings: React.FC = () => {
                 farmerName: meeting.farmerName,
             });
         } catch (e: any) {
-            Alert.alert('Error', e?.response?.data?.message || 'Could not open chat.');
+            AppNotify.toast(e?.response?.data?.message || 'Could not open chat.', 'error');
         } finally {
             setOpeningChat(null);
         }
@@ -160,11 +160,11 @@ const ExpertMeetings: React.FC = () => {
 
     const handleCreateMeeting = async () => {
         if (!newMeeting.title.trim()) {
-            Alert.alert('Error', 'Please enter a meeting title.');
+            AppNotify.toast('Please enter a meeting title.', 'error');
             return;
         }
         if (newMeeting.dateTime <= new Date()) {
-            Alert.alert('Error', 'Please select a future date and time.');
+            AppNotify.toast('Please select a future date and time.', 'error');
             return;
         }
         try {
@@ -177,14 +177,14 @@ const ExpertMeetings: React.FC = () => {
                 dateTime: newMeeting.dateTime.toISOString(),
                 meetingLink: newMeeting.zoomLink.trim() || undefined,
             });
-            Alert.alert('Success', 'Meeting session created successfully!');
+            AppNotify.toast('Meeting session created successfully!', 'success');
             setShowCreateModal(false);
             setNewMeeting({ title: '', description: '', type: 'group', duration: '60', zoomLink: '', dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000) });
             loadMeetings();
         } catch (e: any) {
             console.error('Failed to create meeting:', e);
             const message = e?.response?.data?.message || e?.message || 'Failed to create meeting.';
-            Alert.alert('Error', message);
+            AppNotify.toast(message, 'error');
         }
     };
 
@@ -289,7 +289,7 @@ const ExpertMeetings: React.FC = () => {
                     <TouchableOpacity
                         style={styles.joinButton}
                         activeOpacity={0.7}
-                        onPress={() => Linking.openURL(meeting.meetingLink).catch(() => Alert.alert('Error', 'Cannot open meeting link.'))}
+                        onPress={() => Linking.openURL(meeting.meetingLink).catch(() => AppNotify.toast('Cannot open meeting link.', 'error'))}
                     >
                         <Ionicons name="videocam" size={18} color="#ffffff" />
                         <Text style={styles.joinButtonText}>

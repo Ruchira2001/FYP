@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, PrimaryButton } from '../../../components';
+import { Header, PrimaryButton, AppNotify } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { useExpert } from '../../../context/ExpertContext';
 import { useApp } from '../../../context';
@@ -16,17 +16,11 @@ const ExpertProfile: React.FC = () => {
     const { switchRole } = useApp();
 
     const handleLogout = () => {
-        Alert.alert(
+        AppNotify.confirm(
             'Logout',
             'Are you sure you want to logout?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Logout',
-                    style: 'destructive',
-                    onPress: () => logout(),
-                },
-            ]
+            () => logout(),
+            { confirmLabel: 'Logout', destructive: true }
         );
     };
 
@@ -125,7 +119,8 @@ const ExpertProfile: React.FC = () => {
                             onPress={handleEditProfile}
                             style={styles.editButton}
                         >
-                            <Ionicons name="pencil" size={18} color={COLORS.neutral[600]} />
+                            <Ionicons name="pencil" size={15} color={COLORS.neutral[600]} />
+                            <Text style={styles.editButtonLabel}>Edit</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -193,28 +188,21 @@ const ExpertProfile: React.FC = () => {
                 <TouchableOpacity
                     onPress={async () => {
                         console.log('--- Switch to Farmer button pressed ---');
-                        Alert.alert(
-                            'Switch Role',
-                            'Switch back to Farmer Mode?',
-                            [
-                                { text: 'Cancel', style: 'cancel' },
-                                {
-                                    text: 'Switch',
-                                    onPress: async () => {
-                                        console.log('--- Role switch confirmed ---');
-                                        const success = await switchRole('farmer');
-                                        console.log('--- Role switch result:', success);
-                                        if (success) {
-                                            navigation.reset({
-                                                index: 0,
-                                                routes: [{ name: 'FarmerApp' }],
-                                            });
-                                        } else {
-                                            Alert.alert('Error', 'Could not switch to Farmer Mode');
-                                        }
-                                    }
+                        AppNotify.confirm(
+                            'Switch to Farmer Mode',
+                            'Switch back to your farmer account?',
+                            async () => {
+                                const success = await switchRole('farmer');
+                                if (success) {
+                                    navigation.reset({
+                                        index: 0,
+                                        routes: [{ name: 'FarmerApp' }],
+                                    });
+                                } else {
+                                    AppNotify.toast('Could not switch to Farmer Mode', 'error');
                                 }
-                            ]
+                            },
+                            { confirmLabel: 'Switch' }
                         );
                     }}
                     style={[styles.availabilityCard, { backgroundColor: COLORS.primary[600], marginBottom: 0 }]}
@@ -393,12 +381,18 @@ const styles = StyleSheet.create({
         marginLeft: 4,
     },
     editButton: {
-        width: 40,
-        height: 40,
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: COLORS.neutral[100],
         borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        gap: 4,
+    },
+    editButtonLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: COLORS.neutral[600],
     },
     // ===== Rating =====
     ratingSection: {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, InputField } from '../../../components';
+import { Header, InputField, AppNotify } from '../../../components';
 import { COLORS } from '../../../utils/constants';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
@@ -40,7 +40,7 @@ const ExpertRegister: React.FC = () => {
 
     const handleRegister = async () => {
         if (!form.specialty || !form.yearsExperience) {
-            Alert.alert('Error', 'Please fill in specialty and years of experience.');
+            AppNotify.toast('Please fill in specialty and years of experience.', 'error');
             return;
         }
 
@@ -62,15 +62,12 @@ const ExpertRegister: React.FC = () => {
                     console.error('Final refresh error:', refreshErr);
                 }
 
-                Alert.alert(
-                    'Success', 
-                    'You are now registered as an expert!', 
-                    [{ text: 'OK', onPress: () => navigation.goBack() }]
-                );
+                AppNotify.toast('You are now registered as an expert!', 'success');
+                navigation.goBack();
             }
         } catch (error: any) {
             console.error('Expert registration error:', error);
-            Alert.alert('Error', error.response?.data?.message || 'Failed to register as expert');
+            AppNotify.toast(error.response?.data?.message || 'Failed to register as expert', 'error');
         } finally {
             setLoading(false);
         }

@@ -94,28 +94,28 @@ const ExpertHome: React.FC = () => {
             onPress: () => navigation.navigate('ExpertDiagnosisReviews'),
         },
         {
-            id: 'farmers',
-            title: 'Farmer Directory',
-            icon: 'people' as const,
-            iconColor: COLORS.primary[600],
-            iconBgColor: COLORS.primary[50],
-            onPress: () => navigation.navigate('ExpertFarmerDirectory'),
-        },
-        {
-            id: 'schedule',
-            title: 'My Schedule',
+            id: 'meetings',
+            title: 'Meetings',
             icon: 'calendar' as const,
             iconColor: COLORS.info,
             iconBgColor: '#dbeafe',
             onPress: () => navigation.navigate('ExpertMeetingsTab'),
         },
         {
-            id: 'knowledge',
-            title: 'Knowledge Base',
+            id: 'learnhub',
+            title: 'LearnHub',
             icon: 'library' as const,
             iconColor: COLORS.secondary[600],
             iconBgColor: COLORS.secondary[50],
             onPress: () => navigation.navigate('ExpertKnowledgeBase'),
+        },
+        {
+            id: 'chats',
+            title: 'Chats',
+            icon: 'chatbubbles' as const,
+            iconColor: COLORS.primary[600],
+            iconBgColor: COLORS.primary[50],
+            onPress: () => navigation.navigate('ExpertChatsList'),
         },
     ];
 
@@ -151,7 +151,7 @@ const ExpertHome: React.FC = () => {
                 onLanguagePress={() => navigation.navigate('LanguageModal')}
                 onNotificationsPress={() => navigation.navigate('ExpertNotifications')}
                 onChatsPress={() => navigation.navigate('ExpertChatsList')}
-                notificationCount={3}
+                notificationCount={stats.pendingReviews ?? 0}
                 chatUnreadCount={stats.unreadMessages}
             />
 

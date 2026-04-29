@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, EmptyState, Chip, PrimaryButton } from '../../../components';
+import { Header, EmptyState, Chip, PrimaryButton, AppNotify } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { getRelativeTime } from '../../../utils/validators';
 import { expertDashboardAPI } from '../../../services/api';
@@ -87,11 +87,11 @@ const DiagnosisReviews: React.FC = () => {
         }));
 
         setShowReviewModal(false);
-        Alert.alert(
-            'Review Submitted',
+        AppNotify.toast(
             reviewAction === 'verify'
                 ? 'You have confirmed the AI diagnosis.'
                 : 'You have corrected the AI diagnosis.',
+            'success'
         );
     };
 

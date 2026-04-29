@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, PrimaryButton, InputField } from '../../../components';
+import { Header, PrimaryButton, InputField, AppNotify } from '../../../components';
 import { COLORS } from '../../../utils/constants';
 import { useExpert } from '../../../context/ExpertContext';
 import { userAPI } from '../../../services/api';
@@ -48,7 +48,7 @@ const ExpertEditProfile: React.FC = () => {
 
     const handleSave = async () => {
         if (!name.trim()) {
-            Alert.alert(t('common.error'), 'Name is required');
+            AppNotify.toast('Name is required', 'error');
             return;
         }
 
@@ -72,12 +72,11 @@ const ExpertEditProfile: React.FC = () => {
                 specializations: updated.specializations || [],
             });
 
-            Alert.alert(t('common.success'), 'Profile updated successfully', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            AppNotify.toast('Profile updated successfully', 'success');
+            navigation.goBack();
         } catch (error) {
             console.error('Error saving profile:', error);
-            Alert.alert(t('common.error'), 'Failed to update profile');
+            AppNotify.toast('Failed to update profile', 'error');
         } finally {
             setIsLoading(false);
         }
