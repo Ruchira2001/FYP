@@ -259,13 +259,17 @@ const LearnHub: React.FC = () => {
     const renderMyGuideCard = ({ item }: { item: any }) => {
         const sc = getStatusColor(item.status);
         return (
-            <View style={styles.myGuideCard}>
+            <TouchableOpacity
+                style={styles.myGuideCard}
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item })}
+            >
                 <View style={styles.myGuideCardLeft}>
                     {item.images && item.images.length > 0 ? (
                         <Image source={{ uri: item.images[0] }} style={styles.myGuideThumb} />
                     ) : (
                         <View style={[styles.myGuideThumb, styles.myGuideThumbPlaceholder]}>
-                            <Text style={{ fontSize: 24 }}>🌱</Text>
+                            <Text style={{ fontSize: 28 }}>{getCropIcon(item.name, item.cropId)}</Text>
                         </View>
                     )}
                 </View>
@@ -285,16 +289,24 @@ const LearnHub: React.FC = () => {
                         </View>
 
                         <View style={{ flexDirection: 'row', gap: 12 }}>
-                            <TouchableOpacity onPress={() => navigation.navigate('AddCropGuide', { guide: item })} activeOpacity={0.7} style={{ padding: 4 }}>
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('AddCropGuide', { guide: item })}
+                                activeOpacity={0.7}
+                                style={{ padding: 4 }}
+                            >
                                 <Ionicons name="pencil" size={20} color={COLORS.primary[600]} />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => handleDeleteMyGuide(item._id || item.id)} activeOpacity={0.7} style={{ padding: 4 }}>
+                            <TouchableOpacity
+                                onPress={() => handleDeleteMyGuide(item._id || item.id)}
+                                activeOpacity={0.7}
+                                style={{ padding: 4 }}
+                            >
                                 <Ionicons name="trash" size={20} color={COLORS.error} />
                             </TouchableOpacity>
                         </View>
                     </View>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     };
 
