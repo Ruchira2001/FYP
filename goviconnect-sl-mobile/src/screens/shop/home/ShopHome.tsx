@@ -90,36 +90,20 @@ const ShopHome: React.FC = () => {
 
     const quickActions = [
         {
-            id: 'browse-products',
-            title: 'Browse Products',
+            id: 'products',
+            title: 'My Products',
             icon: 'leaf' as const,
             iconColor: COLORS.primary[600],
             iconBgColor: COLORS.primary[50],
             onPress: () => navigation.navigate('ProductsTab'),
         },
         {
-            id: 'add-product',
-            title: 'Add New Product',
-            icon: 'add-circle' as const,
-            iconColor: COLORS.success,
-            iconBgColor: '#dcfce7',
-            onPress: () => navigation.navigate('ProductsTab'),
-        },
-        {
-            id: 'low-stock',
-            title: 'Low Stock Alerts',
-            icon: 'warning' as const,
-            iconColor: COLORS.warning,
-            iconBgColor: '#fef3c7',
-            onPress: () => navigation.navigate('ProductsTab'),
-        },
-        {
-            id: 'manage-stock',
-            title: 'Manage Stock',
-            icon: 'cube' as const,
-            iconColor: COLORS.info,
-            iconBgColor: '#dbeafe',
-            onPress: () => navigation.navigate('ProductsTab'),
+            id: 'learnhub',
+            title: 'LearnHub',
+            icon: 'book' as const,
+            iconColor: COLORS.secondary[600],
+            iconBgColor: COLORS.secondary[50],
+            onPress: () => navigation.navigate('ShopLearnHubTab'),
         },
     ];
 

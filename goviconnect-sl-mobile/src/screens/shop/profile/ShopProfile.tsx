@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShop } from '../../../context/ShopContext';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, AppNotify } from '../../../components';
+import { Header, AppNotify, ActionCard } from '../../../components';
 import { shopAPI } from '../../../services/api';
 
 const ShopProfile: React.FC = () => {
@@ -33,10 +33,8 @@ const ShopProfile: React.FC = () => {
 
     // Quick shortcuts
     const shortcuts = [
-        { id: 'products', label: 'Products', icon: 'leaf' as const, color: COLORS.primary[600], bgColor: COLORS.primary[50], onPress: () => navigation.navigate('ProductsTab') },
-        { id: 'add-product', label: 'Add Product', icon: 'add-circle' as const, color: COLORS.success, bgColor: '#dcfce7', onPress: () => navigation.navigate('ProductsTab') },
-        { id: 'manage-stock', label: 'Stock', icon: 'cube' as const, color: COLORS.info, bgColor: '#dbeafe', onPress: () => navigation.navigate('ProductsTab') },
-        { id: 'orders', label: 'Orders', icon: 'receipt' as const, color: COLORS.warning, bgColor: '#fef3c7', onPress: () => { } },
+        { id: 'products', label: 'Products', icon: 'leaf' as const, iconColor: COLORS.primary[600], iconBgColor: COLORS.primary[50], onPress: () => navigation.navigate('ProductsTab') },
+        { id: 'learnhub', label: 'LearnHub', icon: 'book' as const, iconColor: COLORS.secondary[600], iconBgColor: COLORS.secondary[50], onPress: () => navigation.navigate('ShopLearnHubTab') },
     ];
 
     // Bottom menu items (matching farmer/expert side)
@@ -100,17 +98,16 @@ const ShopProfile: React.FC = () => {
                     <Text style={styles.sectionTitle}>Quick Access</Text>
                     <View style={styles.shortcutsGrid}>
                         {shortcuts.map((shortcut) => (
-                            <TouchableOpacity
-                                key={shortcut.id}
-                                style={styles.shortcutCard}
-                                onPress={shortcut.onPress}
-                                activeOpacity={0.7}
-                            >
-                                <View style={[styles.shortcutIcon, { backgroundColor: shortcut.bgColor }]}>
-                                    <Ionicons name={shortcut.icon} size={22} color={shortcut.color} />
-                                </View>
-                                <Text style={styles.shortcutLabel}>{shortcut.label}</Text>
-                            </TouchableOpacity>
+                            <View key={shortcut.id} style={styles.shortcutCardWrapper}>
+                                <ActionCard
+                                    title={shortcut.label}
+                                    icon={shortcut.icon}
+                                    iconColor={shortcut.iconColor}
+                                    iconBgColor={shortcut.iconBgColor}
+                                    onPress={shortcut.onPress}
+                                    size="sm"
+                                />
+                            </View>
                         ))}
                     </View>
                 </View>
@@ -264,31 +261,12 @@ const styles = StyleSheet.create({
     },
     shortcutsGrid: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
     },
-    shortcutCard: {
-        width: '23%',
-        alignItems: 'center',
-        backgroundColor: '#ffffff',
-        borderRadius: 16,
-        paddingVertical: 16,
-        borderWidth: 1,
-        borderColor: COLORS.neutral[100],
-        ...SHADOW.sm,
-    },
-    shortcutIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-    },
-    shortcutLabel: {
-        fontSize: 11,
-        fontWeight: '500',
-        color: COLORS.neutral[700],
-        textAlign: 'center',
+    shortcutCardWrapper: {
+        width: '48%',
+        marginBottom: 12,
     },
     // ===== Bottom Menu =====
     bottomMenuSection: {

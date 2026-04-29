@@ -12,12 +12,14 @@ import ShopEditProfile from '../screens/shop/profile/ShopEditProfile';
 import { Settings, HelpFAQ } from '../screens/profile';
 import { LanguageModal } from '../screens/home';
 import Notifications from '../screens/notifications/Notifications';
+import { LearnHub, CropDetails, SavedLibrary, OfflineDownloads, AddCropGuide, FarmerGuideDetails } from '../screens/learnhub';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const ProductsStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
+const LearnHubStack = createNativeStackNavigator();
 
 const HomeStackNavigator = () => (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
@@ -39,6 +41,17 @@ const ProfileStackNavigator = () => (
         <ProfileStack.Screen name="Settings" component={Settings} />
         <ProfileStack.Screen name="HelpFAQ" component={HelpFAQ} />
     </ProfileStack.Navigator>
+);
+
+const LearnHubStackNavigator = () => (
+    <LearnHubStack.Navigator screenOptions={{ headerShown: false }}>
+        <LearnHubStack.Screen name="LearnHubScreen" component={LearnHub} />
+        <LearnHubStack.Screen name="CropDetails" component={CropDetails} />
+        <LearnHubStack.Screen name="SavedLibrary" component={SavedLibrary} />
+        <LearnHubStack.Screen name="OfflineDownloads" component={OfflineDownloads} />
+        <LearnHubStack.Screen name="AddCropGuide" component={AddCropGuide} />
+        <LearnHubStack.Screen name="FarmerGuideDetails" component={FarmerGuideDetails} />
+    </LearnHubStack.Navigator>
 );
 
 // Badge component
@@ -70,6 +83,9 @@ const ShopTabs: React.FC = () => {
                         case 'ProductsTab':
                             iconName = focused ? 'leaf' : 'leaf-outline';
                             break;
+                        case 'ShopLearnHubTab':
+                            iconName = focused ? 'book' : 'book-outline';
+                            break;
                         case 'ProfileTab':
                             iconName = focused ? 'person' : 'person-outline';
                             break;
@@ -94,6 +110,11 @@ const ShopTabs: React.FC = () => {
                 name="ProductsTab"
                 component={ProductsStackNavigator}
                 options={{ tabBarLabel: 'Products' }}
+            />
+            <Tab.Screen
+                name="ShopLearnHubTab"
+                component={LearnHubStackNavigator}
+                options={{ tabBarLabel: 'LearnHub' }}
             />
             <Tab.Screen
                 name="ProfileTab"
