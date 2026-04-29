@@ -21,7 +21,7 @@ app = Flask(__name__)
 CORS(app)
 
 # --------- Configuration ---------
-MODEL_PATH = os.environ.get('MODEL_PATH', 'model/plant_disease_model.h5')
+MODEL_PATH = os.environ.get('MODEL_PATH', 'model/plant_disease_model.keras')
 LABELS_PATH = os.environ.get('LABELS_PATH', 'labels.json')
 IMG_SIZE = 224
 CONFIDENCE_THRESHOLD = 0.5

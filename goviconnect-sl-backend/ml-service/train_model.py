@@ -25,7 +25,7 @@ DATASET_DIR = os.path.join(os.path.dirname(__file__), 'dataset')
 TRAIN_DIR = os.path.join(DATASET_DIR, 'train')
 VAL_DIR = os.path.join(DATASET_DIR, 'val')
 MODEL_DIR = os.path.join(os.path.dirname(__file__), 'model')
-MODEL_PATH = os.path.join(MODEL_DIR, 'plant_disease_model.h5')
+MODEL_PATH = os.path.join(MODEL_DIR, 'plant_disease_model.keras')
 LABELS_PATH = os.path.join(os.path.dirname(__file__), 'labels.json')
 
 IMG_SIZE = 224
