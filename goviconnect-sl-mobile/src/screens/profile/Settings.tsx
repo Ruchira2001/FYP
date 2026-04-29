@@ -15,9 +15,9 @@ const Settings: React.FC = () => {
     const { settings, updateSettings, changeLanguage } = useApp();
 
     const handleLanguageChange = () => {
-        const currentIndex = languages.findIndex(l => l.code === i18n.language);
-        const nextIndex = (currentIndex + 1) % languages.length;
-        changeLanguage(languages[nextIndex].code);
+        // Toggle directly between 'en' and 'si' to immediately switch
+        const nextLang = i18n.language === 'en' ? 'si' : 'en';
+        changeLanguage(nextLang);
     };
 
     const handleLiteModeToggle = (value: boolean) => {
@@ -29,7 +29,9 @@ const Settings: React.FC = () => {
     };
 
     const getCurrentLanguage = () => {
-        const lang = languages.find(l => l.code === i18n.language);
+        // Safe check to avoid undefined if i18n isn't loaded correctly yet
+        const currentCode = (i18n.language || 'en').substring(0, 2);
+        const lang = languages.find(l => l.code === currentCode);
         return lang?.nativeName || 'English';
     };
 
