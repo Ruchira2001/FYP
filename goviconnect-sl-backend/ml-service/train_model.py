@@ -1,5 +1,5 @@
 """
-Train a MobileNetV2 model on the PlantVillage dataset for crop disease detection.
+Train a ResNet50 model on the PlantVillage dataset for crop disease detection.
 
 Prerequisites:
 1. Download the PlantVillage dataset: https://github.com/spMohanty/PlantVillage-Dataset
@@ -13,7 +13,8 @@ import os
 import json
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications import ResNet50
+from tensorflow.keras.applications.resnet50 import preprocess_input
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -39,7 +40,7 @@ def create_data_generators():
     """Create training and validation data generators with augmentation"""
     
     train_datagen = ImageDataGenerator(
-        rescale=1.0 / 255,
+        preprocessing_function=preprocess_input,
         rotation_range=30,
         width_shift_range=0.2,
         height_shift_range=0.2,
@@ -49,7 +50,7 @@ def create_data_generators():
         fill_mode='nearest',
     )
     
-    val_datagen = ImageDataGenerator(rescale=1.0 / 255)
+    val_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
     
     train_generator = train_datagen.flow_from_directory(
         TRAIN_DIR,
@@ -71,10 +72,10 @@ def create_data_generators():
 
 
 def build_model(num_classes):
-    """Build MobileNetV2 transfer learning model"""
+    """Build ResNet50 transfer learning model"""
     
-    # Load pre-trained MobileNetV2 (without top classification layers)
-    base_model = MobileNetV2(
+    # Load pre-trained ResNet50 (without top classification layers)
+    base_model = ResNet50(
         weights='imagenet',
         include_top=False,
         input_shape=(IMG_SIZE, IMG_SIZE, 3),
@@ -130,7 +131,7 @@ def train():
     print(f"   ✅ Labels saved to {LABELS_PATH}")
     
     # Build model
-    print("\n🏗️ Building MobileNetV2 model...")
+    print("\n🏗️ Building ResNet50 model...")
     model, base_model = build_model(num_classes)
     
     # Phase 1: Train classification head

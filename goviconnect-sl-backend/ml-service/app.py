@@ -1,6 +1,6 @@
 """
 GoviConnect SL - Crop Disease Detection ML Microservice
-Uses MobileNetV2 trained on PlantVillage dataset
+Uses ResNet50 trained on 5 target crop diseases
 """
 
 import os
@@ -10,6 +10,7 @@ import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PIL import Image
+from tensorflow.keras.applications.resnet50 import preprocess_input
 import logging
 
 # Configure logging
@@ -70,34 +71,14 @@ def load_model():
 
 
 def get_default_labels():
-    """Default PlantVillage-compatible labels for Sri Lankan crops"""
+    """Top 5 Target PlantVillage-compatible labels for Sri Lankan crops"""
     return {
         "classes": [
-            "Tomato___Bacterial_spot",
-            "Tomato___Early_blight",
-            "Tomato___Late_blight",
-            "Tomato___Leaf_Mold",
-            "Tomato___Septoria_leaf_spot",
-            "Tomato___Spider_mites",
-            "Tomato___Target_Spot",
-            "Tomato___Yellow_Leaf_Curl_Virus",
-            "Tomato___mosaic_virus",
-            "Tomato___healthy",
-            "Pepper___Bacterial_spot",
-            "Pepper___healthy",
-            "Potato___Early_blight",
-            "Potato___Late_blight",
-            "Potato___healthy",
             "Rice___Brown_Spot",
             "Rice___Leaf_Blast",
-            "Rice___Neck_Blast",
-            "Rice___healthy",
-            "Tea___Blister_Blight",
-            "Tea___Grey_Blight",
-            "Tea___healthy",
-            "Chili___Anthracnose",
-            "Chili___Leaf_Curl",
-            "Chili___healthy"
+            "Tomato___Bacterial_spot",
+            "Tomato___Early_blight",
+            "Tomato___Late_blight"
         ]
     }
 
@@ -350,9 +331,9 @@ def preprocess_image(image_bytes):
     image = Image.open(io.BytesIO(image_bytes))
     image = image.convert('RGB')
     image = image.resize((IMG_SIZE, IMG_SIZE))
-    img_array = np.array(image) / 255.0
+    img_array = np.array(image)
     img_array = np.expand_dims(img_array, axis=0)
-    return img_array
+    return preprocess_input(img_array)
 
 
 def get_mock_prediction(image_bytes):
@@ -362,10 +343,9 @@ def get_mock_prediction(image_bytes):
     mock_diseases = [
         ("Tomato___Early_blight", 0.87),
         ("Tomato___Late_blight", 0.82),
+        ("Tomato___Bacterial_spot", 0.90),
         ("Rice___Leaf_Blast", 0.91),
-        ("Tea___Blister_Blight", 0.85),
-        ("Chili___Anthracnose", 0.89),
-        ("Tomato___healthy", 0.95),
+        ("Rice___Brown_Spot", 0.85),
     ]
     
     disease, confidence = random.choice(mock_diseases)
