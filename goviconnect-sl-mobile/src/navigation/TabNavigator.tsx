@@ -10,7 +10,7 @@ import { COLORS } from '../utils/constants';
 import { Home } from '../screens/home';
 import { LearnHub, CropDetails, SavedLibrary, OfflineDownloads, AddCropGuide, FarmerGuideDetails } from '../screens/learnhub';
 import { AIHome, CropDoctorUpload, CropDoctorResult, DiagnosisHistory, PriceForm, PriceResult, PredictionHistory } from '../screens/ai';
-import { Meetings, MeetingDetails, MyMeetings } from '../screens/meetings';
+import { Meetings, MeetingDetails, MyMeetings, ExpertProfileView } from '../screens/meetings';
 import { Profile, Settings, HelpFAQ, EditProfile } from '../screens/profile';
 import { ExpertRegister } from '../screens/expert/auth';
 
@@ -59,6 +59,7 @@ const MeetingsStackNavigator = () => (
         <MeetingsStack.Screen name="MeetingsScreen" component={Meetings} />
         <MeetingsStack.Screen name="MeetingDetails" component={MeetingDetails} />
         <MeetingsStack.Screen name="MyMeetings" component={MyMeetings} />
+        <MeetingsStack.Screen name="ExpertProfileView" component={ExpertProfileView} />
     </MeetingsStack.Navigator>
 );
 
@@ -110,7 +111,7 @@ const TabNavigator: React.FC = () => {
                             iconName = focused ? 'sparkles' : 'sparkles-outline';
                             break;
                         case 'MeetingsTab':
-                            iconName = focused ? 'calendar' : 'calendar-outline';
+                            iconName = focused ? 'people' : 'people-outline';
                             break;
                         case 'ProfileTab':
                             iconName = focused ? 'person' : 'person-outline';
