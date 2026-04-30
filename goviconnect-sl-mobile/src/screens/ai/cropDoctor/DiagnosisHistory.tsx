@@ -26,8 +26,8 @@ const DiagnosisHistory: React.FC = () => {
     const renderItem = ({ item }: { item: DiagnosisResult }) => (
         <TouchableOpacity
             style={styles.card}
-            // Add handler later if we want to view past result details
-            onPress={() => { /* navigation.navigate('CropDoctorResult', { result: item }); */ }}
+            onPress={() => navigation.navigate('DiagnosisDetail', { item })}
+            activeOpacity={0.7}
         >
             <Image
                 source={{ uri: item.imageUri }}
