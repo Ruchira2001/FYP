@@ -44,3 +44,9 @@ Thumbs.db
 *.pt
 goviconnect-sl-backend/ml-service/.venv/
 goviconnect-sl-backend/ml-service/venv/
+
+# ML dataset images (large, not for git)
+goviconnect-sl-backend/ml-service/dataset/
+
+# Trained model output
+goviconnect-sl-backend/ml-service/model/
