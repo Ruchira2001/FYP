@@ -21,10 +21,11 @@ app = Flask(__name__)
 CORS(app)
 
 # --------- Configuration ---------
-MODEL_PATH = os.environ.get('MODEL_PATH', 'model/plant_disease_model.keras')
-LABELS_PATH = os.environ.get('LABELS_PATH', 'labels.json')
+_HERE = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.environ.get('MODEL_PATH', os.path.join(_HERE, 'model', 'plant_disease_model.keras'))
+LABELS_PATH = os.environ.get('LABELS_PATH', os.path.join(_HERE, 'labels.json'))
 IMG_SIZE = 224
-CONFIDENCE_THRESHOLD = 0.5
+CONFIDENCE_THRESHOLD = 0.75  # Below this = unrecognized / not a supported crop image
 
 # --------- Load Model & Labels ---------
 model = None
@@ -397,6 +398,26 @@ def predict():
             # Mock prediction fallback
             predicted_class, confidence = get_mock_prediction(image_bytes)
         
+        # ---- Low-confidence = unrecognized image ----
+        if confidence < CONFIDENCE_THRESHOLD:
+            logger.info(f"Unrecognized image — best guess: {predicted_class} ({confidence:.2%}), below threshold {CONFIDENCE_THRESHOLD}")
+            return jsonify({
+                'success': True,
+                'unrecognized': True,
+                'prediction': {
+                    'class': 'Unrecognized',
+                    'diseaseName': 'Image Not Recognized',
+                    'diseaseNameSi': 'රූපය හඳුනා නොගැනීය',
+                    'crop': 'Unknown',
+                    'confidence': round(confidence, 4),
+                    'isHealthy': False,
+                    'treatments': [],
+                    'treatmentsSi': [],
+                    'preventionTips': [],
+                    'preventionTipsSi': [],
+                }
+            })
+
         # Determine if healthy
         is_healthy = 'healthy' in predicted_class.lower()
         
@@ -411,6 +432,7 @@ def predict():
         
         result = {
             'success': True,
+            'unrecognized': False,
             'prediction': {
                 'class': predicted_class,
                 'diseaseName': treatment_info.get('diseaseName', disease_name),
@@ -463,6 +485,25 @@ def predict_base64():
         else:
             predicted_class, confidence = get_mock_prediction(image_bytes)
         
+        if confidence < CONFIDENCE_THRESHOLD:
+            logger.info(f"Unrecognized image (base64) — best guess: {predicted_class} ({confidence:.2%})")
+            return jsonify({
+                'success': True,
+                'unrecognized': True,
+                'prediction': {
+                    'class': 'Unrecognized',
+                    'diseaseName': 'Image Not Recognized',
+                    'diseaseNameSi': 'රූපය හඳුනා නොගැනීය',
+                    'crop': 'Unknown',
+                    'confidence': round(confidence, 4),
+                    'isHealthy': False,
+                    'treatments': [],
+                    'treatmentsSi': [],
+                    'preventionTips': [],
+                    'preventionTipsSi': [],
+                }
+            })
+
         is_healthy = 'healthy' in predicted_class.lower()
         parts = predicted_class.split('___')
         crop_name = parts[0] if len(parts) > 0 else 'Unknown'
@@ -473,6 +514,7 @@ def predict_base64():
         
         result = {
             'success': True,
+            'unrecognized': False,
             'prediction': {
                 'class': predicted_class,
                 'diseaseName': treatment_info.get('diseaseName', disease_name),

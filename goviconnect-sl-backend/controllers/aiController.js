@@ -48,6 +48,15 @@ exports.cropDiagnosis = async (req, res, next) => {
     // Call ML service
     const prediction = await predictDisease(imageUrl);
 
+    // Image did not match any supported crop disease
+    if (prediction.unrecognized) {
+      return res.status(200).json({
+        success: true,
+        unrecognized: true,
+        data: prediction,
+      });
+    }
+
     // Save result to database
     const diagnosis = await DiagnosisResult.create({
       userId: req.user._id,

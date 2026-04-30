@@ -31,12 +31,25 @@ const CropDoctorResult: React.FC = () => {
         analyzeImage();
     }, []);
 
+    const analyzeCropImage = async (uri: string) => {
+        const formData = new FormData();
+        const filename = uri.split('/').pop() ?? 'crop.jpg';
+        const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg';
+        const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+        formData.append('image', { uri, name: filename, type: mimeType } as any);
+        const response = await aiAPI.cropDiagnosis(formData);
+        // Unrecognized: { success, unrecognized: true, data: prediction }
+        // Recognized:   { success, data: DiagnosisResult (MongoDB doc) }
+        if (response.data?.unrecognized) return response.data.data;
+        return response.data?.data ?? response.data;
+    };
+
     const analyzeImage = async () => {
         setLoading(true);
         try {
             if (isConnected) {
-                const response = await analyzeCropImage(imageUri);
-                setResult(response);
+                const result = await analyzeCropImage(imageUri);
+                setResult(result);
             } else {
                 // Queue for later
                 await queueService.addToQueue('analyze_crop', { imageUri });
@@ -103,6 +116,42 @@ const CropDoctorResult: React.FC = () => {
                         {t('ai.analyzing')}
                     </Text>
                     <Text style={styles.loadingSubtitle}>Please wait...</Text>
+                </View>
+            </View>
+        );
+    }
+
+    // Unrecognized image screen
+    if (result?.unrecognized) {
+        return (
+            <View style={styles.container}>
+                <Header
+                    title={t('ai.diagnosis_result')}
+                    showBack
+                    onBackPress={() => navigation.goBack()}
+                />
+                <View style={styles.loadingContainer}>
+                    <View style={[styles.loaderCircle, { backgroundColor: '#FFF3CD' }]}>
+                        <Ionicons name="alert-circle" size={48} color="#F59E0B" />
+                    </View>
+                    <Text style={[styles.loadingTitle, { color: '#92400E', textAlign: 'center', paddingHorizontal: 24 }]}>
+                        {i18n.language === 'si'
+                            ? 'රූපය හඳුනා ගැනීමට නොහැකි විය'
+                            : 'Image Not Recognized'}
+                    </Text>
+                    <Text style={[styles.loadingSubtitle, { textAlign: 'center', paddingHorizontal: 32, marginTop: 8 }]}>
+                        {i18n.language === 'si'
+                            ? 'කරුණාකර වී හෝ තක්කාලි ශාකයක රෝගී කොළ හෝ ඵල ඡායාරූපයක් ඉදිරිපත් කරන්න.'
+                            : 'Please upload a clear photo of a diseased leaf or fruit from a supported crop: Rice or Tomato.'}
+                    </Text>
+                    <View style={{ marginTop: 32, paddingHorizontal: 32, width: '100%' }}>
+                        <PrimaryButton
+                            title={i18n.language === 'si' ? 'නැවත උත්සාහ කරන්න' : 'Try Again'}
+                            onPress={() => navigation.goBack()}
+                            icon="camera-outline"
+                            fullWidth
+                        />
+                    </View>
                 </View>
             </View>
         );
