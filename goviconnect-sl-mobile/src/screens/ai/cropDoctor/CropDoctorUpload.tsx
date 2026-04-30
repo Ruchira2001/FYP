@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -61,7 +61,12 @@ const CropDoctorUpload: React.FC = () => {
                 onBackPress={() => navigation.goBack()}
             />
 
-            <View style={styles.content}>
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
                 {/* Image Preview/Upload Area */}
                 {selectedImage ? (
                     <View style={styles.imageContainer}>
@@ -137,7 +142,7 @@ const CropDoctorUpload: React.FC = () => {
                         size="lg"
                     />
                 </View>
-            </View>
+            </ScrollView>
         </View>
     );
 };
@@ -148,8 +153,8 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.neutral[50],
     },
     content: {
-        flex: 1,
         padding: 16,
+        paddingBottom: 32,
     },
     imageContainer: {
         position: 'relative',
@@ -239,8 +244,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     analyzeButtonContainer: {
-        marginTop: 'auto',
-        paddingBottom: 16,
+        marginTop: 24,
     },
 });
 
