@@ -25,7 +25,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.environ.get('MODEL_PATH', os.path.join(_HERE, 'model', 'plant_disease_model.keras'))
 LABELS_PATH = os.environ.get('LABELS_PATH', os.path.join(_HERE, 'labels.json'))
 IMG_SIZE = 224
-CONFIDENCE_THRESHOLD = 0.75  # Below this = unrecognized / not a supported crop image
+CONFIDENCE_THRESHOLD = 0.88  # Below this = unrecognized / not a supported crop image
 
 # --------- Load Model & Labels ---------
 model = None
@@ -337,10 +337,68 @@ def preprocess_image(image_bytes):
     return preprocess_input(img_array)
 
 
+def is_likely_plant_image(image_bytes):
+    """
+    Heuristic pre-screen: reject images that clearly are NOT plant photos.
+    QR codes, documents, and other non-plant images will be caught here.
+    Returns (is_plant: bool, reason: str)
+    """
+    try:
+        image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        img_array = np.array(image, dtype=np.float32)
+
+        r, g, b = img_array[:, :, 0], img_array[:, :, 1], img_array[:, :, 2]
+
+        # 1. Saturation check: QR codes / documents are near-greyscale
+        max_ch = np.maximum(np.maximum(r, g), b)
+        min_ch = np.minimum(np.minimum(r, g), b)
+        saturation = np.where(max_ch > 0, (max_ch - min_ch) / max_ch, 0.0)
+        avg_saturation = float(np.mean(saturation))
+
+        # 2. B&W pixel ratio: pixels where all channels are within 30 of each other
+        channel_range = max_ch - min_ch
+        bw_ratio = float(np.sum(channel_range < 30) / channel_range.size)
+
+        # 3. Green dominance: plant leaves have significant green-dominant pixels
+        green_dominant_ratio = float(np.sum((g > r) & (g > b)) / r.size)
+
+        logger.info(
+            f"Image check — saturation={avg_saturation:.3f}, "
+            f"bw_ratio={bw_ratio:.3f}, green_dominant={green_dominant_ratio:.3f}"
+        )
+
+        # Reject if image looks like a QR code / document: near-zero saturation + almost entirely B&W
+        # Real disease images (even grey/brown lesions) have sat ~0.10+ and bw ~0.80-0.92
+        # QR codes have sat ~0, bw ~0.99+
+        if avg_saturation < 0.05 and bw_ratio > 0.90:
+            return False, (
+                f"Image appears to be a QR code or document "
+                f"(saturation={avg_saturation:.3f}, bw_ratio={bw_ratio:.3f})"
+            )
+
+        # Reject if almost zero green-dominant pixels AND near-perfect greyscale
+        if green_dominant_ratio < 0.02 and avg_saturation < 0.05:
+            return False, (
+                f"Image lacks plant-like content "
+                f"(green_dominant={green_dominant_ratio:.3f}, saturation={avg_saturation:.3f})"
+            )
+
+        return True, "OK"
+    except Exception as e:
+        logger.warning(f"Plant image check error: {e}")
+        return True, "validation_error"  # fail-open so real images are not blocked
+
+
 def get_mock_prediction(image_bytes):
     """Fallback mock prediction when model is not available"""
     import random
-    
+
+    # Run the plant image heuristic even in mock mode
+    is_plant, reason = is_likely_plant_image(image_bytes)
+    if not is_plant:
+        # Return a confidence that will be below the threshold → unrecognized
+        return "Unknown", 0.30
+
     mock_diseases = [
         ("Tomato___Early_blight", 0.87),
         ("Tomato___Late_blight", 0.82),
@@ -348,7 +406,7 @@ def get_mock_prediction(image_bytes):
         ("Rice___Leaf_Blast", 0.91),
         ("Rice___Brown_Spot", 0.85),
     ]
-    
+
     disease, confidence = random.choice(mock_diseases)
     return disease, confidence
 
@@ -380,15 +438,36 @@ def predict():
         # Read image bytes
         image_bytes = file.read()
         
+        # ---- Pre-screen: reject obviously non-plant images ----
+        is_plant, reject_reason = is_likely_plant_image(image_bytes)
+        if not is_plant:
+            logger.info(f"Pre-screen rejected image: {reject_reason}")
+            return jsonify({
+                'success': True,
+                'unrecognized': True,
+                'prediction': {
+                    'class': 'Unrecognized',
+                    'diseaseName': 'Image Not Recognized',
+                    'diseaseNameSi': 'රූපය හඳුනා නොගැනීය',
+                    'crop': 'Unknown',
+                    'confidence': 0.0,
+                    'isHealthy': False,
+                    'treatments': [],
+                    'treatmentsSi': [],
+                    'preventionTips': [],
+                    'preventionTipsSi': [],
+                }
+            })
+
         if model is not None:
             # Real model prediction
             img_array = preprocess_image(image_bytes)
             predictions = model.predict(img_array, verbose=0)
-            
+
             # Get top prediction
             predicted_idx = np.argmax(predictions[0])
             confidence = float(predictions[0][predicted_idx])
-            
+
             class_names = labels.get('classes', [])
             if predicted_idx < len(class_names):
                 predicted_class = class_names[predicted_idx]
@@ -397,7 +476,7 @@ def predict():
         else:
             # Mock prediction fallback
             predicted_class, confidence = get_mock_prediction(image_bytes)
-        
+
         # ---- Low-confidence = unrecognized image ----
         if confidence < CONFIDENCE_THRESHOLD:
             logger.info(f"Unrecognized image — best guess: {predicted_class} ({confidence:.2%}), below threshold {CONFIDENCE_THRESHOLD}")
@@ -475,6 +554,27 @@ def predict_base64():
         
         image_bytes = base64.b64decode(image_data)
         
+        # ---- Pre-screen: reject obviously non-plant images (base64 route) ----
+        is_plant, reject_reason = is_likely_plant_image(image_bytes)
+        if not is_plant:
+            logger.info(f"Pre-screen rejected base64 image: {reject_reason}")
+            return jsonify({
+                'success': True,
+                'unrecognized': True,
+                'prediction': {
+                    'class': 'Unrecognized',
+                    'diseaseName': 'Image Not Recognized',
+                    'diseaseNameSi': 'රූපය හඳුනා නොගැනීය',
+                    'crop': 'Unknown',
+                    'confidence': 0.0,
+                    'isHealthy': False,
+                    'treatments': [],
+                    'treatmentsSi': [],
+                    'preventionTips': [],
+                    'preventionTipsSi': [],
+                }
+            })
+
         if model is not None:
             img_array = preprocess_image(image_bytes)
             predictions = model.predict(img_array, verbose=0)
@@ -484,7 +584,7 @@ def predict_base64():
             predicted_class = class_names[predicted_idx] if predicted_idx < len(class_names) else f"Unknown_{predicted_idx}"
         else:
             predicted_class, confidence = get_mock_prediction(image_bytes)
-        
+
         if confidence < CONFIDENCE_THRESHOLD:
             logger.info(f"Unrecognized image (base64) — best guess: {predicted_class} ({confidence:.2%})")
             return jsonify({

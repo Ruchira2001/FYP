@@ -11,6 +11,7 @@ import { saveDiagnosisResult, DiagnosisResult } from '../../../services/storage'
 import { queueService } from '../../../services/queueService';
 import { useConnectionStatus } from '../../../services/netinfo';
 import { generateId } from '../../../utils/validators';
+import { useApp } from '../../../context';
 
 type ParamList = {
     CropDoctorResult: { imageUri: string };
@@ -22,10 +23,12 @@ const CropDoctorResult: React.FC = () => {
     const { imageUri } = route.params;
     const { t, i18n } = useTranslation();
     const { isConnected } = useConnectionStatus();
+    const { logout } = useApp();
 
     const [loading, setLoading] = useState(true);
     const [result, setResult] = useState<any>(null);
     const [saved, setSaved] = useState(false);
+    const [error, setError] = useState<{ message: string; isAuth: boolean } | null>(null);
 
     useEffect(() => {
         analyzeImage();
@@ -63,8 +66,18 @@ const CropDoctorResult: React.FC = () => {
                     preventionTipsSi: [],
                 });
             }
-        } catch (error) {
-            console.error('Analysis error:', error);
+        } catch (err: any) {
+            console.error('Analysis error:', err);
+            const status = err?.response?.status;
+            if (status === 401) {
+                setError({ message: 'Your session has expired. Please log in again.', isAuth: true });
+            } else if (status === 403) {
+                setError({ message: 'You are not authorised to use this feature.', isAuth: false });
+            } else if (!isConnected || err?.code === 'ECONNABORTED' || !err?.response) {
+                setError({ message: 'Cannot reach the server. Check your connection and try again.', isAuth: false });
+            } else {
+                setError({ message: 'Analysis failed. Please try again.', isAuth: false });
+            }
         } finally {
             setLoading(false);
         }
@@ -116,6 +129,60 @@ const CropDoctorResult: React.FC = () => {
                         {t('ai.analyzing')}
                     </Text>
                     <Text style={styles.loadingSubtitle}>Please wait...</Text>
+                </View>
+            </View>
+        );
+    }
+
+    // Error screen (auth or server error)
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <Header
+                    title={t('ai.crop_doctor')}
+                    showBack
+                    onBackPress={() => navigation.goBack()}
+                />
+                <View style={styles.loadingContainer}>
+                    <View style={[styles.loaderCircle, { backgroundColor: '#FEE2E2' }]}>
+                        <Ionicons name="alert-circle" size={48} color="#DC2626" />
+                    </View>
+                    <Text style={[styles.loadingTitle, { color: '#991B1B', textAlign: 'center', paddingHorizontal: 24 }]}>
+                        {error.isAuth ? 'Session Expired' : 'Analysis Failed'}
+                    </Text>
+                    <Text style={[styles.loadingSubtitle, { textAlign: 'center', paddingHorizontal: 32, marginTop: 8 }]}>
+                        {error.message}
+                    </Text>
+                    <View style={{ marginTop: 32, paddingHorizontal: 32, width: '100%', gap: 12 }}>
+                        {error.isAuth ? (
+                            <PrimaryButton
+                                title="Log In Again"
+                                onPress={async () => {
+                                    await logout();
+                                    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                                }}
+                                icon="log-in-outline"
+                                fullWidth
+                            />
+                        ) : (
+                            <PrimaryButton
+                                title="Try Again"
+                                onPress={() => {
+                                    setError(null);
+                                    setLoading(true);
+                                    analyzeImage();
+                                }}
+                                icon="refresh-outline"
+                                fullWidth
+                            />
+                        )}
+                        <PrimaryButton
+                            title="Go Back"
+                            onPress={() => navigation.goBack()}
+                            icon="arrow-back-outline"
+                            fullWidth
+                        />
+                    </View>
                 </View>
             </View>
         );
