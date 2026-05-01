@@ -25,9 +25,14 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.environ.get('MODEL_PATH', os.path.join(_HERE, 'model', 'plant_disease_model.keras'))
 LABELS_PATH = os.environ.get('LABELS_PATH', os.path.join(_HERE, 'labels.json'))
 IMG_SIZE = 224
-CONFIDENCE_THRESHOLD = 0.70  # Below this = unrecognized / not a supported crop image
-ENTROPY_THRESHOLD = 1.0      # bits — high entropy means model is unsure (max for 5 classes ≈ 2.32)
-MARGIN_THRESHOLD = 0.25      # top-1 minus top-2 must exceed this; prevents split/uncertain predictions
+CONFIDENCE_THRESHOLD = 0.65  # Predictions below this = unrecognized
+ENTROPY_THRESHOLD = 1.8      # bits — for 5 classes max=2.32; real plants at 65-70% conf have entropy ~1.5-1.6
+MARGIN_THRESHOLD = 0.20      # top-1 minus top-2 must exceed this
+
+# Per-class overrides — empty now that model is retrained with class weights.
+# The Rice___Leaf_Blast override previously blocked real Leaf Blast predictions
+# (70.98% and 67.37% were being rejected). Removed.
+PER_CLASS_THRESHOLD = {}
 
 # --------- Load Model & Labels ---------
 model = None
@@ -372,8 +377,21 @@ def is_prediction_reliable(probs):
 
 def is_likely_plant_image(image_bytes):
     """
-    Heuristic pre-screen: reject images that clearly are NOT plant photos.
-    QR codes, documents, and other non-plant images will be caught here.
+    Pre-screen: rejects images that are clearly not a plant leaf photo.
+
+    The model was ONLY trained on plant disease images, so it always outputs
+    a disease class even for photos of pencil cases, cars, or people.
+    This screen must catch those before they reach the model.
+
+    Strategy:
+      1. Hard rejections for specific non-plant object types.
+      2. Check for MULTIPLE BRIGHT ARTIFICIAL COLOURS simultaneously — stationery,
+         toys, packaging always have 2+ vivid colours (red+orange, orange+blue …).
+         Real diseased leaves have ≤1 artificial-colour family (green + warm-brown).
+      3. Positive gate: the image must have enough real plant-tissue colour.
+         Lesion colour definition is tightened: blue channel MUST be < 100
+         (excludes human skin B≈120 and plastic objects with B≈80-150).
+
     Returns (is_plant: bool, reason: str)
     """
     try:
@@ -381,53 +399,107 @@ def is_likely_plant_image(image_bytes):
         img_array = np.array(image, dtype=np.float32)
 
         r, g, b = img_array[:, :, 0], img_array[:, :, 1], img_array[:, :, 2]
+        total = r.size
 
-        # 1. Saturation check: QR codes / documents are near-greyscale
+        # ── Basic metrics ─────────────────────────────────────────────────────
         max_ch = np.maximum(np.maximum(r, g), b)
         min_ch = np.minimum(np.minimum(r, g), b)
         saturation = np.where(max_ch > 0, (max_ch - min_ch) / max_ch, 0.0)
         avg_saturation = float(np.mean(saturation))
+        bw_ratio = float(np.sum((max_ch - min_ch) < 30) / total)
 
-        # 2. B&W pixel ratio: pixels where all channels are within 30 of each other
-        channel_range = max_ch - min_ch
-        bw_ratio = float(np.sum(channel_range < 30) / channel_range.size)
+        # ── Green leaf tissue (g > r AND g > b) ───────────────────────────────
+        green_mask  = (g > r) & (g > b)
+        green_ratio = float(np.sum(green_mask) / total)
 
-        # 3. Green dominance: plant leaves have significant green-dominant pixels
-        green_dominant_ratio = float(np.sum((g > r) & (g > b)) / r.size)
+        # ── Disease lesion colours ─────────────────────────────────────────────
+        # Real lesion colours:
+        #   Rice Brown Spot        : R≈130, G≈90,  B≈50   (dark brown)
+        #   Rice Leaf Blast border : R≈160, G≈130, B≈70   (grey-tan)
+        #   Tomato Early/Late blight: R≈110, G≈70,  B≈40  (dark brown)
+        # Intentionally EXCLUDED:
+        #   Human skin (B ≈ 100-150) → b < 100 gate removes it
+        #   Bright orange plastic (R>170, G>80, B<80) → explicit exclusion
+        r_int = r.astype(np.int32)
+        b_int = b.astype(np.int32)
+        lesion_mask = (
+            (r > 80) & (b < 100) &
+            ((r_int - b_int) > 30) &
+            ~green_mask &
+            ~((r > 170) & (g > 80) & (b < 80))   # not bright-orange artificial object
+        )
+        lesion_ratio = float(np.sum(lesion_mask) / total)
+
+        # Combined plant-tissue content
+        plant_color_ratio = green_ratio + lesion_ratio
+
+        # ── Bright-red object (vehicles, fire trucks) ─────────────────────────
+        bright_red_mask  = (r > 165) & (r > g + 80) & (r > b + 55) & (g < 80)
+        bright_red_ratio = float(np.sum(bright_red_mask) / total)
+
+        # ── Bright-orange artificial object (marker caps, toys, packaging) ────
+        # Orange markers:  R≈220, G≈120, B≈30
+        # Brown lesions:   R≈130, G≈90,  B≈50  → R < 180, so NOT caught here
+        orange_mask  = (r > 180) & (g > 80) & (g < 155) & (b < 60)
+        orange_ratio = float(np.sum(orange_mask) / total)
+
+        # ── Pure sky ──────────────────────────────────────────────────────────
+        sky_mask  = (b > r + 25) & (b > g + 15) & (b > 100)
+        sky_ratio = float(np.sum(sky_mask) / total)
 
         logger.info(
-            f"Image check — saturation={avg_saturation:.3f}, "
-            f"bw_ratio={bw_ratio:.3f}, green_dominant={green_dominant_ratio:.3f}"
+            f"Image check — sat={avg_saturation:.3f}, bw={bw_ratio:.3f}, "
+            f"green={green_ratio:.3f}, lesion={lesion_ratio:.3f}, "
+            f"plant_color={plant_color_ratio:.3f}, sky={sky_ratio:.3f}, "
+            f"bright_red={bright_red_ratio:.3f}, orange={orange_ratio:.3f}"
         )
 
-        # Reject if image looks like a QR code / document: near-zero saturation + almost entirely B&W
-        # Real disease images (even grey/brown lesions) have sat ~0.10+ and bw ~0.80-0.92
-        # QR codes have sat ~0, bw ~0.99+
+        # ── Rule 1: QR code / black-and-white document ────────────────────────
         if avg_saturation < 0.05 and bw_ratio > 0.90:
+            return False, f"QR code or document (sat={avg_saturation:.3f})"
+
+        # ── Rule 2: Single dominant bright-red object (vehicle, fire truck) ───
+        if bright_red_ratio > 0.25 and green_ratio < 0.08:
+            return False, f"Bright-red vehicle or object (red={bright_red_ratio:.3f})"
+
+        # ── Rule 3: Pure sky with no vegetation ──────────────────────────────
+        if sky_ratio > 0.75 and green_ratio < 0.05:
+            return False, f"Sky image with no plant content (sky={sky_ratio:.3f})"
+
+        # ── Rule 4: Multiple bright artificial colours detected ───────────────
+        # Stationery, toys, and packaging always have 2+ vivid colour groups.
+        # Real diseased leaves only have green + warm-brown; they NEVER have
+        # both a strong bright-red region AND a strong bright-orange region.
+        if bright_red_ratio > 0.04 and orange_ratio > 0.04:
             return False, (
-                f"Image appears to be a QR code or document "
-                f"(saturation={avg_saturation:.3f}, bw_ratio={bw_ratio:.3f})"
+                f"Multiple artificial colours detected — not a plant "
+                f"(red={bright_red_ratio:.3f}, orange={orange_ratio:.3f})"
             )
 
-        # Reject if almost zero green-dominant pixels AND near-perfect greyscale
-        if green_dominant_ratio < 0.02 and avg_saturation < 0.05:
+        # ── Rule 5: Mandatory minimum green ─────────────────────────────────────
+        # Every supported plant disease has green leaf tissue: even severely
+        # diseased leaves retain ≥8% green pixels. Animals (dogs, cats),
+        # cars, food, and most other objects have near-zero green.
+        if green_ratio < 0.08:
             return False, (
-                f"Image lacks plant-like content "
-                f"(green_dominant={green_dominant_ratio:.3f}, saturation={avg_saturation:.3f})"
+                f"Not enough green leaf tissue — not a plant photo "
+                f"(green={green_ratio:.3f})"
             )
 
-        # Tighter check: if the image has very low overall green presence and low
-        # saturation it is unlikely to be a plant photo (e.g. a person, sky, etc.)
-        if green_dominant_ratio < 0.05 and avg_saturation < 0.12:
+        # ── Rule 6: Positive plant-colour gate ─────────────────────────────────
+        # Combined green + disease-lesion colour must meet minimum threshold.
+        if plant_color_ratio < 0.15:
             return False, (
-                f"Insufficient plant-like colour profile "
-                f"(green_dominant={green_dominant_ratio:.3f}, saturation={avg_saturation:.3f})"
+                f"Not enough plant-leaf colour "
+                f"(green={green_ratio:.3f}, lesion={lesion_ratio:.3f}, "
+                f"combined={plant_color_ratio:.3f})"
             )
 
         return True, "OK"
     except Exception as e:
         logger.warning(f"Plant image check error: {e}")
         return True, "validation_error"  # fail-open so real images are not blocked
+
 
 
 def get_mock_prediction(image_bytes):
@@ -539,8 +611,9 @@ def predict():
             predicted_class, confidence = get_mock_prediction(image_bytes)
 
         # ---- Low-confidence = unrecognized image ----
-        if confidence < CONFIDENCE_THRESHOLD:
-            logger.info(f"Unrecognized image — best guess: {predicted_class} ({confidence:.2%}), below threshold {CONFIDENCE_THRESHOLD}")
+        effective_threshold = PER_CLASS_THRESHOLD.get(predicted_class, CONFIDENCE_THRESHOLD)
+        if confidence < effective_threshold:
+            logger.info(f"Unrecognized image — best guess: {predicted_class} ({confidence:.2%}), below threshold {effective_threshold}")
             return jsonify({
                 'success': True,
                 'unrecognized': True,
@@ -669,7 +742,8 @@ def predict_base64():
         else:
             predicted_class, confidence = get_mock_prediction(image_bytes)
 
-        if confidence < CONFIDENCE_THRESHOLD:
+        effective_threshold = PER_CLASS_THRESHOLD.get(predicted_class, CONFIDENCE_THRESHOLD)
+        if confidence < effective_threshold:
             logger.info(f"Unrecognized image (base64) — best guess: {predicted_class} ({confidence:.2%})")
             return jsonify({
                 'success': True,
