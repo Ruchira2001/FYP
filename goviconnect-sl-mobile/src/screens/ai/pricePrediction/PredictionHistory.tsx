@@ -35,8 +35,7 @@ const PredictionHistory: React.FC = () => {
     const renderItem = ({ item }: { item: PredictionResult }) => (
         <TouchableOpacity
             style={styles.card}
-            // Add handler later if we want to view past result details
-            onPress={() => { /* navigation.navigate('PriceResult', { ...item }); */ }}
+            onPress={() => navigation.navigate('PredictionDetail', { item })}
         >
             <View style={styles.cardContent}>
                 <View style={styles.iconContainer}>

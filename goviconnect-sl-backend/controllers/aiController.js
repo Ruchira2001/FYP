@@ -1,31 +1,7 @@
 const DiagnosisResult = require('../models/DiagnosisResult');
 const PredictionResult = require('../models/PredictionResult');
 const { predictDisease } = require('../services/mlService');
-
-// Base prices per kg for crops (LKR) - real SL market prices
-const BASE_PRICES = {
-  tea: { low: 120, high: 180 },
-  paddy: { low: 85, high: 110 },
-  tomato: { low: 150, high: 280 },
-  chili: { low: 350, high: 550 },
-  potato: { low: 180, high: 250 },
-  carrot: { low: 200, high: 320 },
-  cabbage: { low: 80, high: 150 },
-  beans: { low: 280, high: 420 },
-  mango: { low: 200, high: 400 },
-  banana: { low: 120, high: 200 },
-  coconut: { low: 80, high: 120 },
-  cinnamon: { low: 1800, high: 2500 },
-  pepper: { low: 1200, high: 1800 },
-  ginger: { low: 450, high: 700 },
-  turmeric: { low: 380, high: 550 },
-};
-
-// Season multipliers
-const SEASON_MULTIPLIER = {
-  Maha: 0.95, // Oct-Mar: higher supply = slightly lower prices
-  Yala: 1.05, // Apr-Sep: lower supply = slightly higher prices
-};
+const { getCurrentPrices } = require('../services/priceService');
 
 // Crop Sinhala names mapping
 const CROP_SI_NAMES = {
@@ -143,23 +119,35 @@ exports.pricePrediction = async (req, res, next) => {
       });
     }
 
-    const cropKey = crop.toLowerCase();
-    const base = BASE_PRICES[cropKey] || { low: 100, high: 200 };
+    const cropKey     = crop.toLowerCase();
+    const cropName    = crop.charAt(0).toUpperCase() + crop.slice(1);
+    const cropSi      = CROP_SI_NAMES[cropKey] || crop;
+    // Sanitize optional fields — empty strings must become undefined to pass Mongoose enum validation
+    const cleanSeason   = season   && ['Maha', 'Yala'].includes(season)   ? season   : undefined;
+    const cleanDistrict = district && district.trim() ? district.trim() : undefined;
 
-    // Apply season multiplier
-    const seasonMult = season ? (SEASON_MULTIPLIER[season] || 1) : 1;
+    // Fetch live SL market prices (WFP API) or fall back to HARTI/DOA averages
+    const { priceLow, priceHigh, dataSource, fetchedAt } =
+      await getCurrentPrices(cropKey, cleanDistrict, cleanSeason);
 
-    // Add randomness (±10%)
-    const variance = 0.1;
-    const priceLow = Math.round(base.low * seasonMult * (1 - variance + Math.random() * variance * 2));
-    const priceHigh = Math.round(base.high * seasonMult * (1 - variance + Math.random() * variance * 2));
+    const seasonNote = cleanSeason
+      ? (cleanSeason === 'Yala'
+          ? `The ${cleanSeason} season (Apr–Sep) typically sees lower supply and higher prices.`
+          : `The ${cleanSeason} season (Oct–Mar) is peak harvest; supply is higher and prices may be moderate.`)
+      : '';
 
-    const cropName = crop.charAt(0).toUpperCase() + crop.slice(1);
-    const cropSi = CROP_SI_NAMES[cropKey] || crop;
+    const districtNote = cleanDistrict ? ` in the ${cleanDistrict} district` : '';
 
-    const summary = `Based on current market trends and your ${landSize} ${landUnit} of ${cropName} in ${district || 'your area'}, the estimated price range is Rs. ${priceLow} - ${priceHigh} per kg. ${season ? `The ${season} season typically shows ${season === 'Yala' ? 'higher' : 'moderate'} demand.` : ''} Consider monitoring local market prices for optimal selling time.`;
+    const summary = `Based on ${dataSource} data (as of ${new Date(fetchedAt).toLocaleDateString('en-LK')}), ` +
+      `the estimated farmgate/market price for ${cropName}${districtNote} is Rs. ${priceLow.toLocaleString()} – ${priceHigh.toLocaleString()} per kg. ` +
+      `${seasonNote} ` +
+      `You have ${landSize} ${landUnit} under cultivation. Monitor local markets (Dambulla, Manning, Narahenpita) for the best selling window.`;
 
-    const summarySi = `වත්මන් වෙළඳපොළ ප්‍රවණතා සහ ${district || 'ඔබේ ප්‍රදේශයේ'} ඔබේ ${landSize} ${landUnit} ${cropSi} මත පදනම්ව, ඇස්තමේන්තුගත මිල පරාසය කිලෝ ග්‍රෑම් එකකට රු. ${priceLow} - ${priceHigh} වේ. ${season ? `${season} කන්නය සාමාන්‍යයෙන් ${season === 'Yala' ? 'ඉහළ' : 'මධ්‍යස්ථ'} ඉල්ලුමක් දක්වයි.` : ''} ප්‍රශස්ත විකුණුම් වේලාව සඳහා ප්‍රාදේශීය වෙළඳපොළ මිල නිරීක්ෂණය කිරීම සලකා බලන්න.`;
+    const summarySi = `${dataSource} දත්ත (${new Date(fetchedAt).toLocaleDateString('si-LK')} දිනට) ` +
+      `අනුව${cleanDistrict ? ` ${cleanDistrict} දිස්ත්‍රික්කයේ` : ''} ${cropSi} සඳහා ` +
+      `ඇස්තමේන්තුගත වෙළඳපොළ මිල කිලෝ ග්‍රෑම් එකකට රු. ${priceLow.toLocaleString()} – ${priceHigh.toLocaleString()} වේ. ` +
+      `${cleanSeason ? (cleanSeason === 'Yala' ? `${cleanSeason} කන්නයේදී සැපයුම අඩු නිසා මිල ඉහළ විය හැක.` : `${cleanSeason} කන්නය ප්‍රධාන අස්වනු කාලය; සැපයුම ඉහළ නිසා මිල මධ්‍යස්ථ විය හැක.`) : ''} ` +
+      `ප්‍රශස්ත විකුණුම් අවස්ථාව සඳහා (දඹුල්ල, මැනිං, නාරාහේන්පිට) ප්‍රාදේශීය වෙළඳපොළ නිරීක්ෂණය කරන්න.`;
 
     // Save prediction
     const prediction = await PredictionResult.create({
@@ -169,8 +157,8 @@ exports.pricePrediction = async (req, res, next) => {
       variety,
       landSize,
       landUnit,
-      district,
-      season,
+      district: cleanDistrict,
+      season: cleanSeason,
       priceLow,
       priceHigh,
       summary,
@@ -180,7 +168,7 @@ exports.pricePrediction = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      data: prediction,
+      data: { ...prediction.toObject(), dataSource, priceAsOf: fetchedAt },
     });
   } catch (error) {
     next(error);

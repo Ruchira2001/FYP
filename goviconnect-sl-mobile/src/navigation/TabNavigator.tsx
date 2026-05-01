@@ -10,7 +10,7 @@ import { expertsAPI } from '../services/api';
 // Import screens
 import { Home } from '../screens/home';
 import { LearnHub, CropDetails, SavedLibrary, OfflineDownloads, AddCropGuide, FarmerGuideDetails } from '../screens/learnhub';
-import { AIHome, CropDoctorUpload, CropDoctorResult, DiagnosisHistory, DiagnosisDetail, PriceForm, PriceResult, PredictionHistory } from '../screens/ai';
+import { AIHome, CropDoctorUpload, CropDoctorResult, DiagnosisHistory, DiagnosisDetail, PriceForm, PriceResult, PredictionHistory, PredictionDetail } from '../screens/ai';
 import { Meetings, MeetingDetails, MyMeetings, ExpertProfileView } from '../screens/meetings';
 import { Profile, Settings, HelpFAQ, EditProfile } from '../screens/profile';
 import { ExpertRegister } from '../screens/expert/auth';
@@ -52,6 +52,7 @@ const AIStackNavigator = () => (
         <AIStack.Screen name="PriceForm" component={PriceForm} />
         <AIStack.Screen name="PriceResult" component={PriceResult} />
         <AIStack.Screen name="PredictionHistory" component={PredictionHistory} />
+        <AIStack.Screen name="PredictionDetail" component={PredictionDetail} />
     </AIStack.Navigator>
 );
 

@@ -13,6 +13,39 @@ import { useConnectionStatus } from '../../../services/netinfo';
 import { generateId } from '../../../utils/validators';
 import cropsData from '../../../data/crops.json';
 
+// Typical yield per acre (kg) for Sri Lanka — DOA/HARTI reference values
+const YIELD_PER_ACRE: Record<string, number> = {
+    tea:      1500,  // green leaf
+    paddy:    2000,
+    tomato:   8000,
+    chili:    1500,
+    potato:   6000,
+    carrot:   8000,
+    cabbage:  10000,
+    beans:    2500,
+    mango:    3000,
+    banana:   8000,
+    coconut:  1750,  // ~50 nuts/tree × 70 trees/acre × avg 0.5 kg
+    cinnamon: 300,
+    pepper:   500,
+    ginger:   4000,
+    turmeric: 5000,
+};
+
+const LAND_UNIT_TO_ACRES: Record<string, number> = {
+    acres:    1,
+    hectares: 2.47105,
+    perches:  0.00625,
+};
+
+/** Returns estimated yield in kg based on crop, land size, and unit. */
+function estimateYieldKg(cropId: string, landSize: number, landUnit: string): number | null {
+    const yieldPerAcre = YIELD_PER_ACRE[cropId.toLowerCase()];
+    const factor = LAND_UNIT_TO_ACRES[landUnit.toLowerCase()];
+    if (!yieldPerAcre || !factor) return null;
+    return Math.round(landSize * factor * yieldPerAcre);
+}
+
 type ParamList = {
     PriceResult: {
         crop: string;
@@ -37,6 +70,10 @@ const PriceResult: React.FC = () => {
     const [saved, setSaved] = useState(false);
 
     const crop = cropsData.crops.find(c => c.id === params.crop);
+
+    const estYieldKg = params.expectedYield
+        ? parseInt(params.expectedYield, 10) || null
+        : estimateYieldKg(params.crop, params.landSize, params.landUnit);
 
     useEffect(() => {
         getPrediction();
@@ -187,6 +224,36 @@ const PriceResult: React.FC = () => {
                         <Text style={styles.unitText}>
                             {t('ai.per_kg')}
                         </Text>
+
+                        {/* Estimated Yield & Revenue */}
+                        {estYieldKg != null && (
+                            <View style={styles.yieldContainer}>
+                                <View style={styles.yieldDivider} />
+                                <View style={styles.yieldRow}>
+                                    <View style={styles.yieldItem}>
+                                        <Ionicons name="leaf-outline" size={16} color={COLORS.success} />
+                                        <Text style={styles.yieldLabel}>
+                                            {i18n.language === 'si' ? 'ඇස්.අස්වනු' : 'Est. Yield'}
+                                        </Text>
+                                        <Text style={styles.yieldValue}>
+                                            {estYieldKg.toLocaleString()} kg
+                                        </Text>
+                                    </View>
+                                    <View style={styles.yieldSeparator} />
+                                    <View style={styles.yieldItem}>
+                                        <Ionicons name="cash-outline" size={16} color={COLORS.info} />
+                                        <Text style={styles.yieldLabel}>
+                                            {i18n.language === 'si' ? 'ඇස්.ආදායම' : 'Est. Revenue'}
+                                        </Text>
+                                        <Text style={styles.yieldValue}>
+                                            {result?.priceLow && result?.priceHigh
+                                                ? `Rs. ${(estYieldKg * result.priceLow).toLocaleString()} – ${(estYieldKg * result.priceHigh).toLocaleString()}`
+                                                : '---'}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                        )}
                     </View>
 
                     {/* Summary */}
@@ -355,6 +422,40 @@ const styles = StyleSheet.create({
         color: COLORS.neutral[400],
         fontSize: 14,
         marginTop: 8,
+    },
+    yieldContainer: {
+        marginTop: 16,
+    },
+    yieldDivider: {
+        height: 1,
+        backgroundColor: COLORS.neutral[100],
+        marginBottom: 12,
+    },
+    yieldRow: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+    },
+    yieldItem: {
+        flex: 1,
+        alignItems: 'center',
+        gap: 2,
+    },
+    yieldSeparator: {
+        width: 1,
+        backgroundColor: COLORS.neutral[100],
+        marginHorizontal: 8,
+    },
+    yieldLabel: {
+        fontSize: 11,
+        color: COLORS.neutral[400],
+        textTransform: 'uppercase',
+        marginTop: 2,
+    },
+    yieldValue: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: COLORS.neutral[700],
+        textAlign: 'center',
     },
     summaryCard: {
         backgroundColor: '#eff6ff', // blue-50
