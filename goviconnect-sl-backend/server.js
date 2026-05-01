@@ -27,6 +27,7 @@ const expertRoutes = require('./routes/experts');
 const shopRoutes = require('./routes/shop');
 const syncRoutes = require('./routes/sync');
 const adminRoutes = require('./routes/admin');
+const translateRoutes = require('./routes/translate');
 
 // Initialize Express
 const app = express();
@@ -104,6 +105,7 @@ app.use('/api/experts', expertRoutes);
 app.use('/api/shop', shopRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/translate', translateRoutes);
 
 // 404 handler
 app.use((req, res) => {

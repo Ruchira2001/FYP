@@ -12,6 +12,7 @@ import {
 import { authAPI, saveAuthData, getAuthData, clearAuthData } from '../services/api';
 import { initI18n, setStoredLanguage } from '../i18n';
 import { initNetInfo } from '../services/netinfo';
+import { clearTranslationCache } from '../services/translateService';
 
 interface AppContextType {
     // Auth
@@ -282,6 +283,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const changeLanguage = async (lang: string): Promise<void> => {
         await setStoredLanguage(lang);
         await updateSettings({ language: lang });
+        clearTranslationCache(); // flush cached translations so new language is used
     };
 
     return (

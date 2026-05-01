@@ -15,9 +15,7 @@ const Settings: React.FC = () => {
     const { settings, updateSettings, changeLanguage } = useApp();
 
     const handleLanguageChange = () => {
-        // Toggle directly between 'en' and 'si' to immediately switch
-        const nextLang = i18n.language === 'en' ? 'si' : 'en';
-        changeLanguage(nextLang);
+        navigation.navigate('LanguageModal');
     };
 
     const handleLiteModeToggle = (value: boolean) => {

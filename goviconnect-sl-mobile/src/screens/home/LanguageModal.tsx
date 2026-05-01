@@ -13,16 +13,22 @@ const LanguageModal: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
     const { changeLanguage } = useApp();
-    const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || 'en');
+    // Start with the currently active language
+    const [selectedLanguage, setSelectedLanguage] = useState(i18n.language?.substring(0, 2) || 'en');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleLanguageSelect = (langCode: string) => {
+    // Immediately preview the language when user taps an option
+    const handleLanguageSelect = async (langCode: string) => {
+        if (langCode === selectedLanguage) return;
         setSelectedLanguage(langCode);
+        // Live-preview: change i18n instantly without saving yet
+        await i18n.changeLanguage(langCode);
     };
 
     const handleConfirm = async () => {
         setIsLoading(true);
         try {
+            // Persist the selection (AsyncStorage + settings)
             await changeLanguage(selectedLanguage);
             navigation.goBack();
         } catch (error) {
@@ -30,6 +36,15 @@ const LanguageModal: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleCancel = async () => {
+        // Revert preview if user presses close without confirming
+        const storedLang = i18n.language?.substring(0, 2) || 'en';
+        if (storedLang !== selectedLanguage) {
+            await i18n.changeLanguage(storedLang);
+        }
+        navigation.goBack();
     };
 
     return (
@@ -45,7 +60,7 @@ const LanguageModal: React.FC = () => {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity
-                        onPress={() => navigation.goBack()}
+                        onPress={handleCancel}
                         style={styles.closeButton}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
@@ -63,6 +78,7 @@ const LanguageModal: React.FC = () => {
                 <View style={styles.optionsContainer}>
                     {languages.map((lang) => {
                         const isSelected = selectedLanguage === lang.code;
+                        const flag = lang.code === 'si' ? '🇱🇰' : '🇬🇧';
                         return (
                             <TouchableOpacity
                                 key={lang.code}
@@ -71,6 +87,7 @@ const LanguageModal: React.FC = () => {
                                     styles.option,
                                     isSelected ? styles.optionSelected : styles.optionDefault
                                 ]}
+                                activeOpacity={0.7}
                             >
                                 <View
                                     style={[
@@ -78,14 +95,7 @@ const LanguageModal: React.FC = () => {
                                         isSelected ? styles.iconContainerSelected : styles.iconContainerDefault
                                     ]}
                                 >
-                                    <Text
-                                        style={[
-                                            styles.langCode,
-                                            isSelected ? styles.langCodeSelected : styles.langCodeDefault
-                                        ]}
-                                    >
-                                        {lang.code.toUpperCase()}
-                                    </Text>
+                                    <Text style={styles.flagText}>{flag}</Text>
                                 </View>
 
                                 <View style={styles.textContainer}>
@@ -210,6 +220,9 @@ const styles = StyleSheet.create({
     },
     langCodeDefault: {
         color: COLORS.neutral[500],
+    },
+    flagText: {
+        fontSize: 26,
     },
     textContainer: {
         flex: 1,

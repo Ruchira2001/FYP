@@ -14,6 +14,7 @@ import { AIHome, CropDoctorUpload, CropDoctorResult, DiagnosisHistory, Diagnosis
 import { Meetings, MeetingDetails, MyMeetings, ExpertProfileView } from '../screens/meetings';
 import { Profile, Settings, HelpFAQ, EditProfile } from '../screens/profile';
 import { ExpertRegister } from '../screens/expert/auth';
+import LanguageModal from '../screens/home/LanguageModal';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -75,6 +76,11 @@ const ProfileStackNavigator = () => (
         <ProfileStack.Screen name="EditProfile" component={EditProfile} />
         <ProfileStack.Screen name="AddCropGuide" component={AddCropGuide} />
         <ProfileStack.Screen name="ExpertRegister" component={ExpertRegister} />
+        <ProfileStack.Screen
+            name="LanguageModal"
+            component={LanguageModal}
+            options={{ presentation: 'transparentModal', animation: 'slide_from_bottom' }}
+        />
     </ProfileStack.Navigator>
 );
 
