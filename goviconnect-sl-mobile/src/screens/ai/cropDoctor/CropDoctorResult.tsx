@@ -190,6 +190,7 @@ const CropDoctorResult: React.FC = () => {
 
     // Unrecognized image screen
     if (result?.unrecognized) {
+        const isServiceDown = result?.class === 'ServiceUnavailable';
         return (
             <View style={styles.container}>
                 <Header
@@ -198,24 +199,39 @@ const CropDoctorResult: React.FC = () => {
                     onBackPress={() => navigation.goBack()}
                 />
                 <View style={styles.loadingContainer}>
-                    <View style={[styles.loaderCircle, { backgroundColor: '#FFF3CD' }]}>
-                        <Ionicons name="alert-circle" size={48} color="#F59E0B" />
+                    <View style={[styles.loaderCircle, { backgroundColor: isServiceDown ? '#FEE2E2' : '#FFF3CD' }]}>
+                        <Ionicons
+                            name={isServiceDown ? 'cloud-offline' : 'alert-circle'}
+                            size={48}
+                            color={isServiceDown ? '#DC2626' : '#F59E0B'}
+                        />
                     </View>
-                    <Text style={[styles.loadingTitle, { color: '#92400E', textAlign: 'center', paddingHorizontal: 24 }]}>
-                        {i18n.language === 'si'
-                            ? 'රූපය හඳුනා ගැනීමට නොහැකි විය'
-                            : 'Image Not Recognized'}
+                    <Text style={[styles.loadingTitle, { color: isServiceDown ? '#991B1B' : '#92400E', textAlign: 'center', paddingHorizontal: 24 }]}>
+                        {isServiceDown
+                            ? (i18n.language === 'si' ? 'සේවාව නොලැබේ' : 'Analysis Service Unavailable')
+                            : (i18n.language === 'si' ? 'රූපය හඳුනා ගැනීමට නොහැකි විය' : 'Image Not Recognized')}
                     </Text>
                     <Text style={[styles.loadingSubtitle, { textAlign: 'center', paddingHorizontal: 32, marginTop: 8 }]}>
-                        {i18n.language === 'si'
-                            ? 'කරුණාකර වී හෝ තක්කාලි ශාකයක රෝගී කොළ හෝ ඵල ඡායාරූපයක් ඉදිරිපත් කරන්න.'
-                            : 'Please upload a clear photo of a diseased leaf or fruit from a supported crop: Rice or Tomato.'}
+                        {isServiceDown
+                            ? (i18n.language === 'si'
+                                ? 'රෝග විශ්ලේෂණ සේවාව තාවකාලිකව නොලැබේ. කරුණාකර මිනිත්තු කිහිපයකින් නැවත උත්සාහ කරන්න.'
+                                : 'The analysis service is temporarily unavailable. Please try again in a few minutes.')
+                            : (i18n.language === 'si'
+                                ? 'මෙම ආකෘතිය හඳුනා ගන්නේ: වී (දුඹුරු ලප, කොළ පිපිරීම) සහ තක්කාලි (බැක්ටීරියා ලප, මුල් දාහය, පසු දාහය) රෝග පමණි. ආසාදිත කොළ හෝ ඵලයේ පැහැදිලි, ආලෝකයෙන් ගත් ඡායාරූපයක් ඉදිරිපත් කරන්න.'
+                                : 'This AI recognizes: Rice (Brown Spot, Leaf Blast) and Tomato (Bacterial Spot, Early Blight, Late Blight). Please upload a clear, well-lit photo of a diseased leaf or fruit from one of these crops.')}
                     </Text>
-                    <View style={{ marginTop: 32, paddingHorizontal: 32, width: '100%' }}>
+                    <View style={{ marginTop: 32, paddingHorizontal: 32, width: '100%', gap: 12 }}>
                         <PrimaryButton
                             title={i18n.language === 'si' ? 'නැවත උත්සාහ කරන්න' : 'Try Again'}
                             onPress={() => navigation.goBack()}
                             icon="camera-outline"
+                            fullWidth
+                        />
+                        <PrimaryButton
+                            title={i18n.language === 'si' ? 'විශේෂඥයෙකුගෙන් අසන්න' : 'Ask an Expert'}
+                            onPress={handleAskExpert}
+                            icon="chatbubble-outline"
+                            variant="outline"
                             fullWidth
                         />
                     </View>

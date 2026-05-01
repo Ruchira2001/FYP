@@ -118,16 +118,23 @@ const CropDoctorUpload: React.FC = () => {
                 <View style={styles.tipsContainer}>
                     <Text style={styles.tipsTitle}>Tips for best results:</Text>
                     <View style={styles.tipItem}>
-                        <Ionicons name="checkmark-circle" size={16} color={COLORS.info} style={{ marginTop: 2 }} />
-                        <Text style={styles.tipText}>Take a clear, focused photo of the affected area</Text>
+                        <Ionicons name="leaf" size={16} color={COLORS.primary[600]} style={{ marginTop: 2 }} />
+                        <Text style={styles.tipText}>
+                            <Text style={{ fontWeight: '700' }}>Supported crops: </Text>
+                            Rice (Brown Spot, Leaf Blast) and Tomato (Bacterial Spot, Early Blight, Late Blight)
+                        </Text>
                     </View>
                     <View style={styles.tipItem}>
                         <Ionicons name="checkmark-circle" size={16} color={COLORS.info} style={{ marginTop: 2 }} />
-                        <Text style={styles.tipText}>Ensure good lighting conditions</Text>
+                        <Text style={styles.tipText}>Take a clear, focused photo of the affected leaf or fruit</Text>
                     </View>
                     <View style={styles.tipItem}>
                         <Ionicons name="checkmark-circle" size={16} color={COLORS.info} style={{ marginTop: 2 }} />
-                        <Text style={styles.tipText}>Include both healthy and affected parts if possible</Text>
+                        <Text style={styles.tipText}>Ensure good lighting — avoid dark or blurry photos</Text>
+                    </View>
+                    <View style={styles.tipItem}>
+                        <Ionicons name="checkmark-circle" size={16} color={COLORS.info} style={{ marginTop: 2 }} />
+                        <Text style={styles.tipText}>Fill the frame with the diseased area for best accuracy</Text>
                     </View>
                 </View>
 

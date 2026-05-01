@@ -25,7 +25,9 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.environ.get('MODEL_PATH', os.path.join(_HERE, 'model', 'plant_disease_model.keras'))
 LABELS_PATH = os.environ.get('LABELS_PATH', os.path.join(_HERE, 'labels.json'))
 IMG_SIZE = 224
-CONFIDENCE_THRESHOLD = 0.88  # Below this = unrecognized / not a supported crop image
+CONFIDENCE_THRESHOLD = 0.70  # Below this = unrecognized / not a supported crop image
+ENTROPY_THRESHOLD = 1.0      # bits — high entropy means model is unsure (max for 5 classes ≈ 2.32)
+MARGIN_THRESHOLD = 0.25      # top-1 minus top-2 must exceed this; prevents split/uncertain predictions
 
 # --------- Load Model & Labels ---------
 model = None
@@ -337,6 +339,37 @@ def preprocess_image(image_bytes):
     return preprocess_input(img_array)
 
 
+def compute_entropy(probs):
+    """Shannon entropy in bits for a probability distribution."""
+    probs = np.array(probs, dtype=np.float64)
+    probs = probs[probs > 1e-12]  # avoid log(0)
+    return float(-np.sum(probs * np.log2(probs)))
+
+
+def is_prediction_reliable(probs):
+    """
+    Check both entropy and top-2 margin to decide if the prediction
+    is trustworthy.  Returns (reliable: bool, reason: str).
+
+    A model trained on N classes is inherently overconfident via softmax —
+    even out-of-distribution images can score high on one class.  The
+    entropy + margin dual-check catches most of these cases:
+      - High entropy → model is spreading probability across classes (uncertain)
+      - Low margin   → top-2 predictions are close (model is indecisive)
+    """
+    sorted_probs = np.sort(probs)[::-1]
+    top1 = float(sorted_probs[0])
+    top2 = float(sorted_probs[1]) if len(sorted_probs) > 1 else 0.0
+    margin = top1 - top2
+    entropy = compute_entropy(probs)
+
+    if entropy > ENTROPY_THRESHOLD:
+        return False, f"High prediction entropy ({entropy:.3f} bits > {ENTROPY_THRESHOLD} threshold) — model uncertain"
+    if margin < MARGIN_THRESHOLD:
+        return False, f"Low confidence margin ({margin:.3f} < {MARGIN_THRESHOLD}) — top-2 classes too close"
+    return True, "OK"
+
+
 def is_likely_plant_image(image_bytes):
     """
     Heuristic pre-screen: reject images that clearly are NOT plant photos.
@@ -383,6 +416,14 @@ def is_likely_plant_image(image_bytes):
                 f"(green_dominant={green_dominant_ratio:.3f}, saturation={avg_saturation:.3f})"
             )
 
+        # Tighter check: if the image has very low overall green presence and low
+        # saturation it is unlikely to be a plant photo (e.g. a person, sky, etc.)
+        if green_dominant_ratio < 0.05 and avg_saturation < 0.12:
+            return False, (
+                f"Insufficient plant-like colour profile "
+                f"(green_dominant={green_dominant_ratio:.3f}, saturation={avg_saturation:.3f})"
+            )
+
         return True, "OK"
     except Exception as e:
         logger.warning(f"Plant image check error: {e}")
@@ -390,36 +431,34 @@ def is_likely_plant_image(image_bytes):
 
 
 def get_mock_prediction(image_bytes):
-    """Fallback mock prediction when model is not available"""
-    import random
-
+    """
+    Fallback used ONLY when the real model file is absent.
+    Always returns below the confidence threshold so the caller
+    returns an 'unrecognized' response rather than a randomly-chosen
+    disease name, which would be actively misleading.
+    """
     # Run the plant image heuristic even in mock mode
     is_plant, reason = is_likely_plant_image(image_bytes)
     if not is_plant:
-        # Return a confidence that will be below the threshold → unrecognized
-        return "Unknown", 0.30
+        return "Unknown", 0.10
 
-    mock_diseases = [
-        ("Tomato___Early_blight", 0.87),
-        ("Tomato___Late_blight", 0.82),
-        ("Tomato___Bacterial_spot", 0.90),
-        ("Rice___Leaf_Blast", 0.91),
-        ("Rice___Brown_Spot", 0.85),
-    ]
-
-    disease, confidence = random.choice(mock_diseases)
-    return disease, confidence
+    # Signal that no real prediction is available — confidence is intentionally
+    # below CONFIDENCE_THRESHOLD so the API returns 'model not available'.
+    return "Unknown", 0.0
 
 
 # --------- API Routes ---------
 
 @app.route('/', methods=['GET'])
 def health():
+    class_names = labels.get('classes', []) if labels else []
     return jsonify({
         'status': 'healthy',
         'service': 'GoviConnect ML - Crop Disease Detection',
         'model_loaded': model is not None,
-        'version': '1.0.0'
+        'version': '1.0.0',
+        'supportedClasses': class_names,
+        'supportedCrops': list({c.split('___')[0] for c in class_names}),
     })
 
 
@@ -463,18 +502,40 @@ def predict():
             # Real model prediction
             img_array = preprocess_image(image_bytes)
             predictions = model.predict(img_array, verbose=0)
+            all_probs = predictions[0]
 
             # Get top prediction
-            predicted_idx = np.argmax(predictions[0])
-            confidence = float(predictions[0][predicted_idx])
+            predicted_idx = int(np.argmax(all_probs))
+            confidence = float(all_probs[predicted_idx])
 
             class_names = labels.get('classes', [])
             if predicted_idx < len(class_names):
                 predicted_class = class_names[predicted_idx]
             else:
                 predicted_class = f"Unknown_class_{predicted_idx}"
+
+            # ---- Entropy + margin reliability check ----
+            reliable, reliability_reason = is_prediction_reliable(all_probs)
+            if not reliable:
+                logger.info(f"Unreliable prediction rejected: {predicted_class} ({confidence:.2%}) — {reliability_reason}")
+                return jsonify({
+                    'success': True,
+                    'unrecognized': True,
+                    'prediction': {
+                        'class': 'Unrecognized',
+                        'diseaseName': 'Image Not Recognized',
+                        'diseaseNameSi': 'රූපය හඳුනා නොගැනීය',
+                        'crop': 'Unknown',
+                        'confidence': round(confidence, 4),
+                        'isHealthy': False,
+                        'treatments': [],
+                        'treatmentsSi': [],
+                        'preventionTips': [],
+                        'preventionTipsSi': [],
+                    }
+                })
         else:
-            # Mock prediction fallback
+            # Mock prediction fallback — model file not found
             predicted_class, confidence = get_mock_prediction(image_bytes)
 
         # ---- Low-confidence = unrecognized image ----
@@ -523,7 +584,8 @@ def predict():
                 'treatmentsSi': treatment_info.get('treatmentsSi', [f'{disease_name} සඳහා විශේෂඥයෙකුගෙන් උපදෙස් ලබා ගන්න']),
                 'preventionTips': treatment_info.get('preventionTips', ['Monitor regularly', 'Maintain good field hygiene']),
                 'preventionTipsSi': treatment_info.get('preventionTipsSi', ['නිතිපතා නිරීක්ෂණය කරන්න', 'හොඳ ක්ෂේත්‍ර සනීපාරක්ෂාව පවත්වාගන්න']),
-            }
+            },
+            'supportedCrops': list({c.split('___')[0] for c in labels.get('classes', [])}),
         }
         
         logger.info(f"Prediction: {predicted_class} ({confidence:.2%})")
@@ -578,10 +640,32 @@ def predict_base64():
         if model is not None:
             img_array = preprocess_image(image_bytes)
             predictions = model.predict(img_array, verbose=0)
-            predicted_idx = np.argmax(predictions[0])
-            confidence = float(predictions[0][predicted_idx])
+            all_probs = predictions[0]
+            predicted_idx = int(np.argmax(all_probs))
+            confidence = float(all_probs[predicted_idx])
             class_names = labels.get('classes', [])
             predicted_class = class_names[predicted_idx] if predicted_idx < len(class_names) else f"Unknown_{predicted_idx}"
+
+            # ---- Entropy + margin reliability check ----
+            reliable, reliability_reason = is_prediction_reliable(all_probs)
+            if not reliable:
+                logger.info(f"Unreliable base64 prediction rejected: {predicted_class} ({confidence:.2%}) — {reliability_reason}")
+                return jsonify({
+                    'success': True,
+                    'unrecognized': True,
+                    'prediction': {
+                        'class': 'Unrecognized',
+                        'diseaseName': 'Image Not Recognized',
+                        'diseaseNameSi': 'රූපය හඳුනා නොගැනීය',
+                        'crop': 'Unknown',
+                        'confidence': round(confidence, 4),
+                        'isHealthy': False,
+                        'treatments': [],
+                        'treatmentsSi': [],
+                        'preventionTips': [],
+                        'preventionTipsSi': [],
+                    }
+                })
         else:
             predicted_class, confidence = get_mock_prediction(image_bytes)
 
