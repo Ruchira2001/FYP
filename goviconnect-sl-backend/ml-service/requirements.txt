@@ -5,3 +5,4 @@ Pillow==11.2.1
 tensorflow==2.16.1
 scipy==1.17.1
 gunicorn==23.0.0
+kaggle>=1.6.14
