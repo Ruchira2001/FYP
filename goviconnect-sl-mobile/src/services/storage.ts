@@ -123,6 +123,37 @@ export const saveLearnHubItem = async (item: SavedLearnHubItem): Promise<void> =
     }
 };
 
+const getUserScopedStorageKey = async (baseKey: string): Promise<string> => {
+    const user = await getUser();
+    const userId = user?.id?.trim();
+    return userId ? `${baseKey}:${userId}` : baseKey;
+};
+
+const getScopedHistory = async <T>(baseKey: string): Promise<T[]> => {
+    const scopedKey = await getUserScopedStorageKey(baseKey);
+    const scopedHistory = await getItem<T[]>(scopedKey);
+
+    if (scopedHistory) {
+        return scopedHistory;
+    }
+
+    // One-time fallback for users upgrading from older global keys.
+    if (scopedKey !== baseKey) {
+        const legacyHistory = await getItem<T[]>(baseKey);
+        if (legacyHistory && legacyHistory.length > 0) {
+            await setItem(scopedKey, legacyHistory);
+            return legacyHistory;
+        }
+    }
+
+    return [];
+};
+
+const saveScopedHistory = async <T>(baseKey: string, history: T[]): Promise<void> => {
+    const scopedKey = await getUserScopedStorageKey(baseKey);
+    await setItem(scopedKey, history);
+};
+
 export const removeLearnHubItem = async (id: string): Promise<void> => {
     const items = await getSavedLearnHub();
     const filtered = items.filter(i => i.id !== id);
@@ -147,14 +178,13 @@ export interface DiagnosisResult {
 }
 
 export const getDiagnosisHistory = async (): Promise<DiagnosisResult[]> => {
-    const history = await getItem<DiagnosisResult[]>(STORAGE_KEYS.DIAGNOSIS_HISTORY);
-    return history || [];
+    return await getScopedHistory<DiagnosisResult>(STORAGE_KEYS.DIAGNOSIS_HISTORY);
 };
 
 export const saveDiagnosisResult = async (result: DiagnosisResult): Promise<void> => {
     const history = await getDiagnosisHistory();
     history.unshift(result);
-    await setItem(STORAGE_KEYS.DIAGNOSIS_HISTORY, history);
+    await saveScopedHistory(STORAGE_KEYS.DIAGNOSIS_HISTORY, history);
 };
 
 // Prediction History
@@ -177,14 +207,13 @@ export interface PredictionResult {
 }
 
 export const getPredictionHistory = async (): Promise<PredictionResult[]> => {
-    const history = await getItem<PredictionResult[]>(STORAGE_KEYS.PREDICTION_HISTORY);
-    return history || [];
+    return await getScopedHistory<PredictionResult>(STORAGE_KEYS.PREDICTION_HISTORY);
 };
 
 export const savePredictionResult = async (result: PredictionResult): Promise<void> => {
     const history = await getPredictionHistory();
     history.unshift(result);
-    await setItem(STORAGE_KEYS.PREDICTION_HISTORY, history);
+    await saveScopedHistory(STORAGE_KEYS.PREDICTION_HISTORY, history);
 };
 
 // Meetings

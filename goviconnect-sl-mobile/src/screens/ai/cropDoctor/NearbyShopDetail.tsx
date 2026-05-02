@@ -15,11 +15,24 @@ import { Header } from '../../../components';
 import { shopAPI } from '../../../services/api';
 import { COLORS } from '../../../utils/constants';
 
+const normalizeText = (value?: string) => (value || '').toLowerCase().trim();
+
+const isProductSuitable = (product: any, diseaseName: string) => {
+    const disease = normalizeText(diseaseName);
+    if (!disease) return false;
+
+    const target = normalizeText(product?.targetDisease);
+    const ingredient = normalizeText(product?.activeIngredient);
+
+    return target.includes(disease) || disease.includes(target) || ingredient.includes(disease);
+};
+
 const NearbyShopDetail: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const route = useRoute<any>();
     const shopId: string = route.params?.shopId;
     const userLocation = route.params?.userLocation;
+    const diseaseName: string = route.params?.diseaseName || '';
 
     const [loading, setLoading] = useState(true);
     const [shop, setShop] = useState<any>(null);
@@ -36,7 +49,19 @@ const NearbyShopDetail: React.FC = () => {
                 }
 
                 const res = await shopAPI.getNearbyShopDetails(shopId, { lat, lng });
-                setShop(res.data?.data || null);
+                const payload = res.data?.data || null;
+
+                if (payload && Array.isArray(payload.products) && diseaseName) {
+                    const sortedProducts = [...payload.products].sort((a, b) => {
+                        const aSuitable = isProductSuitable(a, diseaseName);
+                        const bSuitable = isProductSuitable(b, diseaseName);
+                        if (aSuitable === bSuitable) return 0;
+                        return aSuitable ? -1 : 1;
+                    });
+                    payload.products = sortedProducts;
+                }
+
+                setShop(payload);
             } catch (e) {
                 console.error('Failed to load shop details:', e);
                 setShop(null);
@@ -112,12 +137,18 @@ const NearbyShopDetail: React.FC = () => {
 
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>Available Chemicals & Products</Text>
+                    {diseaseName ? (
+                        <Text style={styles.matchHint}>Showing suitable products first for: {diseaseName}</Text>
+                    ) : null}
                     {Array.isArray(shop.products) && shop.products.length > 0 ? (
                         shop.products.map((product: any) => (
                             <View key={product._id || product.id || product.name} style={styles.productRow}>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.productName}>{product.name}</Text>
                                     <Text style={styles.productMeta}>{product.category || 'General'}</Text>
+                                    {diseaseName && isProductSuitable(product, diseaseName) ? (
+                                        <Text style={styles.suitableText}>Suitable for this diagnosis</Text>
+                                    ) : null}
                                     {product.activeIngredient ? (
                                         <Text style={styles.productMeta}>Active: {product.activeIngredient}</Text>
                                     ) : null}
@@ -212,6 +243,12 @@ const styles = StyleSheet.create({
         color: COLORS.neutral[800],
         marginBottom: 8,
     },
+    matchHint: {
+        marginBottom: 8,
+        color: COLORS.primary[700],
+        fontSize: 12,
+        fontWeight: '600',
+    },
     productRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -227,6 +264,12 @@ const styles = StyleSheet.create({
         marginTop: 2,
         color: COLORS.neutral[500],
         fontSize: 12,
+    },
+    suitableText: {
+        marginTop: 4,
+        color: COLORS.success,
+        fontSize: 12,
+        fontWeight: '700',
     },
     priceWrap: {
         alignItems: 'flex-end',

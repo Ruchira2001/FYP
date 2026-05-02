@@ -173,7 +173,15 @@ const NearbyShopsMap: React.FC = () => {
                                 title={shop.name}
                                 description={`${shop.distanceKm} km away`}
                             >
-                                <Callout onPress={() => navigation.navigate('NearbyShopDetail', { shopId: shop.id, userLocation })}>
+                                <Callout
+                                    onPress={() =>
+                                        navigation.navigate('NearbyShopDetail', {
+                                            shopId: shop.id,
+                                            userLocation,
+                                            diseaseName: params.diseaseName,
+                                        })
+                                    }
+                                >
                                     <View style={styles.callout}>
                                         <Text style={styles.calloutTitle}>{shop.name}</Text>
                                         <Text style={styles.calloutLine}>{shop.location || shop.address || 'Sri Lanka'}</Text>
@@ -197,7 +205,16 @@ const NearbyShopsMap: React.FC = () => {
                                     <Ionicons name="navigate-outline" size={16} color={COLORS.primary[700]} />
                                     <Text style={styles.mapButtonText}>Map</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.detailButton} onPress={() => navigation.navigate('NearbyShopDetail', { shopId: shop.id, userLocation })}>
+                                <TouchableOpacity
+                                    style={styles.detailButton}
+                                    onPress={() =>
+                                        navigation.navigate('NearbyShopDetail', {
+                                            shopId: shop.id,
+                                            userLocation,
+                                            diseaseName: params.diseaseName,
+                                        })
+                                    }
+                                >
                                     <Text style={styles.detailButtonText}>Details</Text>
                                 </TouchableOpacity>
                             </View>
