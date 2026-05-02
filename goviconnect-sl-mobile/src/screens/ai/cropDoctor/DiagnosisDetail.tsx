@@ -29,6 +29,9 @@ const DiagnosisDetail: React.FC = () => {
     const isHealthy = item.diseaseName?.toLowerCase().includes('healthy');
     const treatments = i18n.language === 'si' ? item.treatmentsSi : item.treatments;
     const preventionTips = i18n.language === 'si' ? item.preventionTipsSi : item.preventionTips;
+    const recommendedChemicals = i18n.language === 'si'
+        ? (item.recommendedChemicalsSi || item.recommendedChemicals || [])
+        : (item.recommendedChemicals || []);
     const diseaseName = i18n.language === 'si' ? item.diseaseNameSi : item.diseaseName;
 
     return (
@@ -142,8 +145,43 @@ const DiagnosisDetail: React.FC = () => {
                         </View>
                     )}
 
+                    {/* Recommended Chemicals */}
+                    {recommendedChemicals && recommendedChemicals.length > 0 && (
+                        <View style={styles.chemicalCard}>
+                            <View style={styles.cardHeader}>
+                                <Ionicons name="flask" size={20} color={COLORS.warning} />
+                                <Text style={styles.chemicalCardTitle}>Recommended Chemicals</Text>
+                            </View>
+                            {recommendedChemicals.map((chemical, index) => (
+                                <View key={`${chemical}-${index}`} style={styles.listItem}>
+                                    <Ionicons
+                                        name="radio-button-on"
+                                        size={14}
+                                        color={COLORS.warning}
+                                        style={{ marginTop: 4 }}
+                                    />
+                                    <Text style={styles.chemicalListText}>{chemical}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    )}
+
                     {/* Action Buttons */}
                     <View style={styles.actionsContainer}>
+                        <View style={styles.actionButtonWrapper}>
+                            <PrimaryButton
+                                title="Nearby Agro Shops"
+                                onPress={() =>
+                                    navigation.navigate('NearbyShopsMap', {
+                                        diseaseName: item.diseaseName,
+                                    })
+                                }
+                                icon="map-outline"
+                                variant="outline"
+                                fullWidth
+                            />
+                        </View>
+                        <View style={styles.verticalSpacer} />
                         <View style={styles.actionButtonWrapper}>
                             <PrimaryButton
                                 title={t('ai.ask_expert')}
@@ -156,7 +194,7 @@ const DiagnosisDetail: React.FC = () => {
                                 fullWidth
                             />
                         </View>
-                        <View style={styles.spacer} />
+                        <View style={styles.verticalSpacer} />
                         <View style={styles.actionButtonWrapper}>
                             <PrimaryButton
                                 title={t('ai.crop_doctor')}
@@ -319,16 +357,37 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         lineHeight: 20,
     },
+    chemicalCard: {
+        backgroundColor: '#fff7ed',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#fdba74',
+    },
+    chemicalCardTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#9a3412',
+        marginLeft: 8,
+    },
+    chemicalListText: {
+        flex: 1,
+        fontSize: 14,
+        color: '#7c2d12',
+        marginLeft: 8,
+        lineHeight: 20,
+    },
     actionsContainer: {
-        flexDirection: 'row',
+        flexDirection: 'column',
         marginTop: 4,
         marginBottom: 24,
     },
     actionButtonWrapper: {
-        flex: 1,
+        width: '100%',
     },
-    spacer: {
-        width: 8,
+    verticalSpacer: {
+        height: 10,
     },
 });
 

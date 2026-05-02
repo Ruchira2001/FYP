@@ -6,6 +6,8 @@ const {
   getShopDashboard,
   getProducts,
   getProductById,
+  getNearbyShops,
+  getNearbyShopDetails,
   addProduct,
   updateProduct,
   deleteProduct,
@@ -13,6 +15,10 @@ const {
   updateOrderStatus,
   createOrder,
 } = require('../controllers/shopController');
+
+// Farmer-facing shop discovery
+router.get('/nearby', protect, authorize('farmer'), getNearbyShops);
+router.get('/nearby/:id', protect, authorize('farmer'), getNearbyShopDetails);
 
 // All shop routes require authentication and shop role
 router.use(protect, authorize('shop'));

@@ -136,22 +136,56 @@ const seedUsers = async () => {
 
     console.log(`   ✅ Seeded 3 demo experts`);
 
-    // --------- Demo Shop ---------
-    const shop = await Shop.create({
-      name: 'Govi Agri Supplies',
-      email: 'shop@goviconnect.lk',
-      phone: '0774444444',
-      password: 'shop123',
-      district: 'Colombo',
-      location: 'No. 45, Main Street, Colombo 07',
-      type: 'Business',
-      settings: {
-        notifications: true,
-        language: 'en',
+    // --------- Demo Shops ---------
+    await Shop.insertMany([
+      {
+        name: 'Govi Agri Supplies - Colombo',
+        email: 'shop@goviconnect.lk',
+        phone: '0774444444',
+        password: 'shop123',
+        location: 'Colombo',
+        address: 'No. 45, Main Street, Colombo 07',
+        latitude: 6.9147,
+        longitude: 79.8737,
+        type: 'Business',
+        settings: {
+          notifications: true,
+          language: 'en',
+        },
       },
-    });
+      {
+        name: 'Hill Country Agro Mart',
+        email: 'shop2@goviconnect.lk',
+        phone: '0775555555',
+        password: 'shop123',
+        location: 'Kandy',
+        address: 'No. 18, Peradeniya Road, Kandy',
+        latitude: 7.2921,
+        longitude: 80.6335,
+        type: 'Business',
+        settings: {
+          notifications: true,
+          language: 'en',
+        },
+      },
+      {
+        name: 'Southern Agro Chemicals',
+        email: 'shop3@goviconnect.lk',
+        phone: '0776666666',
+        password: 'shop123',
+        location: 'Galle',
+        address: 'No. 102, Wakwella Road, Galle',
+        latitude: 6.0451,
+        longitude: 80.217,
+        type: 'Business',
+        settings: {
+          notifications: true,
+          language: 'en',
+        },
+      },
+    ]);
 
-    console.log(`   ✅ Seeded 1 demo shop`);
+    console.log(`   ✅ Seeded 3 demo shops`);
 
     // --------- Demo Meetings ---------
     const now = new Date();
@@ -219,7 +253,9 @@ const seedUsers = async () => {
     console.log('   🧑‍🔬 Expert:  expert@goviconnect.lk / expert123');
     console.log('   🧑‍🔬 Expert2: anura@goviconnect.lk / expert123');
     console.log('   🧑‍🔬 Expert3: samanthi@goviconnect.lk / expert123');
-    console.log('   🏪 Shop:    shop@goviconnect.lk / shop123');
+    console.log('   🏪 Shop1:   shop@goviconnect.lk / shop123');
+    console.log('   🏪 Shop2:   shop2@goviconnect.lk / shop123');
+    console.log('   🏪 Shop3:   shop3@goviconnect.lk / shop123');
     console.log('   ─────────────────────────────────────');
 
   } catch (error) {

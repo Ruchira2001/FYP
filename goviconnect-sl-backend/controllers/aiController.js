@@ -3,6 +3,39 @@ const PredictionResult = require('../models/PredictionResult');
 const { predictDisease } = require('../services/mlService');
 const { getCurrentPrices } = require('../services/priceService');
 
+const CHEMICAL_KEYWORDS = [
+  'fungicide',
+  'insecticide',
+  'herbicide',
+  'copper',
+  'mancozeb',
+  'chlorothalonil',
+  'carbendazim',
+  'tricyclazole',
+  'isoprothiolane',
+  'imidacloprid',
+  'propineb',
+  'hexaconazole',
+  'copper hydroxide',
+  'copper oxychloride',
+  'neem oil',
+];
+
+const extractRecommendedChemicals = (treatments = []) => {
+  const unique = new Set();
+
+  for (const tip of treatments) {
+    const text = (tip || '').toLowerCase();
+    for (const keyword of CHEMICAL_KEYWORDS) {
+      if (text.includes(keyword)) {
+        unique.add(keyword.replace(/\b\w/g, (c) => c.toUpperCase()));
+      }
+    }
+  }
+
+  return Array.from(unique);
+};
+
 // Crop Sinhala names mapping
 const CROP_SI_NAMES = {
   tea: 'තේ', paddy: 'වී', tomato: 'තක්කාලි', chili: 'මිරිස්',
@@ -34,6 +67,16 @@ exports.cropDiagnosis = async (req, res, next) => {
     }
 
     // Save result to database
+    const recommendedChemicals =
+      prediction.recommendedChemicals?.length > 0
+        ? prediction.recommendedChemicals
+        : extractRecommendedChemicals(prediction.treatments || []);
+
+    const recommendedChemicalsSi =
+      prediction.recommendedChemicalsSi?.length > 0
+        ? prediction.recommendedChemicalsSi
+        : [];
+
     const diagnosis = await DiagnosisResult.create({
       userId: req.user._id,
       imageUrl,
@@ -44,6 +87,8 @@ exports.cropDiagnosis = async (req, res, next) => {
       treatmentsSi: prediction.treatmentsSi || [],
       preventionTips: prediction.preventionTips || [],
       preventionTipsSi: prediction.preventionTipsSi || [],
+      recommendedChemicals,
+      recommendedChemicalsSi,
       isHealthy: prediction.isHealthy || false,
       healthMessage: prediction.healthMessage,
       healthMessageSi: prediction.healthMessageSi,

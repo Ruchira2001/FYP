@@ -96,6 +96,8 @@ const CropDoctorResult: React.FC = () => {
             treatmentsSi: result.treatmentsSi,
             preventionTips: result.preventionTips,
             preventionTipsSi: result.preventionTipsSi,
+            recommendedChemicals: result.recommendedChemicals || [],
+            recommendedChemicalsSi: result.recommendedChemicalsSi || [],
             createdAt: new Date().toISOString(),
             synced: isConnected,
         };
@@ -110,6 +112,17 @@ const CropDoctorResult: React.FC = () => {
                 imageUri,
                 result,
             }
+        });
+    };
+
+    const selectedChemicals: string[] =
+        ((i18n.language === 'si' ? result?.recommendedChemicalsSi : result?.recommendedChemicals) ||
+            result?.recommendedChemicals ||
+            []) as string[];
+
+    const handleNearbyShops = () => {
+        navigation.navigate('NearbyShopsMap', {
+            diseaseName: result?.diseaseName,
         });
     };
 
@@ -322,6 +335,23 @@ const CropDoctorResult: React.FC = () => {
                         </View>
                     )}
 
+                    {/* Recommended Chemicals */}
+                    {selectedChemicals.length > 0 && (
+                        <View style={styles.chemicalCard}>
+                            <View style={styles.cardHeader}>
+                                <Ionicons name="flask" size={20} color={COLORS.warning} />
+                                <Text style={styles.chemicalCardTitle}>Recommended Chemicals</Text>
+                            </View>
+
+                            {selectedChemicals.map((chemical: string, index: number) => (
+                                <View key={`${chemical}-${index}`} style={styles.listItem}>
+                                    <Ionicons name="radio-button-on" size={12} color={COLORS.warning} style={{ marginTop: 5 }} />
+                                    <Text style={styles.chemicalListText}>{chemical}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    )}
+
                     {/* Action Buttons */}
                     <View style={styles.actionsContainer}>
                         <View style={styles.actionButtonWrapper}>
@@ -330,6 +360,18 @@ const CropDoctorResult: React.FC = () => {
                                 onPress={handleSave}
                                 disabled={saved}
                                 icon={saved ? 'checkmark' : 'bookmark-outline'}
+                                variant="outline"
+                                fullWidth
+                            />
+                        </View>
+                    </View>
+
+                    <View style={styles.actionsContainer}>
+                        <View style={styles.actionButtonWrapper}>
+                            <PrimaryButton
+                                title="Nearby Agro Shops"
+                                onPress={handleNearbyShops}
+                                icon="map-outline"
                                 variant="outline"
                                 fullWidth
                             />
@@ -489,9 +531,30 @@ const styles = StyleSheet.create({
         color: '#1d4ed8', // blue-700
         marginLeft: 8,
     },
+    chemicalCard: {
+        backgroundColor: '#fff7ed',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#fdba74',
+    },
+    chemicalCardTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#9a3412',
+        marginLeft: 8,
+    },
+    chemicalListText: {
+        flex: 1,
+        fontSize: 14,
+        color: '#7c2d12',
+        marginLeft: 8,
+    },
     actionsContainer: {
         flexDirection: 'row',
-        marginTop: 8,
+        marginTop: 4,
+        marginBottom: 8,
     },
     actionButtonWrapper: {
         flex: 1,

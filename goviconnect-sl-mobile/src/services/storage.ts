@@ -140,6 +140,8 @@ export interface DiagnosisResult {
     treatmentsSi: string[];
     preventionTips: string[];
     preventionTipsSi: string[];
+    recommendedChemicals?: string[];
+    recommendedChemicalsSi?: string[];
     createdAt: string;
     synced: boolean;
 }

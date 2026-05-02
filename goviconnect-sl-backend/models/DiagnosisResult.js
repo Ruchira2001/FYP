@@ -27,6 +27,8 @@ const diagnosisResultSchema = new mongoose.Schema(
     treatmentsSi: [String],
     preventionTips: [String],
     preventionTipsSi: [String],
+    recommendedChemicals: [String],
+    recommendedChemicalsSi: [String],
     isHealthy: {
       type: Boolean,
       default: false,

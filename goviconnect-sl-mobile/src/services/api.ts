@@ -438,6 +438,12 @@ export const expertDashboardAPI = {
 
 export const shopAPI = {
   getDashboard: () => api.get('/shop/dashboard'),
+  
+  getNearbyShops: (params: { lat: number; lng: number; radiusKm?: number; search?: string }) =>
+    api.get('/shop/nearby', { params }),
+  
+  getNearbyShopDetails: (shopId: string, params: { lat: number; lng: number }) =>
+    api.get(`/shop/nearby/${shopId}`, { params }),
 
   getProducts: (params?: { category?: string; search?: string }) =>
     api.get('/shop/products', { params }),

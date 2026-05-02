@@ -96,7 +96,7 @@ exports.updateExpertAvatar = async (req, res, next) => {
 // @route   PUT /api/shops/me
 exports.updateShopProfile = async (req, res, next) => {
   try {
-    const allowedFields = ['name', 'phone', 'location', 'type', 'settings'];
+    const allowedFields = ['name', 'phone', 'location', 'address', 'latitude', 'longitude', 'type', 'settings'];
     const updates = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
