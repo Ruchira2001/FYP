@@ -8,6 +8,7 @@ const {
   createChat,
   markChatRead,
   sendImageMessage,
+  deleteChat,
 } = require('../controllers/chatController');
 
 router.get('/', protect, getChats);
@@ -16,5 +17,6 @@ router.get('/:chatId/messages', protect, getMessages);
 router.post('/:chatId/messages', protect, sendMessage);
 router.put('/:chatId/read', protect, markChatRead);
 router.post('/:chatId/messages/image', protect, uploadChatImage, sendImageMessage);
+router.delete('/:chatId', protect, deleteChat);
 
 module.exports = router;

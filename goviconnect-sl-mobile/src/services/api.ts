@@ -257,6 +257,9 @@ export const chatAPI = {
   markChatRead: (chatId: string) =>
     api.put(`/chats/${chatId}/read`),
 
+  deleteChat: (chatId: string) =>
+    api.delete(`/chats/${chatId}`),
+
   sendImageMessage: (chatId: string, formData: FormData) =>
     api.post(`/chats/${chatId}/messages/image`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

@@ -11,7 +11,7 @@ import { Splash, Onboarding, LanguageSelect, Login, Register, ForgotPassword } f
 
 // Import global screens
 import { Notifications } from '../screens/notifications';
-import { ChatsList, ChatDetail, BookMeetingFromChat } from '../screens/chats';
+import { ChatsList, ChatDetail, BookMeetingFromChat, NewChat } from '../screens/chats';
 import { LanguageModal } from '../screens/home';
 
 const RootStack = createNativeStackNavigator();
@@ -78,6 +78,13 @@ export const FarmerNavigator: React.FC = () => {
             <RootStack.Screen
                 name="ChatDetail"
                 component={ChatDetail}
+                options={{
+                    animation: 'slide_from_right',
+                }}
+            />
+            <RootStack.Screen
+                name="NewChat"
+                component={NewChat}
                 options={{
                     animation: 'slide_from_right',
                 }}

@@ -285,3 +285,40 @@ exports.sendImageMessage = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Delete a chat and its messages
+// @route   DELETE /api/chats/:chatId
+exports.deleteChat = async (req, res, next) => {
+  try {
+    const { chatId } = req.params;
+    const userId = req.user._id;
+
+    const chat = await Chat.findOne({
+      _id: chatId,
+      'participants.userId': userId,
+    });
+
+    if (!chat) {
+      return res.status(404).json({ success: false, message: 'Chat not found' });
+    }
+
+    await Promise.all([
+      Message.deleteMany({ chatId }),
+      Chat.findByIdAndDelete(chatId),
+    ]);
+
+    try {
+      const io = getIO();
+      io.emit('chat_deleted', {
+        chatId,
+        deletedBy: userId.toString(),
+      });
+    } catch (socketErr) {
+      // Socket not initialized, skip real-time
+    }
+
+    res.json({ success: true, message: 'Chat deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};

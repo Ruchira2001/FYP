@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,7 @@ const ChatsList: React.FC = () => {
 
     const [activeCategory, setActiveCategory] = useState('All');
     const [chats, setChats] = useState<any[]>([]);
+    const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
 
     const loadChats = useCallback(async () => {
         try {
@@ -58,11 +59,13 @@ const ChatsList: React.FC = () => {
         if (socket) {
             socket.on('new_message', loadChats);
             socket.on('messages_read', loadChats);
+            socket.on('chat_deleted', loadChats);
         }
         return () => {
             if (socket) {
                 socket.off('new_message', loadChats);
                 socket.off('messages_read', loadChats);
+                socket.off('chat_deleted', loadChats);
             }
         };
     }, [loadChats]);
@@ -75,7 +78,37 @@ const ChatsList: React.FC = () => {
     });
 
     const handleNewChat = () => {
-        Alert.alert("New Chat", "Select a contact to start a new conversation.");
+        navigation.navigate('NewChat');
+    };
+
+    const confirmDeleteChat = (chat: any) => {
+        Alert.alert(
+            'Delete Conversation?',
+            `Are you sure you want to delete your conversation with ${chat.expertName}?\n\nThis action will permanently remove all messages and cannot be undone.`,
+            [
+                { text: 'Keep Chat', style: 'cancel' },
+                {
+                    text: 'Delete Conversation',
+                    style: 'destructive',
+                    onPress: () => handleDeleteChat(chat.id),
+                },
+            ]
+        );
+    };
+
+    const handleDeleteChat = async (chatId: string) => {
+        if (deletingChatId) return;
+
+        try {
+            setDeletingChatId(chatId);
+            await chatAPI.deleteChat(chatId);
+            setChats(prev => prev.filter(chat => chat.id !== chatId));
+        } catch (e) {
+            console.error('Failed to delete chat:', e);
+            Alert.alert('Error', 'Could not delete chat. Please try again.');
+        } finally {
+            setDeletingChatId(null);
+        }
     };
 
     const renderChat = ({ item }: { item: any }) => (
@@ -101,9 +134,22 @@ const ChatsList: React.FC = () => {
                     <Text style={[styles.expertName, item.unreadCount > 0 && styles.expertNameUnread]}>
                         {item.expertName}
                     </Text>
-                    <Text style={styles.timeText}>
-                        {getRelativeTime(item.lastMessageTime, i18n.language)}
-                    </Text>
+                    <View style={styles.chatHeaderRight}>
+                        <Text style={styles.timeText}>
+                            {getRelativeTime(item.lastMessageTime, i18n.language)}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => confirmDeleteChat(item)}
+                            disabled={deletingChatId === item.id}
+                        >
+                            {deletingChatId === item.id ? (
+                                <ActivityIndicator size="small" color={COLORS.error} />
+                            ) : (
+                                <Ionicons name="trash-outline" size={16} color={COLORS.error} />
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <View style={styles.messageRow}>
@@ -162,7 +208,8 @@ const ChatsList: React.FC = () => {
             )}
 
             <TouchableOpacity style={styles.fab} onPress={handleNewChat}>
-                <Ionicons name="chatbubble-ellipses" size={24} color="white" />
+                <Ionicons name="add-circle-outline" size={20} color="white" />
+                <Text style={styles.fabText}>New Chat</Text>
             </TouchableOpacity>
         </View>
     );
@@ -235,6 +282,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginBottom: 4,
     },
+    chatHeaderRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     expertName: {
         fontSize: 16,
         fontWeight: '600',
@@ -247,6 +298,14 @@ const styles = StyleSheet.create({
     timeText: {
         fontSize: 12,
         color: COLORS.neutral[400],
+        marginRight: 8,
+    },
+    deleteButton: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     messageRow: {
         flexDirection: 'row',
@@ -277,17 +336,24 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 24,
         right: 24,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        height: 52,
+        borderRadius: 26,
+        paddingHorizontal: 16,
         backgroundColor: COLORS.primary[600],
+        flexDirection: 'row',
         alignItems: 'center',
+        gap: 6,
         justifyContent: 'center',
-        shadowColor: COLORS.primary[600],
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.2,
         shadowRadius: 8,
         elevation: 6,
+    },
+    fabText: {
+        color: '#ffffff',
+        fontSize: 14,
+        fontWeight: '700',
     },
 });
 
