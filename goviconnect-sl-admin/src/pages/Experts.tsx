@@ -214,7 +214,7 @@ export default function Experts() {
           rejected: 'bg-red-100 text-red-700',
         };
         return (
-          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${colors[status]}`}>
+          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${colors[status]}`}>
             {status}
           </span>
         );
@@ -225,8 +225,8 @@ export default function Experts() {
       label: 'Farmer Account',
       render: (e: Expert) => e.farmerUserId ? (
         <div className="min-w-40">
-          <p className="font-medium text-gray-800">{e.farmerUserId.name}</p>
-          <p className="text-xs text-gray-500">{e.farmerUserId.email}</p>
+          <p className="font-semibold text-slate-800">{e.farmerUserId.name}</p>
+          <p className="text-xs text-slate-500">{e.farmerUserId.email}</p>
         </div>
       ) : '-',
     },
@@ -246,8 +246,8 @@ export default function Experts() {
       key: 'isActive',
       label: 'Status',
       render: (e: Expert) => (
-        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-          e.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+          e.isActive !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
         }`}>
           {e.isActive !== false ? 'Active' : 'Inactive'}
         </span>
@@ -261,17 +261,19 @@ export default function Experts() {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-teal-50 p-5 shadow-sm shadow-emerald-900/5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Experts</h1>
-          <p className="text-sm text-gray-500 mt-1">Approve farmer expert applications before expert access is enabled.</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-emerald-600">Expert Management</p>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">Experts</h1>
+          <p className="mt-1 text-sm text-slate-500">Approve farmer expert applications before expert access is enabled.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none bg-white"
+            className="admin-select w-44"
           >
             <option value="">All Applications</option>
             <option value="pending">Pending</option>
@@ -283,8 +285,9 @@ export default function Experts() {
             placeholder="Search experts..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none w-64"
+            className="admin-input w-64"
           />
+        </div>
         </div>
       </div>
 
@@ -294,11 +297,11 @@ export default function Experts() {
         loading={loading}
         actions={(item) => (
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setViewItem(item)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100"><Eye size={12} /> View</button>
+            <button onClick={() => setViewItem(item)} className="admin-soft-btn"><Eye size={12} /> View</button>
             {(item.applicationStatus || 'approved') === 'pending' && (
               <>
-                <button onClick={() => handleApprove(item)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><Check size={12} /> Approve</button>
-                <button onClick={() => { setRejectItem(item); setRejectReason(''); }} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><XCircle size={12} /> Reject</button>
+                <button onClick={() => handleApprove(item)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"><Check size={12} /> Approve</button>
+                <button onClick={() => { setRejectItem(item); setRejectReason(''); }} className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100"><XCircle size={12} /> Reject</button>
               </>
             )}
             {(item.applicationStatus || 'approved') === 'approved' && (
@@ -306,15 +309,15 @@ export default function Experts() {
                 onClick={() => handleToggleActive(item)}
                 className={`px-3 py-1 text-xs rounded-lg ${
                   item.isActive !== false
-                    ? 'bg-orange-50 text-orange-600 hover:bg-orange-100'
-                    : 'bg-green-50 text-green-600 hover:bg-green-100'
+                    ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                 }`}
               >
                 {item.isActive !== false ? 'Deactivate' : 'Activate'}
               </button>
             )}
-            <button onClick={() => handleEdit(item)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"><Pencil size={12} /> Edit</button>
-            <button onClick={() => setDeleteTarget(item._id)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 size={12} /> Delete</button>
+            <button onClick={() => handleEdit(item)} className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-100"><Pencil size={12} /> Edit</button>
+            <button onClick={() => setDeleteTarget(item._id)} className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100"><Trash2 size={12} /> Delete</button>
           </div>
         )}
       />
@@ -365,8 +368,8 @@ export default function Experts() {
             {viewItem.rejectionReason && <Detail label="Rejection Reason" value={viewItem.rejectionReason} block />}
             {(viewItem.applicationStatus || 'approved') === 'pending' && (
               <div className="flex gap-3 pt-2">
-                <button onClick={() => { handleApprove(viewItem); setViewItem(null); }} className="flex-1 rounded-lg bg-green-600 py-2 text-sm font-medium text-white hover:bg-green-700">Approve Application</button>
-                <button onClick={() => { setRejectItem(viewItem); setRejectReason(''); setViewItem(null); }} className="flex-1 rounded-lg bg-red-50 py-2 text-sm font-medium text-red-700 hover:bg-red-100">Reject Application</button>
+                <button onClick={() => { handleApprove(viewItem); setViewItem(null); }} className="admin-primary-btn flex-1">Approve Application</button>
+                <button onClick={() => { setRejectItem(viewItem); setRejectReason(''); setViewItem(null); }} className="flex-1 rounded-lg bg-red-50 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 focus:outline-none focus:ring-4 focus:ring-red-100">Reject Application</button>
               </div>
             )}
           </div>
@@ -378,22 +381,22 @@ export default function Experts() {
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+              <label className="admin-field-label">Name *</label>
+              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="admin-input" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-              <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+              <label className="admin-field-label">Email *</label>
+              <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="admin-input" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input type="text" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+              <label className="admin-field-label">Phone</label>
+              <input type="text" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="admin-input" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
-              <select value={editForm.district} onChange={(e) => setEditForm({ ...editForm, district: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none bg-white">
+              <label className="admin-field-label">District</label>
+              <select value={editForm.district} onChange={(e) => setEditForm({ ...editForm, district: e.target.value })} className="admin-select">
                 <option value="">Select district</option>
                 {SL_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
@@ -401,62 +404,62 @@ export default function Experts() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Specialty</label>
-              <input type="text" value={editForm.specialty} onChange={(e) => setEditForm({ ...editForm, specialty: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+              <label className="admin-field-label">Specialty</label>
+              <input type="text" value={editForm.specialty} onChange={(e) => setEditForm({ ...editForm, specialty: e.target.value })} className="admin-input" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Specialty (Sinhala)</label>
-              <input type="text" value={editForm.specialtySi} onChange={(e) => setEditForm({ ...editForm, specialtySi: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+              <label className="admin-field-label">Specialty (Sinhala)</label>
+              <input type="text" value={editForm.specialtySi} onChange={(e) => setEditForm({ ...editForm, specialtySi: e.target.value })} className="admin-input" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
-              <input type="number" value={editForm.yearsExperience} onChange={(e) => setEditForm({ ...editForm, yearsExperience: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+              <label className="admin-field-label">Years of Experience</label>
+              <input type="number" value={editForm.yearsExperience} onChange={(e) => setEditForm({ ...editForm, yearsExperience: e.target.value })} className="admin-input" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Languages (comma-separated)</label>
-              <input type="text" value={editForm.languages} onChange={(e) => setEditForm({ ...editForm, languages: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="English, Sinhala" />
+              <label className="admin-field-label">Languages (comma-separated)</label>
+              <input type="text" value={editForm.languages} onChange={(e) => setEditForm({ ...editForm, languages: e.target.value })} className="admin-input" placeholder="English, Sinhala" />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Qualifications (comma-separated)</label>
-            <input type="text" value={editForm.qualifications} onChange={(e) => setEditForm({ ...editForm, qualifications: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="PhD Agriculture, B.Sc Botany" />
+            <label className="admin-field-label">Qualifications (comma-separated)</label>
+            <input type="text" value={editForm.qualifications} onChange={(e) => setEditForm({ ...editForm, qualifications: e.target.value })} className="admin-input" placeholder="PhD Agriculture, B.Sc Botany" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Specializations (comma-separated)</label>
-            <input type="text" value={editForm.specializations} onChange={(e) => setEditForm({ ...editForm, specializations: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="Rice farming, Pest control" />
+            <label className="admin-field-label">Specializations (comma-separated)</label>
+            <input type="text" value={editForm.specializations} onChange={(e) => setEditForm({ ...editForm, specializations: e.target.value })} className="admin-input" placeholder="Rice farming, Pest control" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-            <textarea value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+            <label className="admin-field-label">Bio</label>
+            <textarea value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} rows={2} className="admin-textarea" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bio (Sinhala)</label>
-            <textarea value={editForm.bioSi} onChange={(e) => setEditForm({ ...editForm, bioSi: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+            <label className="admin-field-label">Bio (Sinhala)</label>
+            <textarea value={editForm.bioSi} onChange={(e) => setEditForm({ ...editForm, bioSi: e.target.value })} rows={2} className="admin-textarea" />
           </div>
 
           <div className="flex items-center gap-3 pt-1">
-            <label className="text-sm font-medium text-gray-700">Account Status</label>
+            <label className="text-sm font-semibold text-slate-700">Account Status</label>
             <button
               type="button"
               onClick={() => setEditForm({ ...editForm, isActive: !editForm.isActive })}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                editForm.isActive ? 'bg-green-600' : 'bg-gray-300'
+                editForm.isActive ? 'bg-emerald-600' : 'bg-slate-300'
               }`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                 editForm.isActive ? 'translate-x-6' : 'translate-x-1'
               }`} />
             </button>
-            <span className={`text-xs font-medium ${editForm.isActive ? 'text-green-600' : 'text-red-600'}`}>
+            <span className={`text-xs font-semibold ${editForm.isActive ? 'text-emerald-700' : 'text-red-700'}`}>
               {editForm.isActive ? 'Active' : 'Inactive'}
             </span>
           </div>
 
           {/* Read-only stats */}
           {editItem && (
-            <div className="bg-gray-50 rounded-lg p-3 mt-2 grid grid-cols-3 gap-3">
+            <div className="mt-2 grid grid-cols-3 gap-3 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
               <div className="text-center">
                 <p className="text-lg font-bold text-blue-600">{editItem.rating?.toFixed(1) || '0.0'}</p>
                 <p className="text-[10px] text-gray-500">Rating</p>
@@ -473,8 +476,8 @@ export default function Experts() {
           )}
 
           <div className="flex gap-3 pt-2">
-            <button onClick={handleUpdate} className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700">Save</button>
-            <button onClick={() => setEditItem(null)} className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200">Cancel</button>
+            <button onClick={handleUpdate} className="admin-primary-btn flex-1">Save</button>
+            <button onClick={() => setEditItem(null)} className="admin-secondary-btn flex-1">Cancel</button>
           </div>
         </div>
       </Modal>
@@ -490,22 +493,22 @@ export default function Experts() {
 
       <Modal open={!!rejectItem} onClose={() => setRejectItem(null)} title="Reject Expert Application" size="sm">
         <div className="space-y-3">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-600">
             Rejecting: <strong>{rejectItem?.name}</strong>
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+            <label className="admin-field-label">Reason</label>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none"
+              className="w-full rounded-lg border border-red-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-100"
               placeholder="Enter reason for rejection..."
             />
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={handleReject} className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700">Reject</button>
-            <button onClick={() => setRejectItem(null)} className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200">Cancel</button>
+            <button onClick={handleReject} className="admin-danger-btn flex-1">Reject</button>
+            <button onClick={() => setRejectItem(null)} className="admin-secondary-btn flex-1">Cancel</button>
           </div>
         </div>
       </Modal>
@@ -515,9 +518,9 @@ export default function Experts() {
 
 function Detail({ label, value, block = false }: { label: string; value: string; block?: boolean }) {
   return (
-    <div className={block ? 'rounded-lg border border-gray-100 p-3' : 'rounded-lg bg-white p-3'}>
-      <p className="text-xs font-medium text-gray-500">{label}</p>
-      <p className="mt-1 whitespace-pre-wrap break-words text-gray-800">{value}</p>
+    <div className={block ? 'rounded-xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5' : 'rounded-xl border border-slate-100 bg-white p-3 shadow-sm shadow-slate-900/5'}>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 whitespace-pre-wrap break-words text-slate-800">{value}</p>
     </div>
   );
 }
