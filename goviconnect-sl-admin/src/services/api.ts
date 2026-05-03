@@ -94,7 +94,11 @@ export const updateMeeting = (id: string, data: Record<string, unknown>) =>
   api.put(`/meetings/${id}`, data);
 export const deleteMeeting = (id: string) => api.delete(`/meetings/${id}`);
 
-// AI — removed (read-only, not needed for admin)
+// AI Monitoring
+export const getDiagnoses = (params?: Record<string, string | number>) =>
+  api.get('/diagnoses', { params });
+export const getPredictions = (params?: Record<string, string | number>) =>
+  api.get('/predictions', { params });
 
 // Notifications
 export const getNotifications = (params?: Record<string, string | number>) =>

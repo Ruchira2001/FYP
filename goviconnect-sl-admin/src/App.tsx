@@ -7,11 +7,11 @@ import Farmers from './pages/Farmers';
 import Experts from './pages/Experts';
 import Shops from './pages/Shops';
 import Crops from './pages/Crops';
-import Guides from './pages/Guides';
-import Tips from './pages/Tips';
 import Notifications from './pages/Notifications';
 import UserGuides from './pages/UserGuides';
 import Meetings from './pages/Meetings';
+import AICropDoctor from './pages/AICropDoctor';
+import PricePredictions from './pages/PricePredictions';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, loading } = useAuth();
@@ -35,11 +35,11 @@ export default function App() {
                 <Route path="/experts" element={<Experts />} />
                 <Route path="/shops" element={<Shops />} />
                 <Route path="/crops" element={<Crops />} />
-                <Route path="/guides" element={<Guides />} />
-                <Route path="/tips" element={<Tips />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/user-guides" element={<UserGuides />} />
                 <Route path="/meetings" element={<Meetings />} />
+                <Route path="/ai-crop-doctor" element={<AICropDoctor />} />
+                <Route path="/price-predictions" element={<PricePredictions />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>
