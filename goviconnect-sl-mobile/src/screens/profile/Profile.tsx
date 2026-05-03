@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -179,6 +179,13 @@ const Profile: React.FC = () => {
                                 Alert.alert('Error', 'Could not switch to Expert Mode');
                             }
                         } else {
+                            if ((user as any)?.expertApplicationStatus === 'pending') {
+                                Alert.alert('Pending Approval', 'Your expert application is waiting for admin approval.');
+                                return;
+                            }
+                            if ((user as any)?.expertApplicationStatus === 'rejected') {
+                                Alert.alert('Application Rejected', 'Your expert application was rejected. You can submit a new application if your details have changed.');
+                            }
                             navigation.navigate('ExpertRegister');
                         }
                     }}
@@ -190,10 +197,10 @@ const Profile: React.FC = () => {
                         </View>
                         <View style={styles.contributionTextInfo}>
                             <Text style={styles.contributionTitle}>
-                                {user?.expertId ? 'Switch to Expert Mode' : 'Become an Expert'}
+                                {user?.expertId ? 'Switch to Expert Mode' : ((user as any)?.expertApplicationStatus === 'pending' ? 'Expert Application Pending' : 'Become an Expert')}
                             </Text>
                             <Text style={styles.contributionSubtitle}>
-                                {user?.expertId ? 'Access expert tools and requests' : 'Apply to share professional advice'}
+                                {user?.expertId ? 'Access expert tools and requests' : ((user as any)?.expertApplicationStatus === 'pending' ? 'Waiting for admin approval' : 'Apply to share professional advice')}
                             </Text>
                         </View>
                         <Ionicons name="chevron-forward" size={24} color="#ffffff" />

@@ -76,6 +76,16 @@ const userSchema = new mongoose.Schema(
       ref: 'Expert',
       default: null,
     },
+    expertApplicationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Expert',
+      default: null,
+    },
+    expertApplicationStatus: {
+      type: String,
+      enum: ['none', 'pending', 'approved', 'rejected'],
+      default: 'none',
+    },
     expoPushToken: {
       type: String,
       default: null,

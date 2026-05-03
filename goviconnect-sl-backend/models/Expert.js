@@ -90,6 +90,24 @@ const expertSchema = new mongoose.Schema(
       default: ['English', 'Sinhala'],
     },
     availability: [availabilitySchema],
+    farmerUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    applicationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'approved',
+    },
+    applicationSubmittedAt: Date,
+    applicationReviewedAt: Date,
+    applicationReviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Admin',
+      default: null,
+    },
+    rejectionReason: String,
     settings: {
       notifications: { type: Boolean, default: true },
       language: { type: String, default: 'en', enum: ['en', 'si'] },

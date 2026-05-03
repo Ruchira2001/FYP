@@ -6,7 +6,7 @@ import { Header, InputField, AppNotify } from '../../../components';
 import { COLORS } from '../../../utils/constants';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
-import { expertsAPI, authAPI } from '../../../services/api';
+import { expertsAPI } from '../../../services/api';
 import { useApp } from '../../../context';
 
 const ExpertRegister: React.FC = () => {
@@ -62,7 +62,7 @@ const ExpertRegister: React.FC = () => {
                     console.error('Final refresh error:', refreshErr);
                 }
 
-                AppNotify.toast('You are now registered as an expert!', 'success');
+                AppNotify.toast(response.data.message || 'Application submitted. Admin approval is required before Expert Mode is enabled.', 'success');
                 navigation.goBack();
             }
         } catch (error: any) {

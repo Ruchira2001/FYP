@@ -308,10 +308,19 @@ exports.switchRole = async (req, res, next) => {
     if (targetRole === 'expert') {
       const user = await User.findById(userId);
       if (!user.expertId) {
+        if (user.expertApplicationStatus === 'pending') {
+          return res.status(400).json({ success: false, message: 'Your expert application is pending admin approval' });
+        }
+        if (user.expertApplicationStatus === 'rejected') {
+          return res.status(400).json({ success: false, message: 'Your expert application was rejected' });
+        }
         return res.status(400).json({ success: false, message: 'Not registered as an expert' });
       }
       
       const expert = await Expert.findById(user.expertId);
+      if (!expert || expert.applicationStatus === 'pending' || expert.applicationStatus === 'rejected' || expert.isActive === false) {
+        return res.status(403).json({ success: false, message: 'Expert access is not approved yet' });
+      }
       const token = generateToken(expert._id, 'expert');
       
       return res.json({

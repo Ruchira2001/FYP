@@ -49,6 +49,10 @@ export const getExperts = (params?: Record<string, string | number>) =>
 export const getExpert = (id: string) => api.get(`/experts/${id}`);
 export const updateExpert = (id: string, data: Record<string, unknown>) =>
   api.put(`/experts/${id}`, data);
+export const approveExpert = (id: string) =>
+  api.put(`/experts/${id}/approve`);
+export const rejectExpert = (id: string, reason: string) =>
+  api.put(`/experts/${id}/reject`, { reason });
 export const deleteExpert = (id: string) => api.delete(`/experts/${id}`);
 
 // Shops

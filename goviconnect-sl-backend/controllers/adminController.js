@@ -217,13 +217,20 @@ exports.deleteFarmer = async (req, res) => {
 
 exports.getExperts = async (req, res) => {
   try {
-    const { search, specialty, page = 1, limit = 20 } = req.query;
+    const { search, specialty, status, page = 1, limit = 20 } = req.query;
     const filter = {};
     if (search) filter.name = { $regex: search, $options: 'i' };
     if (specialty) filter.specialty = specialty;
+    if (status === 'approved') {
+      filter.$or = [{ applicationStatus: 'approved' }, { applicationStatus: { $exists: false } }];
+    } else if (status) {
+      filter.applicationStatus = status;
+    }
 
     const experts = await Expert.find(filter)
       .select('-password')
+      .populate('farmerUserId', 'name email phone district expertApplicationStatus')
+      .populate('applicationReviewedBy', 'name email')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
@@ -237,7 +244,10 @@ exports.getExperts = async (req, res) => {
 
 exports.getExpertById = async (req, res) => {
   try {
-    const expert = await Expert.findById(req.params.id).select('-password');
+    const expert = await Expert.findById(req.params.id)
+      .select('-password')
+      .populate('farmerUserId', 'name email phone district expertApplicationStatus')
+      .populate('applicationReviewedBy', 'name email');
     if (!expert) return res.status(404).json({ success: false, message: 'Expert not found' });
     res.json({ success: true, data: expert });
   } catch (err) {
@@ -247,7 +257,7 @@ exports.getExpertById = async (req, res) => {
 
 exports.updateExpert = async (req, res) => {
   try {
-    const allowed = ['name', 'email', 'phone', 'district', 'specialty', 'specialtySi', 'yearsExperience', 'qualifications', 'specializations', 'bio', 'bioSi', 'languages', 'isActive'];
+    const allowed = ['name', 'email', 'phone', 'district', 'specialty', 'specialtySi', 'yearsExperience', 'qualifications', 'specializations', 'bio', 'bioSi', 'languages', 'isActive', 'applicationStatus', 'rejectionReason'];
     const updates = {};
     allowed.forEach((key) => { if (req.body[key] !== undefined) updates[key] = req.body[key]; });
     const expert = await Expert.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true }).select('-password');
@@ -470,6 +480,77 @@ exports.getMeetings = async (req, res) => {
 
     const total = await Meeting.countDocuments(filter);
     res.json({ success: true, data: meetings, total, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.approveExpert = async (req, res) => {
+  try {
+    const expert = await Expert.findById(req.params.id);
+    if (!expert) return res.status(404).json({ success: false, message: 'Expert not found' });
+
+    expert.applicationStatus = 'approved';
+    expert.applicationReviewedAt = new Date();
+    expert.applicationReviewedBy = req.user._id;
+    expert.rejectionReason = undefined;
+    expert.isActive = true;
+    await expert.save({ validateBeforeSave: false });
+
+    if (expert.farmerUserId) {
+      await User.findByIdAndUpdate(expert.farmerUserId, {
+        expertId: expert._id,
+        expertApplicationId: expert._id,
+        expertApplicationStatus: 'approved',
+      });
+
+      await createNotification({
+        userId: expert.farmerUserId,
+        userModel: 'User',
+        type: 'system',
+        title: 'Expert application approved',
+        body: 'Your expert application has been approved. You can now switch to Expert Mode.',
+        data: { expertId: expert._id },
+      });
+    }
+
+    res.json({ success: true, data: expert, message: 'Expert approved' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.rejectExpert = async (req, res) => {
+  try {
+    const expert = await Expert.findById(req.params.id);
+    if (!expert) return res.status(404).json({ success: false, message: 'Expert not found' });
+
+    const reason = req.body.reason || 'Application rejected by admin';
+    expert.applicationStatus = 'rejected';
+    expert.applicationReviewedAt = new Date();
+    expert.applicationReviewedBy = req.user._id;
+    expert.rejectionReason = reason;
+    expert.isActive = false;
+    await expert.save({ validateBeforeSave: false });
+
+    if (expert.farmerUserId) {
+      await User.findByIdAndUpdate(expert.farmerUserId, {
+        expertId: null,
+        expertApplicationId: expert._id,
+        expertApplicationStatus: 'rejected',
+      });
+
+      await createNotification({
+        userId: expert.farmerUserId,
+        userModel: 'User',
+        type: 'system',
+        title: 'Expert application rejected',
+        body: reason,
+        data: { expertId: expert._id },
+      });
+    }
+
+    res.json({ success: true, data: expert, message: 'Expert rejected' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -1,12 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getExperts, updateExpert, deleteExpert } from '../services/api';
+import { approveExpert, deleteExpert, getExperts, rejectExpert, updateExpert } from '../services/api';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { showToast } from '../components/Toast';
 import { SL_DISTRICTS } from '../constants';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Check, Eye, Pencil, Trash2, XCircle } from 'lucide-react';
+
+interface FarmerRef {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  district?: string;
+}
 
 interface Expert {
   _id: string;
@@ -26,6 +34,12 @@ interface Expert {
   specializations: string[];
   languages: string[];
   isActive: boolean;
+  farmerUserId?: FarmerRef | null;
+  applicationStatus?: 'pending' | 'approved' | 'rejected';
+  applicationSubmittedAt?: string;
+  applicationReviewedAt?: string;
+  rejectionReason?: string;
+  qualificationImages?: string[];
   createdAt: string;
 }
 
@@ -57,14 +71,20 @@ export default function Experts() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [editItem, setEditItem] = useState<Expert | null>(null);
+  const [viewItem, setViewItem] = useState<Expert | null>(null);
   const [editForm, setEditForm] = useState<EditForm>(EMPTY_FORM);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [rejectItem, setRejectItem] = useState<Expert | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await getExperts({ page, search });
+      const params: Record<string, string | number> = { page, search };
+      if (statusFilter) params.status = statusFilter;
+      const res = await getExperts(params);
       setItems(res.data.data);
       setTotalPages(res.data.pages || 1);
     } catch {
@@ -72,7 +92,7 @@ export default function Experts() {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page, search, statusFilter]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -127,12 +147,43 @@ export default function Experts() {
   };
 
   const handleToggleActive = async (item: Expert) => {
+    if ((item.applicationStatus || 'approved') !== 'approved') {
+      showToast('Only approved experts can be activated', 'error');
+      return;
+    }
     try {
       await updateExpert(item._id, { isActive: !item.isActive });
       showToast(`Expert ${item.isActive ? 'deactivated' : 'activated'}`);
       load();
     } catch {
       showToast('Status update failed', 'error');
+    }
+  };
+
+  const handleApprove = async (item: Expert) => {
+    if (!confirm(`Approve ${item.name} as an expert? The farmer will be able to switch to Expert Mode.`)) return;
+    try {
+      await approveExpert(item._id);
+      showToast('Expert application approved');
+      load();
+    } catch {
+      showToast('Approval failed', 'error');
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectItem || !rejectReason.trim()) {
+      showToast('Enter a rejection reason', 'error');
+      return;
+    }
+    try {
+      await rejectExpert(rejectItem._id, rejectReason.trim());
+      setRejectItem(null);
+      setRejectReason('');
+      showToast('Expert application rejected');
+      load();
+    } catch {
+      showToast('Rejection failed', 'error');
     }
   };
 
@@ -152,6 +203,33 @@ export default function Experts() {
     { key: 'name', label: 'Name' },
     { key: 'email', label: 'Email' },
     { key: 'specialty', label: 'Specialty' },
+    {
+      key: 'applicationStatus',
+      label: 'Application',
+      render: (e: Expert) => {
+        const status = e.applicationStatus || 'approved';
+        const colors: Record<string, string> = {
+          pending: 'bg-yellow-100 text-yellow-700',
+          approved: 'bg-green-100 text-green-700',
+          rejected: 'bg-red-100 text-red-700',
+        };
+        return (
+          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${colors[status]}`}>
+            {status}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'farmerUserId',
+      label: 'Farmer Account',
+      render: (e: Expert) => e.farmerUserId ? (
+        <div className="min-w-40">
+          <p className="font-medium text-gray-800">{e.farmerUserId.name}</p>
+          <p className="text-xs text-gray-500">{e.farmerUserId.email}</p>
+        </div>
+      ) : '-',
+    },
     { key: 'yearsExperience', label: 'Experience', render: (e: Expert) => `${e.yearsExperience || 0} yrs` },
     {
       key: 'rating',
@@ -185,14 +263,29 @@ export default function Experts() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Experts</h1>
-        <input
-          type="text"
-          placeholder="Search experts..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none w-64"
-        />
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Experts</h1>
+          <p className="text-sm text-gray-500 mt-1">Approve farmer expert applications before expert access is enabled.</p>
+        </div>
+        <div className="flex gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none bg-white"
+          >
+            <option value="">All Applications</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Search experts..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none w-64"
+          />
+        </div>
       </div>
 
       <DataTable
@@ -201,16 +294,25 @@ export default function Experts() {
         loading={loading}
         actions={(item) => (
           <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => handleToggleActive(item)}
-              className={`px-3 py-1 text-xs rounded-lg ${
-                item.isActive !== false
-                  ? 'bg-orange-50 text-orange-600 hover:bg-orange-100'
-                  : 'bg-green-50 text-green-600 hover:bg-green-100'
-              }`}
-            >
-              {item.isActive !== false ? 'Deactivate' : 'Activate'}
-            </button>
+            <button onClick={() => setViewItem(item)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100"><Eye size={12} /> View</button>
+            {(item.applicationStatus || 'approved') === 'pending' && (
+              <>
+                <button onClick={() => handleApprove(item)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><Check size={12} /> Approve</button>
+                <button onClick={() => { setRejectItem(item); setRejectReason(''); }} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><XCircle size={12} /> Reject</button>
+              </>
+            )}
+            {(item.applicationStatus || 'approved') === 'approved' && (
+              <button
+                onClick={() => handleToggleActive(item)}
+                className={`px-3 py-1 text-xs rounded-lg ${
+                  item.isActive !== false
+                    ? 'bg-orange-50 text-orange-600 hover:bg-orange-100'
+                    : 'bg-green-50 text-green-600 hover:bg-green-100'
+                }`}
+              >
+                {item.isActive !== false ? 'Deactivate' : 'Activate'}
+              </button>
+            )}
             <button onClick={() => handleEdit(item)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"><Pencil size={12} /> Edit</button>
             <button onClick={() => setDeleteTarget(item._id)} className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 size={12} /> Delete</button>
           </div>
@@ -218,6 +320,58 @@ export default function Experts() {
       />
 
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+
+      <Modal open={!!viewItem} onClose={() => setViewItem(null)} title="Expert Application Details" size="lg">
+        {viewItem && (
+          <div className="space-y-4 text-sm">
+            <div className="grid grid-cols-3 gap-3">
+              <Detail label="Application Status" value={viewItem.applicationStatus || 'approved'} />
+              <Detail label="Submitted" value={viewItem.applicationSubmittedAt ? new Date(viewItem.applicationSubmittedAt).toLocaleString() : new Date(viewItem.createdAt).toLocaleString()} />
+              <Detail label="Account Status" value={viewItem.isActive !== false ? 'Active' : 'Inactive'} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Detail label="Expert Name" value={viewItem.name} />
+              <Detail label="Email" value={viewItem.email} />
+              <Detail label="Phone" value={viewItem.phone || '-'} />
+              <Detail label="District" value={viewItem.district || '-'} />
+              <Detail label="Specialty" value={viewItem.specialty || '-'} />
+              <Detail label="Years of Experience" value={`${viewItem.yearsExperience || 0} years`} />
+            </div>
+            {viewItem.farmerUserId && (
+              <div className="rounded-lg border border-green-100 bg-green-50 p-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-700">Linked Farmer Account</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Detail label="Farmer Name" value={viewItem.farmerUserId.name} />
+                  <Detail label="Farmer Email" value={viewItem.farmerUserId.email} />
+                  <Detail label="Farmer Phone" value={viewItem.farmerUserId.phone || '-'} />
+                  <Detail label="Farmer District" value={viewItem.farmerUserId.district || '-'} />
+                </div>
+              </div>
+            )}
+            <Detail label="Qualifications" value={(viewItem.qualifications || []).join(', ') || '-'} block />
+            <Detail label="Specializations" value={(viewItem.specializations || []).join(', ') || '-'} block />
+            <Detail label="Languages" value={(viewItem.languages || []).join(', ') || '-'} block />
+            <Detail label="Bio" value={viewItem.bio || '-'} block />
+            {viewItem.qualificationImages?.length ? (
+              <div>
+                <p className="mb-2 text-xs font-medium text-gray-500">Qualification Images</p>
+                <div className="flex flex-wrap gap-2">
+                  {viewItem.qualificationImages.map((src, index) => (
+                    <img key={`${src}-${index}`} src={src} alt="Qualification" className="h-24 w-24 rounded-lg border border-gray-200 object-cover" />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {viewItem.rejectionReason && <Detail label="Rejection Reason" value={viewItem.rejectionReason} block />}
+            {(viewItem.applicationStatus || 'approved') === 'pending' && (
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => { handleApprove(viewItem); setViewItem(null); }} className="flex-1 rounded-lg bg-green-600 py-2 text-sm font-medium text-white hover:bg-green-700">Approve Application</button>
+                <button onClick={() => { setRejectItem(viewItem); setRejectReason(''); setViewItem(null); }} className="flex-1 rounded-lg bg-red-50 py-2 text-sm font-medium text-red-700 hover:bg-red-100">Reject Application</button>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
 
       {/* Edit Modal */}
       <Modal open={!!editItem} onClose={() => setEditItem(null)} title="Edit Expert" size="lg">
@@ -333,6 +487,37 @@ export default function Experts() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      <Modal open={!!rejectItem} onClose={() => setRejectItem(null)} title="Reject Expert Application" size="sm">
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">
+            Rejecting: <strong>{rejectItem?.name}</strong>
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none"
+              placeholder="Enter reason for rejection..."
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={handleReject} className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700">Reject</button>
+            <button onClick={() => setRejectItem(null)} className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200">Cancel</button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+function Detail({ label, value, block = false }: { label: string; value: string; block?: boolean }) {
+  return (
+    <div className={block ? 'rounded-lg border border-gray-100 p-3' : 'rounded-lg bg-white p-3'}>
+      <p className="text-xs font-medium text-gray-500">{label}</p>
+      <p className="mt-1 whitespace-pre-wrap break-words text-gray-800">{value}</p>
     </div>
   );
 }

@@ -448,7 +448,10 @@ exports.deleteMeeting = async (req, res, next) => {
 exports.listExperts = async (req, res, next) => {
   try {
     const { search, specialty, district } = req.query;
-    const filter = {};
+    const filter = {
+      isActive: true,
+      $or: [{ applicationStatus: 'approved' }, { applicationStatus: { $exists: false } }],
+    };
     if (specialty) filter.specialty = specialty;
     if (district) filter.district = district;
     if (search) {
@@ -472,7 +475,11 @@ exports.listExperts = async (req, res, next) => {
 // @route   GET /api/experts/:id
 exports.getExpertById = async (req, res, next) => {
   try {
-    const expert = await Expert.findById(req.params.id)
+    const expert = await Expert.findOne({
+      _id: req.params.id,
+      isActive: true,
+      $or: [{ applicationStatus: 'approved' }, { applicationStatus: { $exists: false } }],
+    })
       .select('-password -expoPushToken');
 
     if (!expert) {
@@ -497,6 +504,10 @@ exports.registerAsExpert = async (req, res, next) => {
       const expert = await Expert.findById(user.expertId);
       return res.status(200).json({ success: true, message: 'User is already registered as an expert', data: expert });
     }
+    if (user.expertApplicationStatus === 'pending' && user.expertApplicationId) {
+      const expert = await Expert.findById(user.expertApplicationId);
+      return res.status(200).json({ success: true, message: 'Your expert application is pending admin approval', data: expert });
+    }
 
     const { specialty, specialtySi, yearsExperience, qualifications, qualificationImages, specializations, bio, bioSi, availability } = req.body;
 
@@ -510,11 +521,14 @@ exports.registerAsExpert = async (req, res, next) => {
     const crypto = require('crypto');
     const tempPassword = crypto.randomBytes(16).toString('hex');
 
-    const expert = await Expert.create({
+    let expert = user.expertApplicationId
+      ? await Expert.findById(user.expertApplicationId)
+      : await Expert.findOne({ farmerUserId: user._id });
+
+    const applicationPayload = {
       name: user.name,
       email: user.email,
       phone: user.phone,
-      password: tempPassword,
       district: user.district,
       specialty,
       specialtySi,
@@ -526,13 +540,35 @@ exports.registerAsExpert = async (req, res, next) => {
       bioSi,
       availability: availability || [],
       avatar: user.avatar,
-    });
+      farmerUserId: user._id,
+      applicationStatus: 'pending',
+      applicationSubmittedAt: new Date(),
+      applicationReviewedAt: undefined,
+      applicationReviewedBy: undefined,
+      rejectionReason: undefined,
+      isActive: false,
+    };
 
-    // Update user record with expert link
-    user.expertId = expert._id;
+    if (expert) {
+      Object.assign(expert, applicationPayload);
+      await expert.save({ validateBeforeSave: false });
+    } else {
+      expert = await Expert.create({
+        ...applicationPayload,
+        password: tempPassword,
+      });
+    }
+
+    // Keep farmer access unchanged until admin approval.
+    user.expertApplicationId = expert._id;
+    user.expertApplicationStatus = 'pending';
     await user.save();
 
-    res.status(201).json({ success: true, data: expert });
+    res.status(201).json({
+      success: true,
+      message: 'Expert application submitted. Admin approval is required before expert mode is enabled.',
+      data: expert,
+    });
   } catch (error) {
     next(error);
   }

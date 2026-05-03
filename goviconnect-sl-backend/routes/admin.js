@@ -48,6 +48,8 @@ router.delete('/farmers/:id', admin.deleteFarmer);
 router.get('/experts', admin.getExperts);
 router.get('/experts/:id', admin.getExpertById);
 router.put('/experts/:id', admin.updateExpert);
+router.put('/experts/:id/approve', admin.approveExpert);
+router.put('/experts/:id/reject', admin.rejectExpert);
 router.delete('/experts/:id', admin.deleteExpert);
 
 // ── Shops ──
