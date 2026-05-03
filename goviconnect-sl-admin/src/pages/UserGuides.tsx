@@ -7,14 +7,38 @@ import { Eye, Check, XCircle, Trash2 } from 'lucide-react';
 
 interface UGuide {
   _id: string;
+  cropId?: string;
   name: string;
+  scientificName?: string;
   description: string;
   category: string;
+  climate?: string;
+  soil?: string;
+  season?: string;
+  diseases?: string;
+  treatments?: string;
+  practices?: string;
+  videoLink?: string;
+  videoLinks?: string[];
+  videoUrls?: string[];
+  imageUrl?: string;
+  images?: string[];
   userId: { name: string; email: string } | null;
   status: string;
   rejectionReason: string;
   createdAt: string;
 }
+
+const shortText = (value?: string, max = 60) => {
+  if (!value?.trim()) return '-';
+  return value.length > max ? `${value.slice(0, max)}...` : value;
+};
+
+const mediaCount = (guide: UGuide) => {
+  const imageCount = (guide.imageUrl ? 1 : 0) + (guide.images?.length || 0);
+  const videoCount = (guide.videoLink ? 1 : 0) + (guide.videoLinks?.length || 0) + (guide.videoUrls?.length || 0);
+  return `${imageCount} images / ${videoCount} videos`;
+};
 
 export default function UserGuides() {
   const [items, setItems] = useState<UGuide[]>([]);
@@ -95,11 +119,30 @@ export default function UserGuides() {
       <DataTable
         columns={[
           { key: 'name', label: 'Name' },
+          { key: 'cropId', label: 'Crop ID', render: (g: UGuide) => g.cropId || '-' },
+          { key: 'scientificName', label: 'Scientific Name', render: (g: UGuide) => g.scientificName || '-' },
           { key: 'category', label: 'Category' },
+          {
+            key: 'description',
+            label: 'Description',
+            render: (g: UGuide) => <span className="block min-w-52" title={g.description}>{shortText(g.description)}</span>,
+          },
+          { key: 'climate', label: 'Climate', render: (g: UGuide) => <span title={g.climate}>{shortText(g.climate, 40)}</span> },
+          { key: 'soil', label: 'Soil', render: (g: UGuide) => <span title={g.soil}>{shortText(g.soil, 40)}</span> },
+          { key: 'season', label: 'Season', render: (g: UGuide) => <span title={g.season}>{shortText(g.season, 40)}</span> },
+          { key: 'diseases', label: 'Diseases', render: (g: UGuide) => <span title={g.diseases}>{shortText(g.diseases, 40)}</span> },
+          { key: 'treatments', label: 'Treatments', render: (g: UGuide) => <span title={g.treatments}>{shortText(g.treatments, 40)}</span> },
+          { key: 'practices', label: 'Practices', render: (g: UGuide) => <span title={g.practices}>{shortText(g.practices, 40)}</span> },
+          { key: 'media', label: 'Media', render: mediaCount },
           {
             key: 'userId',
             label: 'Author',
-            render: (g: UGuide) => g.userId?.name || '-',
+            render: (g: UGuide) => (
+              <div className="min-w-40">
+                <p className="font-medium text-gray-800">{g.userId?.name || '-'}</p>
+                <p className="text-xs text-gray-500">{g.userId?.email || '-'}</p>
+              </div>
+            ),
           },
           {
             key: 'status',
@@ -158,18 +201,58 @@ export default function UserGuides() {
               <span className="text-sm font-medium text-gray-500">Name:</span>
               <p className="text-gray-800">{viewItem.name}</p>
             </div>
+          <div>
+            <span className="text-sm font-medium text-gray-500">Category:</span>
+            <p className="text-gray-800">{viewItem.category}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <span className="text-sm font-medium text-gray-500">Category:</span>
-              <p className="text-gray-800">{viewItem.category}</p>
+              <span className="text-sm font-medium text-gray-500">Crop ID:</span>
+              <p className="text-gray-800">{viewItem.cropId || '-'}</p>
             </div>
             <div>
-              <span className="text-sm font-medium text-gray-500">Author:</span>
-              <p className="text-gray-800">{viewItem.userId?.name} ({viewItem.userId?.email})</p>
+              <span className="text-sm font-medium text-gray-500">Scientific Name:</span>
+              <p className="text-gray-800">{viewItem.scientificName || '-'}</p>
+            </div>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-500">Author:</span>
+            <p className="text-gray-800">{viewItem.userId?.name} ({viewItem.userId?.email})</p>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-500">Description:</span>
+            <p className="text-gray-800 whitespace-pre-wrap">{viewItem.description}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <span className="text-sm font-medium text-gray-500">Climate:</span>
+              <p className="text-gray-800 whitespace-pre-wrap">{viewItem.climate || '-'}</p>
             </div>
             <div>
-              <span className="text-sm font-medium text-gray-500">Description:</span>
-              <p className="text-gray-800 whitespace-pre-wrap">{viewItem.description}</p>
+              <span className="text-sm font-medium text-gray-500">Soil:</span>
+              <p className="text-gray-800 whitespace-pre-wrap">{viewItem.soil || '-'}</p>
             </div>
+            <div>
+              <span className="text-sm font-medium text-gray-500">Season:</span>
+              <p className="text-gray-800 whitespace-pre-wrap">{viewItem.season || '-'}</p>
+            </div>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-500">Diseases:</span>
+            <p className="text-gray-800 whitespace-pre-wrap">{viewItem.diseases || '-'}</p>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-500">Treatments:</span>
+            <p className="text-gray-800 whitespace-pre-wrap">{viewItem.treatments || '-'}</p>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-500">Practices:</span>
+            <p className="text-gray-800 whitespace-pre-wrap">{viewItem.practices || '-'}</p>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-500">Media:</span>
+            <p className="text-gray-800">{mediaCount(viewItem)}</p>
+          </div>
             {viewItem.rejectionReason && (
               <div>
                 <span className="text-sm font-medium text-red-500">Rejection Reason:</span>

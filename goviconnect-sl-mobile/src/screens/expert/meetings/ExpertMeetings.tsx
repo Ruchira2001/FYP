@@ -217,6 +217,17 @@ const ExpertMeetings: React.FC = () => {
         }
     };
 
+    const handleConfirmMeeting = async (m: MeetingItem) => {
+        closeActionSheet();
+        try {
+            await expertDashboardAPI.updateMeeting(m.id, { status: 'confirmed' });
+            AppNotify.toast('Meeting confirmed. Farmers can now see it.', 'success');
+            loadMeetings();
+        } catch {
+            AppNotify.toast('Failed to confirm meeting.', 'error');
+        }
+    };
+
     const handlePostponeSubmit = async () => {
         if (!postponeMeeting) return;
         if (postponeDate <= new Date()) { AppNotify.toast('Please select a future date and time.', 'error'); return; }
@@ -542,6 +553,13 @@ const ExpertMeetings: React.FC = () => {
                     <Text style={styles.actionSheetLabel}>Postpone / Reschedule</Text>
                     <Ionicons name="chevron-forward" size={18} color={COLORS.neutral[300]} />
                 </TouchableOpacity>
+                {actionMeeting?.status === 'pending' && (
+                    <TouchableOpacity style={styles.actionSheetItem} onPress={() => actionMeeting && handleConfirmMeeting(actionMeeting)}>
+                        <View style={[styles.actionSheetIcon, { backgroundColor: '#dcfce7' }]}><Ionicons name="shield-checkmark-outline" size={20} color={COLORS.success} /></View>
+                        <Text style={styles.actionSheetLabel}>Confirm for Farmers</Text>
+                        <Ionicons name="chevron-forward" size={18} color={COLORS.neutral[300]} />
+                    </TouchableOpacity>
+                )}
                 <TouchableOpacity style={styles.actionSheetItem} onPress={() => actionMeeting && handleMarkCompleted(actionMeeting)}>
                     <View style={[styles.actionSheetIcon, { backgroundColor: '#dcfce7' }]}><Ionicons name="checkmark-circle-outline" size={20} color={COLORS.success} /></View>
                     <Text style={styles.actionSheetLabel}>Mark as Completed</Text>

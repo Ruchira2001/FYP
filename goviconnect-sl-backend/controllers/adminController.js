@@ -16,6 +16,7 @@ const FarmerRequest = require('../models/FarmerRequest');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const UserCropGuide = require('../models/UserCropGuide');
+const { createNotification } = require('../services/notificationService');
 
 const generateToken = (id) => {
   return jwt.sign({ id, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -474,10 +475,83 @@ exports.getMeetings = async (req, res) => {
   }
 };
 
+exports.createMeeting = async (req, res) => {
+  try {
+    const {
+      expertId,
+      type = 'group',
+      topic,
+      topicSi,
+      description,
+      descriptionSi,
+      sessionTitle,
+      sessionTitleSi,
+      dateTime,
+      duration = 60,
+      maxAttendees = 50,
+      meetingLink,
+      status = 'pending',
+      notes,
+    } = req.body;
+
+    if (!expertId || !topic || !dateTime) {
+      return res.status(400).json({ success: false, message: 'Expert, topic, and date/time are required' });
+    }
+
+    const expert = await Expert.findById(expertId);
+    if (!expert) return res.status(404).json({ success: false, message: 'Expert not found' });
+
+    const meeting = await Meeting.create({
+      expertId,
+      expertName: expert.name,
+      expertAvatar: expert.avatar,
+      type,
+      topic,
+      topicSi: topicSi || topic,
+      description,
+      descriptionSi,
+      sessionTitle: sessionTitle || topic,
+      sessionTitleSi: sessionTitleSi || topicSi || topic,
+      dateTime: new Date(dateTime),
+      duration: Number(duration) || 60,
+      status,
+      maxAttendees: Number(maxAttendees) || 50,
+      notes,
+      meetingLink: meetingLink || `https://meet.goviconnect.lk/session_${Date.now()}`,
+    });
+
+    await createNotification({
+      userId: expert._id,
+      userModel: 'Expert',
+      type: 'meeting',
+      title: `Admin scheduled a meeting: ${meeting.topic}`,
+      titleSi: `Admin meeting: ${meeting.topicSi || meeting.topic}`,
+      body: status === 'pending'
+        ? 'Please review and confirm this meeting before farmers can see it.'
+        : 'This meeting has been confirmed by admin.',
+      bodySi: status === 'pending'
+        ? 'Please review and confirm this meeting before farmers can see it.'
+        : 'This meeting has been confirmed by admin.',
+      data: { meetingId: meeting._id },
+    });
+
+    const io = req.app.get('io');
+    if (io) io.emit('meeting_created', { meeting });
+
+    res.status(201).json({ success: true, data: meeting });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 exports.updateMeeting = async (req, res) => {
   try {
     const meeting = await Meeting.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!meeting) return res.status(404).json({ success: false, message: 'Meeting not found' });
+
+    const io = req.app.get('io');
+    if (io) io.emit('meeting_updated', { meetingId: meeting._id.toString(), meeting });
+
     res.json({ success: true, data: meeting });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -487,6 +561,8 @@ exports.updateMeeting = async (req, res) => {
 exports.deleteMeeting = async (req, res) => {
   try {
     await Meeting.findByIdAndDelete(req.params.id);
+    const io = req.app.get('io');
+    if (io) io.emit('meeting_deleted', { meetingId: req.params.id });
     res.json({ success: true, message: 'Meeting deleted' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

@@ -11,6 +11,7 @@ import Guides from './pages/Guides';
 import Tips from './pages/Tips';
 import Notifications from './pages/Notifications';
 import UserGuides from './pages/UserGuides';
+import Meetings from './pages/Meetings';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, loading } = useAuth();
@@ -38,6 +39,7 @@ export default function App() {
                 <Route path="/tips" element={<Tips />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/user-guides" element={<UserGuides />} />
+                <Route path="/meetings" element={<Meetings />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>

@@ -76,6 +76,7 @@ router.delete('/tips/:id', admin.deleteTip);
 
 // ── Meetings ──
 router.get('/meetings', admin.getMeetings);
+router.post('/meetings', admin.createMeeting);
 router.put('/meetings/:id', admin.updateMeeting);
 router.delete('/meetings/:id', admin.deleteMeeting);
 

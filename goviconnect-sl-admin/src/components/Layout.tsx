@@ -11,6 +11,7 @@ import {
   Lightbulb,
   ClipboardCheck,
   Bell,
+  CalendarDays,
   LogOut,
   type LucideIcon,
 } from 'lucide-react';
@@ -48,6 +49,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: 'Moderation',
     items: [
       { label: 'User Guides', path: '/user-guides', icon: ClipboardCheck },
+      { label: 'Meetings', path: '/meetings', icon: CalendarDays },
       { label: 'Notifications', path: '/notifications', icon: Bell },
     ],
   },

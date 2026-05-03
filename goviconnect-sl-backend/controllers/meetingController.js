@@ -9,7 +9,7 @@ exports.getSessions = async (req, res, next) => {
     const sessions = await Meeting.find({
       type: 'group',
       dateTime: { $gte: new Date() },
-      status: { $ne: 'cancelled' },
+      status: 'confirmed',
     })
       .sort({ dateTime: 1 })
       .populate('expertId', 'name avatar specialty');

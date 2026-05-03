@@ -85,7 +85,14 @@ export const updateTip = (id: string, data: Record<string, unknown>) =>
   api.put(`/tips/${id}`, data);
 export const deleteTip = (id: string) => api.delete(`/tips/${id}`);
 
-// Meetings — removed (not needed for admin)
+// Meetings
+export const getMeetings = (params?: Record<string, string | number>) =>
+  api.get('/meetings', { params });
+export const createMeeting = (data: Record<string, unknown>) =>
+  api.post('/meetings', data);
+export const updateMeeting = (id: string, data: Record<string, unknown>) =>
+  api.put(`/meetings/${id}`, data);
+export const deleteMeeting = (id: string) => api.delete(`/meetings/${id}`);
 
 // AI — removed (read-only, not needed for admin)
 
