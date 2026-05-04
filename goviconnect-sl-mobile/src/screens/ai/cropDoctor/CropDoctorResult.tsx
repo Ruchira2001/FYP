@@ -133,10 +133,13 @@ const CropDoctorResult: React.FC = () => {
         }
     };
 
-    const selectedChemicals: string[] =
-        ((i18n.language === 'si' ? result?.recommendedChemicalsSi : result?.recommendedChemicals) ||
-            result?.recommendedChemicals ||
-            []) as string[];
+    const getLocalizedList = (localized?: string[], fallback?: string[]) => (
+        localized && localized.length > 0 ? localized : fallback || []
+    );
+
+    const selectedChemicals: string[] = i18n.language === 'si'
+        ? getLocalizedList(result?.recommendedChemicalsSi, result?.recommendedChemicals)
+        : result?.recommendedChemicals || [];
 
     const handleNearbyShops = () => {
         navigation.navigate('NearbyShopsMap', {

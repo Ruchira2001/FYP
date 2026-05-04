@@ -30,8 +30,11 @@ const DiagnosisDetail: React.FC = () => {
     const isHealthy = item.diseaseName?.toLowerCase().includes('healthy');
     const treatments = i18n.language === 'si' ? item.treatmentsSi : item.treatments;
     const preventionTips = i18n.language === 'si' ? item.preventionTipsSi : item.preventionTips;
+    const getLocalizedList = (localized?: string[], fallback?: string[]) => (
+        localized && localized.length > 0 ? localized : fallback || []
+    );
     const recommendedChemicals = i18n.language === 'si'
-        ? (item.recommendedChemicalsSi || item.recommendedChemicals || [])
+        ? getLocalizedList(item.recommendedChemicalsSi, item.recommendedChemicals)
         : (item.recommendedChemicals || []);
     const diseaseName = i18n.language === 'si' ? item.diseaseNameSi : item.diseaseName;
     const handleAskExpert = async () => {
