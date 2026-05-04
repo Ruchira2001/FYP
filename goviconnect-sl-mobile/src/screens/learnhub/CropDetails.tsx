@@ -8,6 +8,7 @@ import { Header, PrimaryButton, Chip } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { learnhubAPI } from '../../services/api';
 import cropsData from '../../data/crops.json';
+import { getCropImage } from '../../utils/cropImages';
 
 type ParamList = {
     CropDetails: { cropId: string };
@@ -380,8 +381,8 @@ const CropDetails: React.FC = () => {
                         </View>
                         {communityGuides.map((item: any) => (
                             <View key={item._id} style={styles.communityCard}>
-                                {item.images && item.images.length > 0 ? (
-                                    <Image source={{ uri: item.images[0] }} style={styles.communityCardImg} />
+                                {getCropImage(item.cropId, item.name) ? (
+                                    <Image source={{ uri: getCropImage(item.cropId, item.name) }} style={styles.communityCardImg} />
                                 ) : (
                                     <View style={[styles.communityCardImg, styles.communityCardImgPlaceholder]}>
                                         <Text style={{ fontSize: 28 }}>🌿</Text>

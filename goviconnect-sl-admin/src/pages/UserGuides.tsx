@@ -3,7 +3,8 @@ import { getUserGuides, approveUserGuide, rejectUserGuide, deleteUserGuidePerm }
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
 import Modal from '../components/Modal';
-import { Eye, Check, XCircle, Trash2 } from 'lucide-react';
+import { Eye, Check, XCircle, Trash2, Image as ImageIcon, PlayCircle, ExternalLink } from 'lucide-react';
+import { getCropImage } from '../utils/cropImages';
 
 interface UGuide {
   _id: string;
@@ -39,6 +40,26 @@ const mediaCount = (guide: UGuide) => {
   const videoCount = (guide.videoLink ? 1 : 0) + (guide.videoLinks?.length || 0) + (guide.videoUrls?.length || 0);
   return `${imageCount} images / ${videoCount} videos`;
 };
+
+const allImages = (guide: UGuide) => [
+  ...(guide.imageUrl ? [guide.imageUrl] : []),
+  ...(guide.images || []),
+].filter(Boolean);
+
+const allVideos = (guide: UGuide) => [
+  ...(guide.videoUrls || []),
+  ...(guide.videoLinks || []),
+  ...(guide.videoLink ? [guide.videoLink] : []),
+].filter(Boolean);
+
+const isDirectVideo = (url: string) => /\.(mp4|webm|ogg)(\?|$)/i.test(url) || /\/video\/upload\//i.test(url);
+
+const DetailBlock = ({ label, value }: { label: string; value?: string }) => (
+  <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
+    <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700">{value?.trim() || '-'}</p>
+  </div>
+);
 
 export default function UserGuides() {
   const [items, setItems] = useState<UGuide[]>([]);
@@ -196,67 +217,114 @@ export default function UserGuides() {
       {/* View Modal */}
       <Modal open={!!viewItem} onClose={() => setViewItem(null)} title="Guide Details" size="lg">
         {viewItem && (
-          <div className="space-y-3">
-            <div>
-              <span className="text-sm font-medium text-gray-500">Name:</span>
-              <p className="text-gray-800">{viewItem.name}</p>
+          <div className="space-y-5">
+            <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm">
+              <div className="relative h-44 bg-emerald-50">
+                {getCropImage(viewItem.cropId, viewItem.name) || allImages(viewItem)[0] ? (
+                  <img
+                    src={getCropImage(viewItem.cropId, viewItem.name) || allImages(viewItem)[0]}
+                    alt={viewItem.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-emerald-50 text-sm font-semibold text-emerald-700">
+                    Crop image unavailable
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-emerald-700">{viewItem.category || 'Guide'}</span>
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-slate-700">{viewItem.status.replace('_', ' ')}</span>
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-slate-700">{mediaCount(viewItem)}</span>
+                  </div>
+                  <h3 className="mt-2 text-xl font-bold text-white">{viewItem.name}</h3>
+                </div>
+              </div>
+              <div className="grid gap-3 p-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Author</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-800">{viewItem.userId?.name || '-'}</p>
+                  <p className="text-xs text-slate-500">{viewItem.userId?.email || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Crop</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-800">{viewItem.cropId || '-'}</p>
+                  <p className="text-xs text-slate-500">{viewItem.scientificName || '-'}</p>
+                </div>
+              </div>
             </div>
-          <div>
-            <span className="text-sm font-medium text-gray-500">Category:</span>
-            <p className="text-gray-800">{viewItem.category}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <span className="text-sm font-medium text-gray-500">Crop ID:</span>
-              <p className="text-gray-800">{viewItem.cropId || '-'}</p>
+
+            <DetailBlock label="Description" value={viewItem.description} />
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <DetailBlock label="Climate" value={viewItem.climate} />
+              <DetailBlock label="Soil" value={viewItem.soil} />
+              <DetailBlock label="Season" value={viewItem.season} />
             </div>
-            <div>
-              <span className="text-sm font-medium text-gray-500">Scientific Name:</span>
-              <p className="text-gray-800">{viewItem.scientificName || '-'}</p>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <DetailBlock label="Diseases" value={viewItem.diseases} />
+              <DetailBlock label="Treatments" value={viewItem.treatments} />
+              <DetailBlock label="Practices" value={viewItem.practices} />
             </div>
-          </div>
-          <div>
-            <span className="text-sm font-medium text-gray-500">Author:</span>
-            <p className="text-gray-800">{viewItem.userId?.name} ({viewItem.userId?.email})</p>
-          </div>
-          <div>
-            <span className="text-sm font-medium text-gray-500">Description:</span>
-            <p className="text-gray-800 whitespace-pre-wrap">{viewItem.description}</p>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <span className="text-sm font-medium text-gray-500">Climate:</span>
-              <p className="text-gray-800 whitespace-pre-wrap">{viewItem.climate || '-'}</p>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Uploaded Media</p>
+                  <p className="text-sm text-slate-600">{mediaCount(viewItem)}</p>
+                </div>
+              </div>
+
+              {allImages(viewItem).length > 0 && (
+                <div className="mb-4">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <ImageIcon size={16} className="text-emerald-600" /> Photos
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {allImages(viewItem).map((src, index) => (
+                      <a key={`${src}-${index}`} href={src} target="_blank" rel="noreferrer" className="group overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                        <img src={src} alt={`Uploaded photo ${index + 1}`} className="h-40 w-full object-cover transition group-hover:scale-[1.02]" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {allVideos(viewItem).length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <PlayCircle size={16} className="text-red-500" /> Videos
+                  </div>
+                  <div className="grid gap-3">
+                    {allVideos(viewItem).map((url, index) => (
+                      <div key={`${url}-${index}`} className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                        {isDirectVideo(url) ? (
+                          <video src={url} controls className="max-h-72 w-full bg-slate-900" />
+                        ) : (
+                          <a href={url} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 p-4 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                            <span className="truncate">{url}</span>
+                            <ExternalLink size={16} className="shrink-0 text-slate-400" />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {allImages(viewItem).length === 0 && allVideos(viewItem).length === 0 && (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
+                  No uploaded photos or videos for this guide.
+                </div>
+              )}
             </div>
-            <div>
-              <span className="text-sm font-medium text-gray-500">Soil:</span>
-              <p className="text-gray-800 whitespace-pre-wrap">{viewItem.soil || '-'}</p>
-            </div>
-            <div>
-              <span className="text-sm font-medium text-gray-500">Season:</span>
-              <p className="text-gray-800 whitespace-pre-wrap">{viewItem.season || '-'}</p>
-            </div>
-          </div>
-          <div>
-            <span className="text-sm font-medium text-gray-500">Diseases:</span>
-            <p className="text-gray-800 whitespace-pre-wrap">{viewItem.diseases || '-'}</p>
-          </div>
-          <div>
-            <span className="text-sm font-medium text-gray-500">Treatments:</span>
-            <p className="text-gray-800 whitespace-pre-wrap">{viewItem.treatments || '-'}</p>
-          </div>
-          <div>
-            <span className="text-sm font-medium text-gray-500">Practices:</span>
-            <p className="text-gray-800 whitespace-pre-wrap">{viewItem.practices || '-'}</p>
-          </div>
-          <div>
-            <span className="text-sm font-medium text-gray-500">Media:</span>
-            <p className="text-gray-800">{mediaCount(viewItem)}</p>
-          </div>
+
             {viewItem.rejectionReason && (
-              <div>
-                <span className="text-sm font-medium text-red-500">Rejection Reason:</span>
-                <p className="text-red-700">{viewItem.rejectionReason}</p>
+              <div className="rounded-xl border border-red-100 bg-red-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-red-500">Rejection Reason</p>
+                <p className="mt-1 text-sm text-red-700">{viewItem.rejectionReason}</p>
               </div>
             )}
           </div>

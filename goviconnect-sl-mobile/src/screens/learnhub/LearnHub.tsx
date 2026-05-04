@@ -13,6 +13,7 @@ import { COLORS, CROP_CATEGORIES } from '../../utils/constants';
 import { learnhubAPI, feedAPI } from '../../services/api';
 import { getSavedLearnHub } from '../../services/storage';
 import cropsData from '../../data/crops.json';
+import { getCropImage } from '../../utils/cropImages';
 
 type TabType = 'official' | 'community' | 'myguides';
 
@@ -159,6 +160,7 @@ const LearnHub: React.FC = () => {
 
         const isSaved = savedIds.includes(guideId);
         const isDownloaded = downloadedIds.includes(guideId);
+        const cropImage = getCropImage(item.cropId, item.name);
 
         return (
             <TouchableOpacity
@@ -167,8 +169,8 @@ const LearnHub: React.FC = () => {
                 activeOpacity={0.85}
                 onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item })}
             >
-                {item.images && item.images.length > 0 ? (
-                    <Image source={{ uri: item.images[0] }} style={styles.farmerGuideThumb} />
+                {cropImage ? (
+                    <Image source={{ uri: cropImage }} style={styles.farmerGuideThumb} />
                 ) : (
                     <View style={styles.farmerGuidePlaceholder}>
                         <Text style={{ fontSize: 36 }}>{getCropIcon(item.name, item.cropId)}</Text>
@@ -251,6 +253,7 @@ const LearnHub: React.FC = () => {
 
     const renderMyGuideCard = ({ item }: { item: any }) => {
         const sc = getStatusColor(item.status);
+        const cropImage = getCropImage(item.cropId, item.name);
         return (
             <TouchableOpacity
                 style={styles.myGuideCard}
@@ -258,8 +261,8 @@ const LearnHub: React.FC = () => {
                 onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item })}
             >
                 <View style={styles.myGuideCardLeft}>
-                    {item.images && item.images.length > 0 ? (
-                        <Image source={{ uri: item.images[0] }} style={styles.myGuideThumb} />
+                    {cropImage ? (
+                        <Image source={{ uri: cropImage }} style={styles.myGuideThumb} />
                     ) : (
                         <View style={[styles.myGuideThumb, styles.myGuideThumbPlaceholder]}>
                             <Text style={{ fontSize: 28 }}>{getCropIcon(item.name, item.cropId)}</Text>

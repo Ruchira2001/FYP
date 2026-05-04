@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Header, CropCard, EmptyState } from '../../components';
 import { learnhubAPI } from '../../services/api';
 import { COLORS } from '../../utils/constants';
+import { getCropImage } from '../../utils/cropImages';
 
 const SavedLibrary: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -37,7 +38,7 @@ const SavedLibrary: React.FC = () => {
                     name={item.name || item.title || ''}
                     nameSi={item.nameSi || item.titleSi || ''}
                     category={item.category || ''}
-                    thumbnail={item.images?.[0]}
+                    thumbnail={getCropImage(item.cropId, item.name || item.title) || item.images?.[0]}
                     onPress={() => navigation.navigate('FarmerGuideDetails', { guide: item })}
                     isSaved={true}
                     isDownloaded={false} // Would need a check similar to FarmerGuideDetails
