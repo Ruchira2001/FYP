@@ -14,6 +14,11 @@ const { width } = Dimensions.get('window');
 const SHOP_COLOR = '#2563eb';
 const SHOP_LIGHT = '#dbeafe';
 const SHOP_BG = '#eff6ff';
+const LOCATIONS = [
+    'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
+    'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kurunegala', 'Puttalam',
+    'Anuradhapura', 'Polonnaruwa', 'Badulla', 'Ratnapura', 'Kegalle',
+];
 
 const ShopRegister: React.FC = () => {
     const navigation = useNavigation<any>();
@@ -26,6 +31,7 @@ const ShopRegister: React.FC = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [showLocationPicker, setShowLocationPicker] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -159,17 +165,44 @@ const ShopRegister: React.FC = () => {
                     {/* Location */}
                     <View style={styles.inputGroup}>
                         <Text style={styles.inputLabel}>Location</Text>
-                        <View style={styles.inputContainer}>
+                        <TouchableOpacity
+                            style={styles.inputContainer}
+                            activeOpacity={0.8}
+                            onPress={() => setShowLocationPicker(prev => !prev)}
+                        >
                             <Ionicons name="location-outline" size={20} color={COLORS.neutral[400]} />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Colombo"
-                                placeholderTextColor={COLORS.neutral[400]}
-                                value={location}
-                                onChangeText={setLocation}
-                                autoCapitalize="words"
+                            <Text style={[styles.locationValue, location ? styles.locationValueActive : styles.locationValuePlaceholder]}>
+                                {location || 'Select shop location'}
+                            </Text>
+                            <Ionicons
+                                name={showLocationPicker ? 'chevron-up' : 'chevron-down'}
+                                size={18}
+                                color={COLORS.neutral[400]}
                             />
-                        </View>
+                        </TouchableOpacity>
+                        {showLocationPicker && (
+                            <View style={styles.locationDropdown}>
+                                <ScrollView nestedScrollEnabled style={styles.locationScroll}>
+                                    {LOCATIONS.map((loc) => (
+                                        <TouchableOpacity
+                                            key={loc}
+                                            style={[styles.locationOption, location === loc && styles.locationOptionSelected]}
+                                            onPress={() => {
+                                                setLocation(loc);
+                                                setShowLocationPicker(false);
+                                            }}
+                                        >
+                                            <Text style={[styles.locationOptionText, location === loc && styles.locationOptionTextSelected]}>
+                                                {loc}
+                                            </Text>
+                                            {location === loc && (
+                                                <Ionicons name="checkmark" size={16} color={SHOP_COLOR} />
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        )}
                     </View>
 
                     {/* Password */}
@@ -352,6 +385,49 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: COLORS.neutral[800],
         marginLeft: 8,
+    },
+    locationValue: {
+        flex: 1,
+        fontSize: 14,
+        marginLeft: 8,
+    },
+    locationValueActive: {
+        color: COLORS.neutral[800],
+    },
+    locationValuePlaceholder: {
+        color: COLORS.neutral[400],
+    },
+    locationDropdown: {
+        marginTop: 8,
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[200],
+        overflow: 'hidden',
+        maxHeight: 192,
+    },
+    locationScroll: {
+        maxHeight: 192,
+    },
+    locationOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+    },
+    locationOptionSelected: {
+        backgroundColor: SHOP_BG,
+    },
+    locationOptionText: {
+        fontSize: 14,
+        color: COLORS.neutral[700],
+    },
+    locationOptionTextSelected: {
+        color: SHOP_COLOR,
+        fontWeight: '600',
     },
     registerButton: {
         flexDirection: 'row',

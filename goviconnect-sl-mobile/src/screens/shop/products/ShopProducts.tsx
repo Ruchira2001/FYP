@@ -13,7 +13,7 @@ import { shopAPI } from '../../../services/api';
 
 const FILTER_CATEGORIES = ['All', 'Fungicides', 'Insecticides', 'Herbicides', 'Fertilizers', 'Bio Products'];
 const PRODUCT_CATEGORIES = ['Fungicides', 'Insecticides', 'Herbicides', 'Fertilizers', 'Bio Products'];
-const PRODUCT_EMOJIS = ['??', '??', '??', '??', '??', '??', '??', '??', '??', '??', '??', '??', '???', '??', '??', '??'];
+const PRODUCT_EMOJIS = ['🧪', '🌿', '🍃', '🌱', '💧', '🛡️', '🐛', '🧴', '⚗️', '🌾', '🍅', '🥔', '🌶️', '🥬', '🌻', '📦'];
 
 export interface Product {
     id: string;
@@ -44,7 +44,7 @@ const emptyForm = () => ({
     name: '',
     category: 'Fungicides',
     description: '',
-    emoji: '??',
+    emoji: '🧪',
     price: '',
     unit: '',
     stock: '0',
@@ -87,8 +87,8 @@ const ShopProducts: React.FC = () => {
         try {
             const res = await shopAPI.getProducts();
             const data = Array.isArray(res.data.data) ? res.data.data : [];
-            setProducts(data.map((p: any): Product => ({
-                id: p._id || p.id,
+            setProducts(data.map((p: any, index: number): Product => ({
+                id: p._id || p.id || `product-${index}`,
                 name: p.name || '',
                 nameSi: p.nameSi || '',
                 category: p.category || '',
@@ -98,7 +98,7 @@ const ShopProducts: React.FC = () => {
                 dosage: p.dosage || '',
                 price: p.price || 0,
                 unit: p.unit || '',
-                emoji: p.emoji || '??',
+                emoji: p.emoji || '🧪',
                 stock: p.stock || 0,
                 availability: normalizeAvailability(p.availability || '', p.stock || 0),
                 manufacturer: p.manufacturer || '',
@@ -324,8 +324,8 @@ const ShopProducts: React.FC = () => {
                         </TouchableOpacity>
                         {showEmojiPicker && (
                             <View style={styles.emojiGrid}>
-                                {PRODUCT_EMOJIS.map(em => (
-                                    <TouchableOpacity key={em} style={[styles.emojiCell, form.emoji === em && styles.emojiCellSelected]}
+                                {PRODUCT_EMOJIS.map((em, index) => (
+                                    <TouchableOpacity key={`${em}-${index}`} style={[styles.emojiCell, form.emoji === em && styles.emojiCellSelected]}
                                         onPress={() => { setForm(prev => ({ ...prev, emoji: em })); setShowEmojiPicker(false); }}>
                                         <Text style={styles.emojiCellText}>{em}</Text>
                                     </TouchableOpacity>
@@ -497,7 +497,7 @@ const ShopProducts: React.FC = () => {
             <FlatList
                 data={filteredProducts}
                 renderItem={renderProductCard}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item, index) => item.id || `${item.name}-${index}`}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={

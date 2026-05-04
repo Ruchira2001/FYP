@@ -9,7 +9,7 @@ import { shopAPI } from '../../../services/api';
 import { Product } from './ShopProducts';
 
 const PRODUCT_CATEGORIES = ['Fungicides', 'Insecticides', 'Herbicides', 'Fertilizers', 'Bio Products'];
-const PRODUCT_EMOJIS = ['??', '??', '??', '??', '??', '??', '??', '??', '??', '??', '??', '??', '???', '??', '??', '??'];
+const PRODUCT_EMOJIS = ['🧪', '🌿', '🍃', '🌱', '💧', '🛡️', '🐛', '🧴', '⚗️', '🌾', '🍅', '🥔', '🌶️', '🥬', '🌻', '📦'];
 
 const ShopProductDetail: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -22,7 +22,7 @@ const ShopProductDetail: React.FC = () => {
         name: product?.name || '',
         category: product?.category || '',
         description: product?.description || '',
-        emoji: product?.emoji || '??',
+        emoji: product?.emoji || '🧪',
         price: String(product?.price || ''),
         unit: product?.unit || '',
         stock: String(product?.stock || 0),
@@ -131,8 +131,8 @@ const ShopProductDetail: React.FC = () => {
                         </TouchableOpacity>
                         {showEmojiPicker && (
                             <View style={styles.emojiGrid}>
-                                {PRODUCT_EMOJIS.map(em => (
-                                    <TouchableOpacity key={em} style={[styles.emojiCell, form.emoji === em && styles.emojiCellSelected]}
+                                {PRODUCT_EMOJIS.map((em, index) => (
+                                    <TouchableOpacity key={`${em}-${index}`} style={[styles.emojiCell, form.emoji === em && styles.emojiCellSelected]}
                                         onPress={() => { setForm(prev => ({ ...prev, emoji: em })); setShowEmojiPicker(false); }}>
                                         <Text style={styles.emojiCellText}>{em}</Text>
                                     </TouchableOpacity>

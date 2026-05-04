@@ -29,6 +29,7 @@ const ShopHome: React.FC = () => {
 
     useFocusEffect(
         React.useCallback(() => {
+            loadDashboard();
             loadNotificationCount();
         }, [])
     );
@@ -129,10 +130,19 @@ const ShopHome: React.FC = () => {
         },
     ];
 
-    const quickActions = [
+    const quickActions: Array<{
+        id: string;
+        title: string;
+        badge?: string;
+        icon: keyof typeof Ionicons.glyphMap;
+        iconColor: string;
+        iconBgColor: string;
+        onPress: () => void;
+    }> = [
         {
             id: 'products',
             title: 'My Products',
+            badge: String(dashStats.totalProducts),
             icon: 'leaf' as const,
             iconColor: COLORS.primary[600],
             iconBgColor: COLORS.primary[50],
@@ -149,8 +159,8 @@ const ShopHome: React.FC = () => {
     ];
 
     // Popular products from dashboard API
-    const displayProducts = popularProducts.length > 0 ? popularProducts.map((p: any) => ({
-        id: p._id || p.id,
+    const displayProducts = popularProducts.length > 0 ? popularProducts.map((p: any, index: number) => ({
+        id: p._id || p.id || `popular-product-${index}`,
         name: p.name || '',
         category: p.category || '',
         emoji: p.emoji || '🧪',
@@ -216,6 +226,7 @@ const ShopHome: React.FC = () => {
                             <View key={action.id} style={styles.actionCardWrapper}>
                                 <ActionCard
                                     title={action.title}
+                                    badge={action.badge}
                                     icon={action.icon}
                                     iconColor={action.iconColor}
                                     iconBgColor={action.iconBgColor}
@@ -236,9 +247,9 @@ const ShopHome: React.FC = () => {
                         </TouchableOpacity>
                     </View>
 
-                    {displayProducts.map((product) => (
+                    {displayProducts.map((product, index) => (
                         <TouchableOpacity
-                            key={product.id}
+                            key={product.id || `${product.name}-${index}`}
                             style={styles.productCard}
                             activeOpacity={0.7}
                             onPress={() => navigation.navigate('ProductsTab', {
