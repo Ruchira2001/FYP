@@ -92,6 +92,7 @@ router.post('/notifications/broadcast', admin.broadcastNotification);
 
 // ── Products & Orders ──
 router.get('/products', admin.getProducts);
+router.get('/products/:id', admin.getProductById);
 router.get('/orders', admin.getOrders);
 
 // ── User Submitted Guides ──

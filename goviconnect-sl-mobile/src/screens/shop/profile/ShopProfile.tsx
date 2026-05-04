@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShop } from '../../../context/ShopContext';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, AppNotify, ActionCard } from '../../../components';
 import { shopAPI } from '../../../services/api';
+import { connectSocket, getSocket } from '../../../services/socketService';
 
 const ShopProfile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -17,13 +18,42 @@ const ShopProfile: React.FC = () => {
         loadStats();
     }, []);
 
+    useFocusEffect(
+        React.useCallback(() => {
+            loadStats();
+        }, [])
+    );
+
+    useEffect(() => {
+        let mounted = true;
+        let socket = getSocket();
+
+        const refreshStats = () => {
+            if (mounted) loadStats();
+        };
+
+        const subscribe = async () => {
+            socket = socket || await connectSocket();
+            socket?.on('dashboard_updated', refreshStats);
+        };
+
+        subscribe();
+
+        return () => {
+            mounted = false;
+            socket?.off('dashboard_updated', refreshStats);
+        };
+    }, []);
+
     const loadStats = async () => {
         try {
             const res = await shopAPI.getDashboard();
             const data = res.data.data || res.data;
+            const products = data.products || {};
+            const orders = data.orders || {};
             setProfileStats({
-                products: data.totalProducts || data.stats?.totalProducts || 0,
-                orders: data.totalOrders || data.stats?.totalOrders || 0,
+                products: data.totalProducts ?? products.total ?? data.stats?.totalProducts ?? 0,
+                orders: data.totalOrders ?? orders.total ?? data.stats?.totalOrders ?? 0,
                 rating: data.rating || data.stats?.rating || 0,
             });
         } catch (e) {

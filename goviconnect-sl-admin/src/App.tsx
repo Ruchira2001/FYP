@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Farmers from './pages/Farmers';
 import Experts from './pages/Experts';
 import Shops from './pages/Shops';
+import Products from './pages/Products';
+import ProductDetails from './pages/ProductDetails';
 import Crops from './pages/Crops';
 import Notifications from './pages/Notifications';
 import UserGuides from './pages/UserGuides';
@@ -34,6 +36,8 @@ export default function App() {
                 <Route path="/farmers" element={<Farmers />} />
                 <Route path="/experts" element={<Experts />} />
                 <Route path="/shops" element={<Shops />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/products/:id" element={<ProductDetails />} />
                 <Route path="/crops" element={<Crops />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/user-guides" element={<UserGuides />} />

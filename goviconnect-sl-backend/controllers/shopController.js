@@ -1,8 +1,46 @@
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Shop = require('../models/Shop');
+const { getIO } = require('../config/socket');
 const { uploadAvatar } = require('../middleware/upload');
 const { updateShopProfile, updateShopAvatar } = require('./userController');
+
+const parseNumber = (value, fallback = 0) => {
+  if (value === undefined || value === null || value === '') return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const normalizeList = (value) => {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const getAvailabilityFromStock = (stock) => {
+  if (stock <= 0) return 'Out of Stock';
+  if (stock <= 10) return 'Low Stock';
+  return 'In Stock';
+};
+
+const buildProductPayload = (body, file) => {
+  const payload = { ...body };
+
+  if (payload.price !== undefined) payload.price = parseNumber(payload.price);
+  if (payload.stock !== undefined) {
+    payload.stock = parseNumber(payload.stock);
+    payload.availability = getAvailabilityFromStock(payload.stock);
+  }
+  if (payload.targetCrops !== undefined) payload.targetCrops = normalizeList(payload.targetCrops);
+  if (file) payload.imageUrl = file.path;
+
+  return payload;
+};
 
 const DISTRICT_COORDINATES = {
   colombo: { latitude: 6.9271, longitude: 79.8612 },
@@ -183,25 +221,33 @@ exports.getShopDashboard = async (req, res, next) => {
   try {
     const shopId = req.user._id;
 
-    const [totalProducts, inStock, lowStock, outOfStock, pendingOrders, processingOrders, totalRevenue] =
+    const [totalProducts, inStock, lowStock, outOfStock, totalOrders, pendingOrders, processingOrders, totalRevenue, popularProducts] =
       await Promise.all([
         Product.countDocuments({ shopId }),
-        Product.countDocuments({ shopId, availability: 'In Stock' }),
-        Product.countDocuments({ shopId, availability: 'Low Stock' }),
-        Product.countDocuments({ shopId, availability: 'Out of Stock' }),
+        Product.countDocuments({ shopId, stock: { $gt: 10 } }),
+        Product.countDocuments({ shopId, stock: { $gt: 0, $lte: 10 } }),
+        Product.countDocuments({ shopId, stock: { $lte: 0 } }),
+        Order.countDocuments({ shopId }),
         Order.countDocuments({ shopId, status: 'Pending' }),
         Order.countDocuments({ shopId, status: 'Processing' }),
         Order.aggregate([
           { $match: { shopId: req.user._id, status: 'Delivered' } },
           { $group: { _id: null, total: { $sum: '$total' } } },
         ]).then((r) => r[0]?.total || 0),
+        Product.find({ shopId }).sort({ updatedAt: -1 }).limit(5),
       ]);
 
     res.json({
       success: true,
       data: {
         products: { total: totalProducts, inStock, lowStock, outOfStock },
-        orders: { pending: pendingOrders, processing: processingOrders },
+        orders: { total: totalOrders, pending: pendingOrders, processing: processingOrders },
+        totalProducts,
+        inStock,
+        lowStock,
+        outOfStock,
+        totalOrders,
+        popularProducts,
         totalRevenue,
       },
     });
@@ -265,11 +311,21 @@ exports.getProductById = async (req, res, next) => {
 // @route   POST /api/shop/products
 exports.addProduct = async (req, res, next) => {
   try {
+    const payload = buildProductPayload(req.body, req.file);
     const product = await Product.create({
-      ...req.body,
+      ...payload,
       shopId: req.user._id,
-      imageUrl: req.file?.path || null,
     });
+
+    try {
+      const io = getIO();
+      // Notify admin
+      io.emit('product_changed', { action: 'created', productId: product._id.toString(), shopId: req.user._id.toString() });
+      // Notify shop owner
+      io.to(`user_${req.user._id}`).emit('dashboard_updated');
+    } catch (e) {
+      console.log('Socket not initialized');
+    }
 
     res.status(201).json({ success: true, data: product });
   } catch (error) {
@@ -281,15 +337,7 @@ exports.addProduct = async (req, res, next) => {
 // @route   PUT /api/shop/products/:id
 exports.updateProduct = async (req, res, next) => {
   try {
-    const updates = { ...req.body };
-    if (req.file) updates.imageUrl = req.file.path;
-
-    // Auto-update availability based on stock
-    if (updates.stock !== undefined) {
-      if (updates.stock === 0) updates.availability = 'Out of Stock';
-      else if (updates.stock <= 10) updates.availability = 'Low Stock';
-      else updates.availability = 'In Stock';
-    }
+    const updates = buildProductPayload(req.body, req.file);
 
     const product = await Product.findOneAndUpdate(
       { _id: req.params.id, shopId: req.user._id },
@@ -299,6 +347,14 @@ exports.updateProduct = async (req, res, next) => {
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    try {
+      const io = getIO();
+      io.emit('product_changed', { action: 'updated', productId: product._id.toString(), shopId: req.user._id.toString() });
+      io.to(`user_${req.user._id}`).emit('dashboard_updated');
+    } catch (e) {
+      console.log('Socket not initialized');
     }
 
     res.json({ success: true, data: product });
@@ -318,6 +374,14 @@ exports.deleteProduct = async (req, res, next) => {
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    try {
+      const io = getIO();
+      io.emit('product_changed', { action: 'deleted', productId: product._id.toString(), shopId: req.user._id.toString() });
+      io.to(`user_${req.user._id}`).emit('dashboard_updated');
+    } catch (e) {
+      console.log('Socket not initialized');
     }
 
     res.json({ success: true, message: 'Product deleted' });

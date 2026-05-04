@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Expert = require('../models/Expert');
 const Shop = require('../models/Shop');
+const Admin = require('../models/Admin');
 
 let io;
 
@@ -33,6 +34,8 @@ const initSocket = (server) => {
         user = await Expert.findById(decoded.id).select('-password');
       } else if (decoded.role === 'shop') {
         user = await Shop.findById(decoded.id).select('-password');
+      } else if (decoded.role === 'admin') {
+        user = await Admin.findById(decoded.id).select('-password');
       }
 
       if (!user) {

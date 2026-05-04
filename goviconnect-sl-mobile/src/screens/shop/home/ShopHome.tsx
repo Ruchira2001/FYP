@@ -44,9 +44,16 @@ const ShopHome: React.FC = () => {
             }
         };
 
+        const refreshDashboard = () => {
+            if (mounted) {
+                loadDashboard();
+            }
+        };
+
         const subscribe = async () => {
             socket = socket || await connectSocket();
             socket?.on('notification', refreshNotificationCount);
+            socket?.on('dashboard_updated', refreshDashboard);
         };
 
         subscribe();
@@ -54,6 +61,7 @@ const ShopHome: React.FC = () => {
         return () => {
             mounted = false;
             socket?.off('notification', refreshNotificationCount);
+            socket?.off('dashboard_updated', refreshDashboard);
         };
     }, []);
 
@@ -70,11 +78,12 @@ const ShopHome: React.FC = () => {
         try {
             const res = await shopAPI.getDashboard();
             const data = res.data.data || res.data;
+            const products = data.products || {};
             setDashStats({
-                totalProducts: data.totalProducts || data.stats?.totalProducts || 0,
-                inStock: data.inStock || data.stats?.inStock || 0,
-                lowStock: data.lowStock || data.stats?.lowStock || 0,
-                outOfStock: data.outOfStock || data.stats?.outOfStock || 0,
+                totalProducts: data.totalProducts ?? products.total ?? data.stats?.totalProducts ?? 0,
+                inStock: data.inStock ?? products.inStock ?? data.stats?.inStock ?? 0,
+                lowStock: data.lowStock ?? products.lowStock ?? data.stats?.lowStock ?? 0,
+                outOfStock: data.outOfStock ?? products.outOfStock ?? data.stats?.outOfStock ?? 0,
             });
             setPopularProducts(data.popularProducts || []);
         } catch (e) {

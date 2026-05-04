@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
     View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput,
     ScrollView, Modal, Animated, ActivityIndicator,
@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, Chip, PrimaryButton, AppNotify } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { shopAPI } from '../../../services/api';
+import { connectSocket, getSocket } from '../../../services/socketService';
 
 const FILTER_CATEGORIES = ['All', 'Fungicides', 'Insecticides', 'Herbicides', 'Fertilizers', 'Bio Products'];
 const PRODUCT_CATEGORIES = ['Fungicides', 'Insecticides', 'Herbicides', 'Fertilizers', 'Bio Products'];
@@ -81,6 +82,27 @@ const ShopProducts: React.FC = () => {
             loadProducts();
         }, [])
     );
+
+    useEffect(() => {
+        let mounted = true;
+        
+        const refreshProducts = () => {
+            if (mounted) loadProducts();
+        };
+
+        const subscribe = async () => {
+            let s = getSocket() || await connectSocket();
+            s?.on('dashboard_updated', refreshProducts);
+        };
+        
+        subscribe();
+
+        return () => {
+            mounted = false;
+            let s = getSocket();
+            s?.off('dashboard_updated', refreshProducts);
+        };
+    }, []);
 
     const loadProducts = async () => {
         setLoading(true);

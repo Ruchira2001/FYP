@@ -36,6 +36,11 @@ export const getMe = () => api.get('/me');
 export const getDashboard = () => api.get('/dashboard');
 
 // Farmers
+export const getProducts = (params?: Record<string, string | number>) => 
+  api.get('/products', { params });
+export const getProduct = (id: string) => api.get(`/products/${id}`);
+
+// Farmers
 export const getFarmers = (params?: Record<string, string | number>) =>
   api.get('/farmers', { params });
 export const getFarmer = (id: string) => api.get(`/farmers/${id}`);

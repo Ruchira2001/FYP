@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,7 +14,10 @@ const PRODUCT_EMOJIS = ['🧪', '🌿', '🍃', '🌱', '💧', '🛡️', '🐛
 const ShopProductDetail: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const route = useRoute<any>();
-    const product: Product = route.params?.product;
+    const routeProduct: Product | undefined = route.params?.product;
+    const productId: string | undefined = route.params?.productId;
+    const [product, setProduct] = useState<Product | null>(routeProduct || null);
+    const [loadingProduct, setLoadingProduct] = useState(!routeProduct && !!productId);
 
     // Edit modal
     const [showEditModal, setShowEditModal] = useState(false);
@@ -35,6 +38,80 @@ const ShopProductDetail: React.FC = () => {
     const [formLoading, setFormLoading] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+    const mapProduct = (p: any): Product => {
+        const stock = p.stock || 0;
+        const availability: Product['availability'] =
+            p.availability === 'In Stock' || p.availability === 'in_stock'
+                ? 'in_stock'
+                : p.availability === 'Low Stock' || p.availability === 'low_stock'
+                    ? 'low_stock'
+                    : p.availability === 'Out of Stock' || p.availability === 'out_of_stock'
+                        ? 'out_of_stock'
+                        : stock > 10 ? 'in_stock' : stock > 0 ? 'low_stock' : 'out_of_stock';
+
+        return {
+            id: p._id || p.id,
+            name: p.name || '',
+            nameSi: p.nameSi || '',
+            category: p.category || '',
+            description: p.description || '',
+            targetDisease: p.targetDisease || '',
+            targetCrops: Array.isArray(p.targetCrops) ? p.targetCrops : [],
+            dosage: p.dosage || '',
+            price: p.price || 0,
+            unit: p.unit || '',
+            emoji: p.emoji || 'ðŸ§ª',
+            stock,
+            availability,
+            manufacturer: p.manufacturer || '',
+            activeIngredient: p.activeIngredient || '',
+        };
+    };
+
+    useEffect(() => {
+        if (!productId || product) return;
+
+        const loadProduct = async () => {
+            try {
+                setLoadingProduct(true);
+                const res = await shopAPI.getProductById(productId);
+                const nextProduct = mapProduct(res.data.data || res.data);
+                setProduct(nextProduct);
+                setForm({
+                    name: nextProduct.name,
+                    category: nextProduct.category,
+                    description: nextProduct.description,
+                    emoji: nextProduct.emoji,
+                    price: String(nextProduct.price || ''),
+                    unit: nextProduct.unit,
+                    stock: String(nextProduct.stock || 0),
+                    targetDisease: nextProduct.targetDisease,
+                    targetCrops: nextProduct.targetCrops.join(', '),
+                    activeIngredient: nextProduct.activeIngredient,
+                    dosage: nextProduct.dosage,
+                    manufacturer: nextProduct.manufacturer,
+                });
+            } catch {
+                setProduct(null);
+            } finally {
+                setLoadingProduct(false);
+            }
+        };
+
+        loadProduct();
+    }, [productId, product]);
+
+    if (loadingProduct) {
+        return (
+            <View style={styles.container}>
+                <Header title="Product Details" showBack onBackPress={() => navigation.goBack()} />
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>Loading product...</Text>
+                </View>
+            </View>
+        );
+    }
 
     if (!product) {
         return (
