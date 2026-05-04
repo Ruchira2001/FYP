@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { Header, ActionCard, FeedCard, WeatherCard } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { useApp } from '../../context';
 import { feedAPI, notificationAPI, chatAPI, learnhubAPI } from '../../services/api';
+import { connectSocket, getSocket } from '../../services/socketService';
 import cropsData from '../../data/crops.json';
 
 const { width } = Dimensions.get('window');
@@ -27,6 +28,44 @@ const Home: React.FC = () => {
     useEffect(() => {
         loadData();
     }, []);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            loadNotificationCount();
+        }, [])
+    );
+
+    useEffect(() => {
+        let mounted = true;
+        let socket = getSocket();
+
+        const refreshNotificationCount = () => {
+            if (mounted) {
+                loadNotificationCount();
+            }
+        };
+
+        const subscribe = async () => {
+            socket = socket || await connectSocket();
+            socket?.on('notification', refreshNotificationCount);
+        };
+
+        subscribe();
+
+        return () => {
+            mounted = false;
+            socket?.off('notification', refreshNotificationCount);
+        };
+    }, []);
+
+    const loadNotificationCount = async () => {
+        try {
+            const res = await notificationAPI.getUnreadCount();
+            setNotificationCount(res.data?.count || res.data?.data?.count || 0);
+        } catch {
+            setNotificationCount(0);
+        }
+    };
 
     const loadData = async () => {
         try {

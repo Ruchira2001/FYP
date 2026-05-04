@@ -314,7 +314,7 @@ export const saveMessage = async (message: Message): Promise<void> => {
 // Notifications
 export interface Notification {
     id: string;
-    type: 'meeting' | 'tip' | 'guide' | 'chat' | 'system';
+    type: 'meeting' | 'tip' | 'guide' | 'chat' | 'system' | 'diagnosis';
     title: string;
     titleSi: string;
     body: string;

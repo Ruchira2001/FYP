@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import { Header, ActionCard, WeatherCard } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { useExpert } from '../../../context/ExpertContext';
 import { getRelativeTime } from '../../../utils/validators';
-import { expertDashboardAPI } from '../../../services/api';
+import { expertDashboardAPI, notificationAPI } from '../../../services/api';
 import { connectSocket, getSocket } from '../../../services/socketService';
 
 const { width } = Dimensions.get('window');
@@ -21,10 +21,18 @@ const ExpertHome: React.FC = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [stats, setStats] = useState<any>({});
     const [recentActivity, setRecentActivity] = useState<any[]>([]);
+    const [notificationCount, setNotificationCount] = useState(0);
 
     useEffect(() => {
         loadDashboard();
+        loadNotificationCount();
     }, []);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            loadNotificationCount();
+        }, [])
+    );
 
     useEffect(() => {
         let mounted = true;
@@ -36,10 +44,17 @@ const ExpertHome: React.FC = () => {
             }
         };
 
+        const handleNotificationUpdate = () => {
+            if (mounted) {
+                loadNotificationCount();
+            }
+        };
+
         const subscribe = async () => {
             socket = socket || await connectSocket();
             socket?.on('diagnosis_review_requested', handleDashboardUpdate);
             socket?.on('diagnosis_review_updated', handleDashboardUpdate);
+            socket?.on('notification', handleNotificationUpdate);
         };
 
         subscribe();
@@ -48,8 +63,18 @@ const ExpertHome: React.FC = () => {
             mounted = false;
             socket?.off('diagnosis_review_requested', handleDashboardUpdate);
             socket?.off('diagnosis_review_updated', handleDashboardUpdate);
+            socket?.off('notification', handleNotificationUpdate);
         };
     }, []);
+
+    const loadNotificationCount = async () => {
+        try {
+            const res = await notificationAPI.getUnreadCount();
+            setNotificationCount(res.data?.count || res.data?.data?.count || 0);
+        } catch {
+            setNotificationCount(0);
+        }
+    };
 
     const loadDashboard = async () => {
         try {
@@ -64,7 +89,7 @@ const ExpertHome: React.FC = () => {
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await loadDashboard();
+        await Promise.all([loadDashboard(), loadNotificationCount()]);
         setRefreshing(false);
     };
 
@@ -177,7 +202,7 @@ const ExpertHome: React.FC = () => {
                 onLanguagePress={() => navigation.navigate('LanguageModal')}
                 onNotificationsPress={() => navigation.navigate('ExpertNotifications')}
                 onChatsPress={() => navigation.navigate('ExpertChatsList')}
-                notificationCount={stats.pendingReviews ?? 0}
+                notificationCount={notificationCount}
                 chatUnreadCount={stats.unreadMessages}
             />
 

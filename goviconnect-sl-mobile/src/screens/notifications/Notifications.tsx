@@ -1,124 +1,169 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState, Chip } from '../../components';
-import { COLORS, NOTIFICATION_TYPES, SHADOW } from '../../utils/constants';
-import { Notification } from '../../services/storage';
+import { COLORS, SHADOW } from '../../utils/constants';
 import { notificationAPI } from '../../services/api';
+import { connectSocket, getSocket } from '../../services/socketService';
 import { getRelativeTime } from '../../utils/validators';
 
-const FILTERS = ['All', 'Unread', 'Meetings', 'Tips', 'Chats'];
+const FILTERS = ['All', 'Unread', 'Meetings', 'Tips', 'Chats', 'Diagnosis'];
+
+type NotificationType = 'meeting' | 'tip' | 'guide' | 'chat' | 'system' | 'diagnosis';
+
+interface NotificationItem {
+    id: string;
+    type: NotificationType;
+    title: string;
+    titleSi?: string;
+    body: string;
+    bodySi?: string;
+    read: boolean;
+    createdAt: string;
+    data?: any;
+}
 
 const Notifications: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
 
-    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [activeFilter, setActiveFilter] = useState('All');
+    const [refreshing, setRefreshing] = useState(false);
+
+    const normalizeNotification = (item: any): NotificationItem => ({
+        id: item._id || item.id || `${item.type || 'notification'}-${item.createdAt || Date.now()}`,
+        type: item.type || 'system',
+        title: item.title || 'Notification',
+        titleSi: item.titleSi || item.title,
+        body: item.body || '',
+        bodySi: item.bodySi || item.body,
+        read: item.read === true,
+        createdAt: item.createdAt || new Date().toISOString(),
+        data: item.data,
+    });
+
+    const loadNotifications = async () => {
+        try {
+            const res = await notificationAPI.getNotifications({ page: 1, limit: 50 });
+            const data = Array.isArray(res.data.data) ? res.data.data : [];
+            setNotifications(data.map(normalizeNotification));
+        } catch (error) {
+            console.error('Failed to load notifications:', error);
+            setNotifications([]);
+        }
+    };
 
     useEffect(() => {
         loadNotifications();
     }, []);
 
-    const loadNotifications = async () => {
-        // Mock notifications for demo
-        const mockNotifications: Notification[] = [
-            {
-                id: '1',
-                type: 'meeting',
-                title: 'Meeting Reminder',
-                titleSi: 'රැස්වීම් මතක් කිරීම',
-                body: 'Your meeting with Dr. Kamal Perera is in 30 minutes',
-                bodySi: 'ආචාර්ය කමල් පෙරේරා සමඟ ඔබේ රැස්වීම මිනිත්තු 30කින්',
-                read: false,
-                createdAt: new Date().toISOString(),
-            },
-            {
-                id: '2',
-                type: 'tip',
-                title: "Today's Farming Tip",
-                titleSi: 'අද ගොවිතැන් ඉඟිය',
-                body: 'Water your crops early morning for best results',
-                bodySi: 'හොඳම ප්‍රතිඵල සඳහා ඔබේ බෝගවලට උදේ ජලය දෙන්න',
-                read: true,
-                createdAt: new Date(Date.now() - 3600000).toISOString(),
-            },
-            {
-                id: '3',
-                type: 'chat',
-                title: 'New Message',
-                titleSi: 'නව පණිවිඩය',
-                body: 'Prof. Nimal Silva sent you a message',
-                bodySi: 'මහාචාර්ය නිමල් සිල්වා ඔබට පණිවිඩයක් එවා ඇත',
-                read: false,
-                createdAt: new Date(Date.now() - 7200000).toISOString(),
-            },
-            {
-                id: '4',
-                type: 'guide',
-                title: 'New Guide Available',
-                titleSi: 'නව මාර්ගෝපදේශය ලබා ගත හැක',
-                body: 'Check out our new guide on organic pest control',
-                bodySi: 'කාබනික පළිබෝධ පාලනය පිළිබඳ අපගේ නව මාර්ගෝපදේශය බලන්න',
-                read: true,
-                createdAt: new Date(Date.now() - 86400000).toISOString(),
-            },
-            {
-                id: '5',
-                type: 'meeting',
-                title: 'Meeting Completed',
-                titleSi: 'රැස්වීම සම්පූර්ණයි',
-                body: 'Your consultation with Dr. Perera has been completed',
-                bodySi: 'ආචාර්ය පෙරේරා සමඟ ඔබේ උපදේශනය සම්පූර්ණ කර ඇත',
-                read: true,
-                createdAt: new Date(Date.now() - 172800000).toISOString(),
-            },
-            {
-                id: '6',
-                type: 'tip',
-                title: 'Weather Alert',
-                titleSi: 'කාලගුණ අනතුරු ඇඟවීම',
-                body: 'Heavy rain expected this weekend. Protect your harvest!',
-                bodySi: 'මේ සති අන්තයේ අධික වැසි අපේක්ෂා කෙරේ. ඔබේ අස්වැන්න ආරක්ෂා කරන්න!',
-                read: false,
-                createdAt: new Date(Date.now() - 10800000).toISOString(),
-            },
-        ];
+    useEffect(() => {
+        let mounted = true;
+        let socket = getSocket();
 
-        setNotifications(mockNotifications);
+        const handleRealtimeNotification = (notification: any) => {
+            if (!mounted) return;
+            const normalized = normalizeNotification(notification);
+            setNotifications(prev => [
+                normalized,
+                ...prev.filter(item => item.id !== normalized.id),
+            ]);
+        };
+
+        const subscribe = async () => {
+            socket = socket || await connectSocket();
+            socket?.on('notification', handleRealtimeNotification);
+        };
+
+        subscribe();
+
+        return () => {
+            mounted = false;
+            socket?.off('notification', handleRealtimeNotification);
+        };
+    }, []);
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await loadNotifications();
+        setRefreshing(false);
     };
 
-    const handleNotificationPress = async (notification: Notification) => {
+    const handleNotificationPress = async (notification: NotificationItem) => {
         if (!notification.read) {
             try {
                 await notificationAPI.markAsRead(notification.id);
-            } catch (e) { /* ignore */ }
+            } catch {
+                // Keep the UI responsive even if the read update fails briefly.
+            }
             setNotifications(prev =>
                 prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
             );
         }
 
-        // Navigate based on type
+        const data = notification.data || {};
+        const routeNames = navigation.getState()?.routeNames || [];
+        const hasRoute = (name: string) => routeNames.includes(name);
+
         switch (notification.type) {
             case 'meeting':
-                navigation.navigate('MeetingsTab', { screen: 'MyMeetings' });
+                if (hasRoute('ExpertTabs')) {
+                    navigation.navigate('ExpertTabs', { screen: 'ExpertMeetingsTab' });
+                } else if (hasRoute('MainTabs')) {
+                    navigation.navigate('MainTabs', {
+                        screen: 'MeetingsTab',
+                        params: data.meetingId
+                            ? { screen: 'MeetingDetails', params: { meetingId: data.meetingId } }
+                            : { screen: 'MyMeetings' },
+                    });
+                } else if (hasRoute('MeetingsTab')) {
+                    navigation.navigate('MeetingsTab', data.meetingId
+                        ? { screen: 'MeetingDetails', params: { meetingId: data.meetingId } }
+                        : { screen: 'MyMeetings' });
+                }
                 break;
             case 'chat':
-                navigation.navigate('ChatsList');
+                if (hasRoute('ExpertChatDetail') && data.chatId) {
+                    navigation.navigate('ExpertChatDetail', { chatId: data.chatId });
+                } else if (hasRoute('ExpertChatsList')) {
+                    navigation.navigate('ExpertChatsList');
+                } else if (hasRoute('ChatDetail') && data.chatId) {
+                    navigation.navigate('ChatDetail', { chatId: data.chatId });
+                } else if (hasRoute('ChatsList')) {
+                    navigation.navigate('ChatsList');
+                }
                 break;
             case 'guide':
-                navigation.navigate('LearnHubTab');
+                if (hasRoute('ExpertTabs')) {
+                    navigation.navigate('ExpertTabs', { screen: 'ExpertLearnHubTab' });
+                } else if (hasRoute('ShopTabs')) {
+                    navigation.navigate('ShopTabs', { screen: 'ShopLearnHubTab' });
+                } else if (hasRoute('MainTabs')) {
+                    navigation.navigate('MainTabs', { screen: 'LearnHubTab' });
+                } else if (hasRoute('LearnHubTab')) {
+                    navigation.navigate('LearnHubTab');
+                }
+                break;
+            case 'diagnosis':
+                if (hasRoute('ExpertDiagnosisReviews')) {
+                    navigation.navigate('ExpertDiagnosisReviews');
+                } else if (hasRoute('MainTabs')) {
+                    navigation.navigate('MainTabs', { screen: 'AITab', params: { screen: 'DiagnosisHistory' } });
+                } else if (hasRoute('AITab')) {
+                    navigation.navigate('AITab', { screen: 'DiagnosisHistory' });
+                }
                 break;
             default:
                 break;
         }
     };
 
-    const handleMarkAllRead = () => {
-        notificationAPI.markAllAsRead().catch(() => {});
+    const handleMarkAllRead = async () => {
+        await notificationAPI.markAllAsRead().catch(() => {});
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     };
 
@@ -127,14 +172,15 @@ const Notifications: React.FC = () => {
         if (activeFilter === 'Meetings') return n.type === 'meeting';
         if (activeFilter === 'Tips') return n.type === 'tip';
         if (activeFilter === 'Chats') return n.type === 'chat';
+        if (activeFilter === 'Diagnosis') return n.type === 'diagnosis';
         return true;
     });
 
     const unreadCount = notifications.filter(n => !n.read).length;
     const meetingCount = notifications.filter(n => n.type === 'meeting').length;
-    const tipCount = notifications.filter(n => n.type === 'tip').length;
+    const diagnosisCount = notifications.filter(n => n.type === 'diagnosis').length;
 
-    const getTypeConfig = (type: string) => {
+    const getTypeConfig = (type: NotificationType) => {
         switch (type) {
             case 'meeting':
                 return { icon: 'calendar' as const, color: COLORS.info, bgColor: '#dbeafe', label: 'Meeting' };
@@ -144,13 +190,17 @@ const Notifications: React.FC = () => {
                 return { icon: 'chatbubble' as const, color: COLORS.primary[500], bgColor: COLORS.primary[50], label: 'Chat' };
             case 'guide':
                 return { icon: 'book' as const, color: COLORS.success, bgColor: '#dcfce7', label: 'Guide' };
+            case 'diagnosis':
+                return { icon: 'medical' as const, color: COLORS.error, bgColor: '#fee2e2', label: 'Diagnosis' };
             default:
                 return { icon: 'notifications' as const, color: COLORS.neutral[500], bgColor: COLORS.neutral[100], label: 'System' };
         }
     };
 
-    const renderNotification = ({ item }: { item: Notification }) => {
+    const renderNotification = ({ item }: { item: NotificationItem }) => {
         const typeConfig = getTypeConfig(item.type);
+        const title = i18n.language === 'si' ? item.titleSi || item.title : item.title;
+        const body = i18n.language === 'si' ? item.bodySi || item.body : item.body;
 
         return (
             <TouchableOpacity
@@ -158,7 +208,6 @@ const Notifications: React.FC = () => {
                 style={[styles.notificationCard, item.read ? styles.cardRead : styles.cardUnread]}
                 activeOpacity={0.7}
             >
-                {/* Header Row */}
                 <View style={styles.cardHeader}>
                     <View style={[styles.typeBadge, { backgroundColor: typeConfig.bgColor }]}>
                         <Ionicons name={typeConfig.icon} size={12} color={typeConfig.color} />
@@ -172,30 +221,26 @@ const Notifications: React.FC = () => {
                     )}
                 </View>
 
-                {/* Content */}
                 <View style={styles.contentRow}>
                     <View style={[styles.iconContainer, { backgroundColor: typeConfig.bgColor }]}>
                         <Ionicons name={typeConfig.icon} size={22} color={typeConfig.color} />
                     </View>
                     <View style={styles.contentInfo}>
                         <Text style={[styles.title, item.read ? styles.titleRead : styles.titleUnread]}>
-                            {i18n.language === 'si' ? item.titleSi : item.title}
+                            {title}
                         </Text>
-                        <Text style={styles.bodyText} numberOfLines={2}>
-                            {i18n.language === 'si' ? item.bodySi : item.body}
-                        </Text>
+                        <Text style={styles.bodyText}>{body}</Text>
                     </View>
                 </View>
 
-                {/* Footer */}
                 <View style={styles.cardFooter}>
                     <Text style={styles.timeText}>
                         {getRelativeTime(item.createdAt, i18n.language)}
                     </Text>
-                    <TouchableOpacity style={styles.viewButton}>
+                    <View style={styles.viewButton}>
                         <Text style={styles.viewButtonText}>View</Text>
                         <Ionicons name="arrow-forward" size={14} color={COLORS.primary[600]} />
-                    </TouchableOpacity>
+                    </View>
                 </View>
             </TouchableOpacity>
         );
@@ -209,31 +254,23 @@ const Notifications: React.FC = () => {
                 onBackPress={() => navigation.goBack()}
             />
 
-            {/* Stats Summary */}
             <View style={styles.statsSummary}>
                 <View style={styles.summaryItem}>
-                    <Text style={[styles.summaryValue, { color: COLORS.error }]}>
-                        {unreadCount}
-                    </Text>
+                    <Text style={[styles.summaryValue, { color: COLORS.error }]}>{unreadCount}</Text>
                     <Text style={styles.summaryLabel}>Unread</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
-                    <Text style={[styles.summaryValue, { color: COLORS.info }]}>
-                        {meetingCount}
-                    </Text>
+                    <Text style={[styles.summaryValue, { color: COLORS.info }]}>{meetingCount}</Text>
                     <Text style={styles.summaryLabel}>Meetings</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
-                    <Text style={[styles.summaryValue, { color: COLORS.warning }]}>
-                        {tipCount}
-                    </Text>
-                    <Text style={styles.summaryLabel}>Tips</Text>
+                    <Text style={[styles.summaryValue, { color: COLORS.warning }]}>{diagnosisCount}</Text>
+                    <Text style={styles.summaryLabel}>Diagnosis</Text>
                 </View>
             </View>
 
-            {/* Filters */}
             <View style={styles.filtersContainer}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersContent}>
                     {FILTERS.map(filter => (
@@ -250,7 +287,6 @@ const Notifications: React.FC = () => {
                 </ScrollView>
             </View>
 
-            {/* Mark all read button */}
             {unreadCount > 0 && (
                 <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllReadButton}>
                     <Ionicons name="checkmark-done" size={16} color={COLORS.primary[600]} />
@@ -265,6 +301,14 @@ const Notifications: React.FC = () => {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={[COLORS.primary[500]]}
+                            tintColor={COLORS.primary[500]}
+                        />
+                    }
                 />
             ) : (
                 <EmptyState
@@ -282,7 +326,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.neutral[50],
     },
-    // ===== Stats Summary =====
     statsSummary: {
         flexDirection: 'row',
         backgroundColor: '#ffffff',
@@ -312,14 +355,12 @@ const styles = StyleSheet.create({
         height: 36,
         backgroundColor: COLORS.neutral[200],
     },
-    // ===== Filters =====
     filtersContainer: {
         paddingVertical: 12,
     },
     filtersContent: {
         paddingHorizontal: 16,
     },
-    // ===== Mark All Read =====
     markAllReadButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -337,13 +378,11 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginLeft: 4,
     },
-    // ===== List =====
     listContent: {
         padding: 16,
         paddingTop: 0,
         paddingBottom: 24,
     },
-    // ===== Notification Card =====
     notificationCard: {
         borderRadius: 16,
         padding: 16,
@@ -393,7 +432,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: COLORS.primary[600],
     },
-    // ===== Content =====
     contentRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -426,7 +464,6 @@ const styles = StyleSheet.create({
         color: COLORS.neutral[500],
         lineHeight: 18,
     },
-    // ===== Footer =====
     cardFooter: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, ActionCard } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { useShop } from '../../../context/ShopContext';
-import { shopAPI } from '../../../services/api';
+import { notificationAPI, shopAPI } from '../../../services/api';
+import { connectSocket, getSocket } from '../../../services/socketService';
 
 const { width } = Dimensions.get('window');
 
@@ -19,10 +20,50 @@ const ShopHome: React.FC = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [dashStats, setDashStats] = useState({ totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 });
     const [popularProducts, setPopularProducts] = useState<any[]>([]);
+    const [notificationCount, setNotificationCount] = useState(0);
 
     useEffect(() => {
         loadDashboard();
+        loadNotificationCount();
     }, []);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            loadNotificationCount();
+        }, [])
+    );
+
+    useEffect(() => {
+        let mounted = true;
+        let socket = getSocket();
+
+        const refreshNotificationCount = () => {
+            if (mounted) {
+                loadNotificationCount();
+            }
+        };
+
+        const subscribe = async () => {
+            socket = socket || await connectSocket();
+            socket?.on('notification', refreshNotificationCount);
+        };
+
+        subscribe();
+
+        return () => {
+            mounted = false;
+            socket?.off('notification', refreshNotificationCount);
+        };
+    }, []);
+
+    const loadNotificationCount = async () => {
+        try {
+            const res = await notificationAPI.getUnreadCount();
+            setNotificationCount(res.data?.count || res.data?.data?.count || 0);
+        } catch {
+            setNotificationCount(0);
+        }
+    };
 
     const loadDashboard = async () => {
         try {
@@ -42,7 +83,7 @@ const ShopHome: React.FC = () => {
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await loadDashboard();
+        await Promise.all([loadDashboard(), loadNotificationCount()]);
         setRefreshing(false);
     };
 
@@ -126,7 +167,7 @@ const ShopHome: React.FC = () => {
                 showNotifications
                 onLanguagePress={() => navigation.navigate('LanguageModal')}
                 onNotificationsPress={() => navigation.navigate('ShopNotifications')}
-                notificationCount={2}
+                notificationCount={notificationCount}
             />
 
             <ScrollView
