@@ -39,6 +39,11 @@ const diagnosisResultSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    expertReviewRequested: {
+      type: Boolean,
+      default: false,
+    },
+    expertReviewRequestedAt: Date,
     // Expert review fields
     expertReviewed: {
       type: Boolean,

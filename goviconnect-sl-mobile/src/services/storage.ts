@@ -163,6 +163,7 @@ export const removeLearnHubItem = async (id: string): Promise<void> => {
 // Diagnosis History
 export interface DiagnosisResult {
     id: string;
+    serverId?: string;
     imageUri: string;
     diseaseName: string;
     diseaseNameSi: string;
@@ -173,6 +174,13 @@ export interface DiagnosisResult {
     preventionTipsSi: string[];
     recommendedChemicals?: string[];
     recommendedChemicalsSi?: string[];
+    expertReviewRequested?: boolean;
+    expertReviewRequestedAt?: string;
+    expertReviewed?: boolean;
+    expertDiagnosis?: string;
+    expertNotes?: string;
+    reviewStatus?: 'pending_review' | 'verified' | 'corrected';
+    reviewedAt?: string;
     createdAt: string;
     synced: boolean;
 }
@@ -183,6 +191,14 @@ export const getDiagnosisHistory = async (): Promise<DiagnosisResult[]> => {
 
 export const saveDiagnosisResult = async (result: DiagnosisResult): Promise<void> => {
     const history = await getDiagnosisHistory();
+    const existingIndex = history.findIndex(item =>
+        item.id === result.id || (!!result.serverId && item.serverId === result.serverId)
+    );
+    if (existingIndex !== -1) {
+        history[existingIndex] = { ...history[existingIndex], ...result };
+        await saveScopedHistory(STORAGE_KEYS.DIAGNOSIS_HISTORY, history);
+        return;
+    }
     history.unshift(result);
     await saveScopedHistory(STORAGE_KEYS.DIAGNOSIS_HISTORY, history);
 };

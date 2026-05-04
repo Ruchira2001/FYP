@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/constants';
+import { expertDashboardAPI } from '../services/api';
+import { connectSocket, getSocket } from '../services/socketService';
 
 // Screens
 import ExpertHome from '../screens/expert/home/ExpertHome';
@@ -77,6 +79,45 @@ const TabBadge: React.FC<{ count: number }> = ({ count }) => {
 };
 
 const ExpertTabNavigator: React.FC = () => {
+    const [pendingReviewCount, setPendingReviewCount] = useState(0);
+
+    const loadPendingReviewCount = async () => {
+        try {
+            const res = await expertDashboardAPI.getDashboard();
+            const data = res.data.data || res.data;
+            const stats = data.stats || data.dashboardStats || {};
+            setPendingReviewCount(Number(stats.pendingReviews ?? 0));
+        } catch (error) {
+            console.error('Failed to load diagnosis badge count:', error);
+        }
+    };
+
+    useEffect(() => {
+        let mounted = true;
+        let socket = getSocket();
+
+        const refreshBadge = () => {
+            if (mounted) {
+                loadPendingReviewCount();
+            }
+        };
+
+        const subscribe = async () => {
+            await loadPendingReviewCount();
+            socket = socket || await connectSocket();
+            socket?.on('diagnosis_review_requested', refreshBadge);
+            socket?.on('diagnosis_review_updated', refreshBadge);
+        };
+
+        subscribe();
+
+        return () => {
+            mounted = false;
+            socket?.off('diagnosis_review_requested', refreshBadge);
+            socket?.off('diagnosis_review_updated', refreshBadge);
+        };
+    }, []);
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -110,7 +151,7 @@ const ExpertTabNavigator: React.FC = () => {
                         <View style={styles.tabIconContainer}>
                             {focused && <View style={styles.activeIndicator} />}
                             <Ionicons name={iconName} size={22} color={color} />
-                            {route.name === 'ExpertDiagnosisTab' && <TabBadge count={2} />}
+                            {route.name === 'ExpertDiagnosisTab' && <TabBadge count={pendingReviewCount} />}
                         </View>
                     );
                 },

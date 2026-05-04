@@ -13,6 +13,8 @@ const setupSocketHandlers = (io) => {
 
     // Track online status
     onlineUsers.set(socket.id, { userId, role });
+    socket.join(`user_${userId}`);
+    socket.join(`role_${role}`);
 
     // Update expert online status in DB
     if (role === 'expert') {

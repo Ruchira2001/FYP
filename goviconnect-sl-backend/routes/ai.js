@@ -4,6 +4,7 @@ const { uploadDiagnosis } = require('../middleware/upload');
 const {
   cropDiagnosis,
   getDiagnosisHistory,
+  requestDiagnosisExpertReview,
   saveDiagnosisResult,
   pricePrediction,
   getPredictionHistory,
@@ -13,6 +14,7 @@ const {
 // Crop diagnosis
 router.post('/diagnosis', protect, authorize('farmer'), uploadDiagnosis, cropDiagnosis);
 router.get('/diagnosis/history', protect, authorize('farmer'), getDiagnosisHistory);
+router.post('/diagnosis/:id/ask-expert', protect, authorize('farmer'), requestDiagnosisExpertReview);
 router.post('/diagnosis/save', protect, authorize('farmer'), saveDiagnosisResult);
 
 // Price prediction

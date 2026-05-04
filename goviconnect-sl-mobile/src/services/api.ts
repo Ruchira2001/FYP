@@ -222,6 +222,9 @@ export const aiAPI = {
 
   getDiagnosisHistory: () => api.get('/ai/diagnosis/history'),
 
+  requestDiagnosisExpertReview: (diagnosisId: string) =>
+    api.post(`/ai/diagnosis/${diagnosisId}/ask-expert`),
+
   saveDiagnosisResult: (data: any) => api.post('/ai/diagnosis/save', data),
 
   pricePrediction: (data: {

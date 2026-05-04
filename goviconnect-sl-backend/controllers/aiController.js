@@ -135,6 +135,44 @@ exports.getDiagnosisHistory = async (req, res, next) => {
   }
 };
 
+// @desc    Request expert review for a diagnosis
+// @route   POST /api/ai/diagnosis/:id/ask-expert
+exports.requestDiagnosisExpertReview = async (req, res, next) => {
+  try {
+    const diagnosis = await DiagnosisResult.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      {
+        expertReviewRequested: true,
+        expertReviewRequestedAt: new Date(),
+        reviewStatus: 'pending_review',
+      },
+      { new: true }
+    );
+
+    if (!diagnosis) {
+      return res.status(404).json({ success: false, message: 'Diagnosis not found' });
+    }
+
+    try {
+      const io = req.app.get('io') || require('../config/socket').getIO();
+      io.to('role_expert').emit('diagnosis_review_requested', {
+        diagnosisId: diagnosis._id.toString(),
+        farmerId: req.user._id.toString(),
+      });
+    } catch (socketErr) {
+      console.warn('Failed to emit diagnosis review request:', socketErr.message);
+    }
+
+    res.json({
+      success: true,
+      data: diagnosis,
+      message: 'Diagnosis sent to experts for review',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Save diagnosis result (for offline sync)
 // @route   POST /api/ai/diagnosis-history
 exports.saveDiagnosisResult = async (req, res, next) => {

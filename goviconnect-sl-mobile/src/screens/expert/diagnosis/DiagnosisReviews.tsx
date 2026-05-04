@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -8,27 +8,47 @@ import { Header, EmptyState, Chip, PrimaryButton, AppNotify } from '../../../com
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { getRelativeTime } from '../../../utils/validators';
 import { expertDashboardAPI } from '../../../services/api';
+import { connectSocket, getSocket } from '../../../services/socketService';
 
 const STATUS_FILTERS = ['All', 'Pending', 'Verified', 'Corrected'];
+
+interface DiagnosisReview {
+    _id: string;
+    userId?: { _id: string; name?: string; district?: string; email?: string };
+    imageUrl?: string;
+    diseaseName: string;
+    diseaseNameSi?: string;
+    confidence: number;
+    treatments: string[];
+    preventionTips?: string[];
+    recommendedChemicals?: string[];
+    expertReviewed?: boolean;
+    expertDiagnosis?: string;
+    expertNotes?: string;
+    reviewStatus: 'pending_review' | 'verified' | 'corrected';
+    createdAt: string;
+    reviewedAt?: string;
+}
 
 const DiagnosisReviews: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
 
     const [activeFilter, setActiveFilter] = useState('All');
-    const [reviews, setReviews] = useState<any[]>([]);
-    const [selectedReview, setSelectedReview] = useState<any>(null);
+    const [reviews, setReviews] = useState<DiagnosisReview[]>([]);
+    const [selectedReview, setSelectedReview] = useState<DiagnosisReview | null>(null);
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [reviewNotes, setReviewNotes] = useState('');
     const [reviewAction, setReviewAction] = useState<'verify' | 'correct'>('verify');
 
-    React.useEffect(() => {
-        loadReviews();
-    }, []);
-
     const loadReviews = async () => {
         try {
-            const res = await expertDashboardAPI.getDiagnosisReviews();
+            const status = activeFilter === 'All'
+                ? 'all'
+                : activeFilter === 'Pending'
+                    ? 'pending_review'
+                    : activeFilter.toLowerCase();
+            const res = await expertDashboardAPI.getDiagnosisReviews({ status });
             const data = Array.isArray(res.data.data) ? res.data.data : [];
             setReviews(data);
         } catch (e) {
@@ -36,10 +56,39 @@ const DiagnosisReviews: React.FC = () => {
         }
     };
 
+    React.useEffect(() => {
+        loadReviews();
+    }, [activeFilter]);
+
+    React.useEffect(() => {
+        let mounted = true;
+        let socket = getSocket();
+
+        const handleReviewChange = () => {
+            if (mounted) {
+                loadReviews();
+            }
+        };
+
+        const subscribe = async () => {
+            socket = socket || await connectSocket();
+            socket?.on('diagnosis_review_requested', handleReviewChange);
+            socket?.on('diagnosis_review_updated', handleReviewChange);
+        };
+
+        subscribe();
+
+        return () => {
+            mounted = false;
+            socket?.off('diagnosis_review_requested', handleReviewChange);
+            socket?.off('diagnosis_review_updated', handleReviewChange);
+        };
+    }, [activeFilter]);
+
     const filteredReviews = reviews.filter(review => {
-        if (activeFilter === 'Pending') return review.status === 'pending_review';
-        if (activeFilter === 'Verified') return review.status === 'verified';
-        if (activeFilter === 'Corrected') return review.status === 'corrected';
+        if (activeFilter === 'Pending') return review.reviewStatus === 'pending_review';
+        if (activeFilter === 'Verified') return review.reviewStatus === 'verified';
+        if (activeFilter === 'Corrected') return review.reviewStatus === 'corrected';
         return true;
     });
 
@@ -57,53 +106,55 @@ const DiagnosisReviews: React.FC = () => {
     };
 
     const getConfidenceColor = (confidence: number) => {
-        if (confidence >= 85) return COLORS.success;
-        if (confidence >= 70) return COLORS.warning;
+        const percent = confidence > 1 ? confidence : confidence * 100;
+        if (percent >= 85) return COLORS.success;
+        if (percent >= 70) return COLORS.warning;
         return COLORS.error;
     };
 
-    const handleOpenReview = (review: typeof expertData.diagnosisReviews[0]) => {
+    const handleOpenReview = (review: DiagnosisReview) => {
         setSelectedReview(review);
         setReviewNotes('');
+        setReviewAction('verify');
         setShowReviewModal(true);
     };
 
-    const handleSubmitReview = () => {
+    const handleSubmitReview = async () => {
         if (!selectedReview) return;
 
-        setReviews(prev => prev.map(r => {
-            if (r.id === selectedReview.id) {
-                return {
-                    ...r,
-                    expertVerified: true,
-                    expertNotes: reviewNotes,
-                    expertDiagnosis: reviewAction === 'verify'
-                        ? `Confirmed: ${r.aiDiagnosis}`
-                        : reviewNotes,
-                    status: reviewAction === 'verify' ? 'verified' : 'corrected',
-                };
-            }
-            return r;
-        }));
-
-        setShowReviewModal(false);
-        AppNotify.toast(
-            reviewAction === 'verify'
-                ? 'You have confirmed the AI diagnosis.'
-                : 'You have corrected the AI diagnosis.',
-            'success'
-        );
+        try {
+            const payload = {
+                expertDiagnosis: reviewAction === 'verify'
+                    ? `Confirmed: ${selectedReview.diseaseName}`
+                    : reviewNotes,
+                expertNotes: reviewNotes,
+                reviewStatus: reviewAction === 'verify' ? 'verified' : 'corrected',
+            };
+            const res = await expertDashboardAPI.submitDiagnosisReview(selectedReview._id, payload);
+            setReviews(prev => prev.map(r => r._id === selectedReview._id ? res.data.data : r));
+            setShowReviewModal(false);
+            AppNotify.toast(
+                reviewAction === 'verify'
+                    ? 'You have confirmed the AI diagnosis.'
+                    : 'You have corrected the AI diagnosis.',
+                'success'
+            );
+            loadReviews();
+        } catch (err: any) {
+            AppNotify.toast(err?.response?.data?.message || 'Failed to submit review.', 'error');
+        }
     };
 
-    const renderReviewCard = (review: typeof expertData.diagnosisReviews[0]) => {
-        const statusConfig = getStatusConfig(review.status);
+    const renderReviewCard = (review: DiagnosisReview) => {
+        const statusConfig = getStatusConfig(review.reviewStatus);
+        const confidencePercent = Math.round((review.confidence > 1 ? review.confidence : review.confidence * 100) || 0);
 
         return (
             <TouchableOpacity
-                key={review.id}
+                key={review._id}
                 style={styles.reviewCard}
                 activeOpacity={0.7}
-                onPress={() => review.status === 'pending_review' ? handleOpenReview(review) : null}
+                onPress={() => review.reviewStatus === 'pending_review' ? handleOpenReview(review) : null}
             >
                 {/* Status Badge */}
                 <View style={styles.cardHeader}>
@@ -114,25 +165,29 @@ const DiagnosisReviews: React.FC = () => {
                         </Text>
                     </View>
                     <Text style={styles.timeText}>
-                        {getRelativeTime(review.submittedAt, i18n.language)}
+                        {getRelativeTime(review.createdAt, i18n.language)}
                     </Text>
                 </View>
 
                 {/* Image & AI Diagnosis */}
                 <View style={styles.diagnosisRow}>
                     <View style={styles.imagePreview}>
-                        <Ionicons name="leaf" size={28} color={COLORS.primary[400]} />
+                        {review.imageUrl ? (
+                            <Image source={{ uri: review.imageUrl }} style={styles.imagePreviewPhoto} />
+                        ) : (
+                            <Ionicons name="leaf" size={28} color={COLORS.primary[400]} />
+                        )}
                     </View>
                     <View style={styles.diagnosisInfo}>
-                        <Text style={styles.cropName}>{review.cropName}</Text>
+                        <Text style={styles.cropName}>{i18n.language === 'si' ? review.diseaseNameSi || review.diseaseName : review.diseaseName}</Text>
                         <Text style={styles.farmerName}>
                             <Ionicons name="person-outline" size={12} color={COLORS.neutral[400]} />
-                            {' '}{review.farmerName}
+                            {' '}{review.userId?.name || 'Farmer'}{review.userId?.district ? ` • ${review.userId.district}` : ''}
                         </Text>
                         <View style={styles.aiDiagnosisRow}>
                             <Ionicons name="sparkles" size={14} color={COLORS.secondary[500]} />
                             <Text style={styles.aiDiagnosisText} numberOfLines={1}>
-                                {review.aiDiagnosis}
+                                AI diagnosis
                             </Text>
                         </View>
                     </View>
@@ -142,8 +197,8 @@ const DiagnosisReviews: React.FC = () => {
                 <View style={styles.confidenceSection}>
                     <View style={styles.confidenceHeader}>
                         <Text style={styles.confidenceLabel}>AI Confidence</Text>
-                        <Text style={[styles.confidenceValue, { color: getConfidenceColor(review.aiConfidence) }]}>
-                            {review.aiConfidence}%
+                        <Text style={[styles.confidenceValue, { color: getConfidenceColor(review.confidence) }]}>
+                            {confidencePercent}%
                         </Text>
                     </View>
                     <View style={styles.confidenceBarBg}>
@@ -151,8 +206,8 @@ const DiagnosisReviews: React.FC = () => {
                             style={[
                                 styles.confidenceBarFill,
                                 {
-                                    width: `${review.aiConfidence}%`,
-                                    backgroundColor: getConfidenceColor(review.aiConfidence),
+                                    width: `${confidencePercent}%`,
+                                    backgroundColor: getConfidenceColor(review.confidence),
                                 },
                             ]}
                         />
@@ -162,7 +217,7 @@ const DiagnosisReviews: React.FC = () => {
                 {/* AI Treatments */}
                 <View style={styles.treatmentsSection}>
                     <Text style={styles.treatmentsTitle}>AI Suggested Treatments:</Text>
-                    {review.aiTreatments.map((treatment, idx) => (
+                    {(review.treatments || []).map((treatment, idx) => (
                         <View key={idx} style={styles.treatmentItem}>
                             <View style={styles.treatmentBullet} />
                             <Text style={styles.treatmentText}>{treatment}</Text>
@@ -171,7 +226,7 @@ const DiagnosisReviews: React.FC = () => {
                 </View>
 
                 {/* Expert Notes (if reviewed) */}
-                {review.expertVerified && review.expertNotes && (
+                {review.expertReviewed && review.expertNotes && (
                     <View style={styles.expertNotesSection}>
                         <View style={styles.expertNotesHeader}>
                             <Ionicons name="shield-checkmark" size={16} color={COLORS.primary[600]} />
@@ -185,7 +240,7 @@ const DiagnosisReviews: React.FC = () => {
                 )}
 
                 {/* Action Button */}
-                {review.status === 'pending_review' && (
+                {review.reviewStatus === 'pending_review' && (
                     <TouchableOpacity
                         style={styles.reviewButton}
                         onPress={() => handleOpenReview(review)}
@@ -228,7 +283,7 @@ const DiagnosisReviews: React.FC = () => {
                 <View style={styles.pendingCountBar}>
                     <Ionicons name="alert-circle" size={18} color={COLORS.warning} />
                     <Text style={styles.pendingCountText}>
-                        {reviews.filter(r => r.status === 'pending_review').length} reviews pending
+                        {reviews.filter(r => r.reviewStatus === 'pending_review').length} reviews pending
                     </Text>
                 </View>
             )}
@@ -271,11 +326,13 @@ const DiagnosisReviews: React.FC = () => {
                                     <View style={styles.aiInfoCard}>
                                         <View style={styles.aiInfoRow}>
                                             <Ionicons name="sparkles" size={18} color={COLORS.secondary[500]} />
-                                            <Text style={styles.aiInfoText}>{selectedReview.aiDiagnosis}</Text>
+                                            <Text style={styles.aiInfoText}>{selectedReview.diseaseName}</Text>
                                         </View>
                                         <View style={styles.aiInfoRow}>
-                                            <Ionicons name="analytics" size={18} color={getConfidenceColor(selectedReview.aiConfidence)} />
-                                            <Text style={styles.aiInfoText}>Confidence: {selectedReview.aiConfidence}%</Text>
+                                            <Ionicons name="analytics" size={18} color={getConfidenceColor(selectedReview.confidence)} />
+                                            <Text style={styles.aiInfoText}>
+                                                Confidence: {Math.round((selectedReview.confidence > 1 ? selectedReview.confidence : selectedReview.confidence * 100) || 0)}%
+                                            </Text>
                                         </View>
                                     </View>
                                 </View>
@@ -439,6 +496,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
+        overflow: 'hidden',
+    },
+    imagePreviewPhoto: {
+        width: '100%',
+        height: '100%',
     },
     diagnosisInfo: {
         flex: 1,

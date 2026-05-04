@@ -11,9 +11,10 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, PrimaryButton } from '../../../components';
+import { AppNotify, Header, PrimaryButton } from '../../../components';
 import { COLORS } from '../../../utils/constants';
-import { DiagnosisResult } from '../../../services/storage';
+import { DiagnosisResult, saveDiagnosisResult } from '../../../services/storage';
+import { aiAPI } from '../../../services/api';
 import { formatDateTime } from '../../../utils/validators';
 
 type ParamList = {
@@ -33,6 +34,25 @@ const DiagnosisDetail: React.FC = () => {
         ? (item.recommendedChemicalsSi || item.recommendedChemicals || [])
         : (item.recommendedChemicals || []);
     const diseaseName = i18n.language === 'si' ? item.diseaseNameSi : item.diseaseName;
+    const handleAskExpert = async () => {
+        const diagnosisId = item.serverId || item.id;
+        try {
+            const res = await aiAPI.requestDiagnosisExpertReview(diagnosisId);
+            const updated = res.data.data;
+            await saveDiagnosisResult({
+                ...item,
+                serverId: updated._id,
+                expertReviewRequested: true,
+                expertReviewRequestedAt: updated.expertReviewRequestedAt,
+                reviewStatus: updated.reviewStatus,
+                synced: true,
+            });
+            AppNotify.toast('Diagnosis sent to experts for review.', 'success');
+            navigation.goBack();
+        } catch (err: any) {
+            AppNotify.toast(err?.response?.data?.message || 'Could not send diagnosis to experts.', 'error');
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -166,6 +186,36 @@ const DiagnosisDetail: React.FC = () => {
                         </View>
                     )}
 
+                    {(item.expertReviewed || item.expertReviewRequested) && (
+                        <View style={[
+                            styles.expertReviewCard,
+                            item.expertReviewed ? styles.expertReviewDone : styles.expertReviewPending,
+                        ]}>
+                            <View style={styles.cardHeader}>
+                                <Ionicons
+                                    name={item.expertReviewed ? 'shield-checkmark' : 'time-outline'}
+                                    size={20}
+                                    color={item.expertReviewed ? COLORS.success : COLORS.warning}
+                                />
+                                <Text style={[
+                                    styles.expertReviewTitle,
+                                    { color: item.expertReviewed ? COLORS.success : COLORS.warning },
+                                ]}>
+                                    {item.expertReviewed ? 'Expert Review' : 'Expert Review Requested'}
+                                </Text>
+                            </View>
+                            {item.expertReviewed ? (
+                                <>
+                                    {item.expertDiagnosis ? <Text style={styles.expertDiagnosisText}>{item.expertDiagnosis}</Text> : null}
+                                    {item.expertNotes ? <Text style={styles.expertNotesText}>{item.expertNotes}</Text> : null}
+                                    {item.reviewedAt ? <Text style={styles.reviewedAtText}>Reviewed {formatDateTime(item.reviewedAt, i18n.language)}</Text> : null}
+                                </>
+                            ) : (
+                                <Text style={styles.expertNotesText}>An expert will review this diagnosis and the result will appear here.</Text>
+                            )}
+                        </View>
+                    )}
+
                     {/* Action Buttons */}
                     <View style={styles.actionsContainer}>
                         <View style={styles.actionButtonWrapper}>
@@ -185,11 +235,8 @@ const DiagnosisDetail: React.FC = () => {
                         <View style={styles.actionButtonWrapper}>
                             <PrimaryButton
                                 title={t('ai.ask_expert')}
-                                onPress={() =>
-                                    navigation.navigate('ChatsList', {
-                                        attachDiagnosis: { imageUri: item.imageUri, result: item },
-                                    })
-                                }
+                                onPress={handleAskExpert}
+                                disabled={item.expertReviewRequested}
                                 icon="chatbubble-outline"
                                 fullWidth
                             />
@@ -377,6 +424,41 @@ const styles = StyleSheet.create({
         color: '#7c2d12',
         marginLeft: 8,
         lineHeight: 20,
+    },
+    expertReviewCard: {
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+    },
+    expertReviewDone: {
+        backgroundColor: '#f0fdf4',
+        borderColor: '#86efac',
+    },
+    expertReviewPending: {
+        backgroundColor: '#fffbeb',
+        borderColor: '#fde68a',
+    },
+    expertReviewTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        marginLeft: 8,
+    },
+    expertDiagnosisText: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: COLORS.neutral[800],
+        marginBottom: 6,
+    },
+    expertNotesText: {
+        fontSize: 14,
+        color: COLORS.neutral[700],
+        lineHeight: 20,
+    },
+    reviewedAtText: {
+        fontSize: 12,
+        color: COLORS.neutral[400],
+        marginTop: 8,
     },
     actionsContainer: {
         flexDirection: 'column',

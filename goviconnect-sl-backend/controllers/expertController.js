@@ -36,6 +36,7 @@ exports.getDashboard = async (req, res, next) => {
       }),
       // Pending diagnosis reviews
       DiagnosisResult.countDocuments({
+        expertReviewRequested: true,
         reviewStatus: 'pending_review',
       }),
       // Upcoming meetings
@@ -176,16 +177,15 @@ exports.respondToRequest = async (req, res, next) => {
 // @route   GET /api/expert/diagnosis-reviews
 exports.getDiagnosisReviews = async (req, res, next) => {
   try {
-    const filter = {};
-    if (req.query.status) {
+    const filter = { expertReviewRequested: true };
+    if (req.query.status && req.query.status !== 'all') {
       filter.reviewStatus = req.query.status;
-    } else {
-      filter.reviewStatus = 'pending_review';
     }
 
     const reviews = await DiagnosisResult.find(filter)
       .sort({ createdAt: -1 })
-      .populate('userId', 'name district');
+      .populate('userId', 'name district email')
+      .populate('expertId', 'name specialty');
 
     res.json({ success: true, data: reviews });
   } catch (error) {
@@ -202,6 +202,7 @@ exports.submitDiagnosisReview = async (req, res, next) => {
     const diagnosis = await DiagnosisResult.findByIdAndUpdate(
       req.params.id,
       {
+        expertReviewRequested: true,
         expertReviewed: true,
         expertId: req.user._id,
         expertDiagnosis,
@@ -210,15 +211,19 @@ exports.submitDiagnosisReview = async (req, res, next) => {
         reviewedAt: new Date(),
       },
       { new: true }
-    );
+    )
+      .populate('userId', 'name district email')
+      .populate('expertId', 'name specialty');
 
     if (!diagnosis) {
       return res.status(404).json({ success: false, message: 'Diagnosis not found' });
     }
 
+    const farmerId = diagnosis.userId._id || diagnosis.userId;
+
     // Notify farmer about review
     await createNotification({
-      userId: diagnosis.userId,
+      userId: farmerId,
       userModel: 'User',
       type: 'diagnosis',
       title: 'Expert reviewed your diagnosis',
@@ -227,6 +232,20 @@ exports.submitDiagnosisReview = async (req, res, next) => {
       bodySi: `${req.user.name} ඔබේ බෝග රෝග විනිශ්චය ${reviewStatus === 'verified' ? 'තහවුරු' : 'නිවැරදි'} කළේය.`,
       data: { diagnosisId: diagnosis._id },
     });
+
+    try {
+      const io = req.app.get('io') || require('../config/socket').getIO();
+      io.to('role_expert').emit('diagnosis_review_updated', {
+        diagnosisId: diagnosis._id.toString(),
+        reviewStatus: diagnosis.reviewStatus,
+      });
+      io.to(`user_${farmerId}`).emit('diagnosis_review_updated', {
+        diagnosisId: diagnosis._id.toString(),
+        reviewStatus: diagnosis.reviewStatus,
+      });
+    } catch (socketErr) {
+      console.warn('Failed to emit diagnosis review update:', socketErr.message);
+    }
 
     res.json({ success: true, data: diagnosis });
   } catch (error) {

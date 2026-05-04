@@ -4,7 +4,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { Header, PrimaryButton } from '../../../components';
+import { AppNotify, Header, PrimaryButton } from '../../../components';
 import { COLORS } from '../../../utils/constants';
 import { aiAPI } from '../../../services/api';
 import { saveDiagnosisResult, DiagnosisResult } from '../../../services/storage';
@@ -27,7 +27,6 @@ const CropDoctorResult: React.FC = () => {
 
     const [loading, setLoading] = useState(true);
     const [result, setResult] = useState<any>(null);
-    const [saved, setSaved] = useState(false);
     const [error, setError] = useState<{ message: string; isAuth: boolean } | null>(null);
 
     useEffect(() => {
@@ -53,10 +52,13 @@ const CropDoctorResult: React.FC = () => {
             if (isConnected) {
                 const result = await analyzeCropImage(imageUri);
                 setResult(result);
+                if (!result?.unrecognized) {
+                    await persistDiagnosis(result, true);
+                }
             } else {
                 // Queue for later
                 await queueService.addToQueue('analyze_crop', { imageUri });
-                setResult({
+                const offlineResult = {
                     diseaseName: 'Pending Analysis',
                     diseaseNameSi: 'විශ්ලේෂණය පොරොත්තුවෙන්',
                     confidence: 0,
@@ -64,7 +66,9 @@ const CropDoctorResult: React.FC = () => {
                     treatmentsSi: ['ඔන්ලයින් වූ විට විශ්ලේෂණය ලබා ගත හැකිය'],
                     preventionTips: [],
                     preventionTipsSi: [],
-                });
+                };
+                setResult(offlineResult);
+                await persistDiagnosis(offlineResult, false);
             }
         } catch (err: any) {
             console.error('Analysis error:', err);
@@ -83,36 +87,50 @@ const CropDoctorResult: React.FC = () => {
         }
     };
 
-    const handleSave = async () => {
-        if (!result) return;
-
+    const persistDiagnosis = async (diagnosis: any, synced: boolean) => {
         const diagnosisResult: DiagnosisResult = {
-            id: generateId(),
-            imageUri,
-            diseaseName: result.diseaseName,
-            diseaseNameSi: result.diseaseNameSi,
-            confidence: result.confidence,
-            treatments: result.treatments,
-            treatmentsSi: result.treatmentsSi,
-            preventionTips: result.preventionTips,
-            preventionTipsSi: result.preventionTipsSi,
-            recommendedChemicals: result.recommendedChemicals || [],
-            recommendedChemicalsSi: result.recommendedChemicalsSi || [],
-            createdAt: new Date().toISOString(),
-            synced: isConnected,
+            id: diagnosis._id || diagnosis.id || generateId(),
+            serverId: diagnosis._id,
+            imageUri: diagnosis.imageUrl || imageUri,
+            diseaseName: diagnosis.diseaseName,
+            diseaseNameSi: diagnosis.diseaseNameSi,
+            confidence: diagnosis.confidence,
+            treatments: diagnosis.treatments || [],
+            treatmentsSi: diagnosis.treatmentsSi || [],
+            preventionTips: diagnosis.preventionTips || [],
+            preventionTipsSi: diagnosis.preventionTipsSi || [],
+            recommendedChemicals: diagnosis.recommendedChemicals || [],
+            recommendedChemicalsSi: diagnosis.recommendedChemicalsSi || [],
+            expertReviewRequested: diagnosis.expertReviewRequested || false,
+            expertReviewRequestedAt: diagnosis.expertReviewRequestedAt,
+            expertReviewed: diagnosis.expertReviewed || false,
+            expertDiagnosis: diagnosis.expertDiagnosis,
+            expertNotes: diagnosis.expertNotes,
+            reviewStatus: diagnosis.reviewStatus,
+            reviewedAt: diagnosis.reviewedAt,
+            createdAt: diagnosis.createdAt || new Date().toISOString(),
+            synced,
         };
 
         await saveDiagnosisResult(diagnosisResult);
-        setSaved(true);
     };
 
-    const handleAskExpert = () => {
-        navigation.navigate('ChatsList', {
-            attachDiagnosis: {
-                imageUri,
-                result,
-            }
-        });
+    const handleAskExpert = async () => {
+        const diagnosisId = result?._id || result?.serverId || result?.id;
+        if (!diagnosisId || !isConnected) {
+            AppNotify.toast('Please sync this diagnosis before asking an expert.', 'error');
+            return;
+        }
+        try {
+            const res = await aiAPI.requestDiagnosisExpertReview(diagnosisId);
+            const updated = res.data.data;
+            setResult(updated);
+            await persistDiagnosis(updated, true);
+            AppNotify.toast('Diagnosis sent to experts for review.', 'success');
+            navigation.navigate('DiagnosisHistory');
+        } catch (err: any) {
+            AppNotify.toast(err?.response?.data?.message || 'Could not send diagnosis to experts.', 'error');
+        }
     };
 
     const selectedChemicals: string[] =
@@ -353,19 +371,6 @@ const CropDoctorResult: React.FC = () => {
                     )}
 
                     {/* Action Buttons */}
-                    <View style={styles.actionsContainer}>
-                        <View style={styles.actionButtonWrapper}>
-                            <PrimaryButton
-                                title={saved ? t('learnhub.saved') : t('ai.save_result')}
-                                onPress={handleSave}
-                                disabled={saved}
-                                icon={saved ? 'checkmark' : 'bookmark-outline'}
-                                variant="outline"
-                                fullWidth
-                            />
-                        </View>
-                    </View>
-
                     <View style={styles.actionsContainer}>
                         <View style={styles.actionButtonWrapper}>
                             <PrimaryButton

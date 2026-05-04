@@ -9,6 +9,7 @@ import { COLORS, SHADOW } from '../../../utils/constants';
 import { useExpert } from '../../../context/ExpertContext';
 import { getRelativeTime } from '../../../utils/validators';
 import { expertDashboardAPI } from '../../../services/api';
+import { connectSocket, getSocket } from '../../../services/socketService';
 
 const { width } = Dimensions.get('window');
 
@@ -23,6 +24,31 @@ const ExpertHome: React.FC = () => {
 
     useEffect(() => {
         loadDashboard();
+    }, []);
+
+    useEffect(() => {
+        let mounted = true;
+        let socket = getSocket();
+
+        const handleDashboardUpdate = () => {
+            if (mounted) {
+                loadDashboard();
+            }
+        };
+
+        const subscribe = async () => {
+            socket = socket || await connectSocket();
+            socket?.on('diagnosis_review_requested', handleDashboardUpdate);
+            socket?.on('diagnosis_review_updated', handleDashboardUpdate);
+        };
+
+        subscribe();
+
+        return () => {
+            mounted = false;
+            socket?.off('diagnosis_review_requested', handleDashboardUpdate);
+            socket?.off('diagnosis_review_updated', handleDashboardUpdate);
+        };
     }, []);
 
     const loadDashboard = async () => {

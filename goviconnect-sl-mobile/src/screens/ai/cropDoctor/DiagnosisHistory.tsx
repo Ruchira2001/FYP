@@ -1,27 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, FlatList, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, EmptyState } from '../../../components';
 import { COLORS } from '../../../utils/constants';
-import { getDiagnosisHistory, DiagnosisResult } from '../../../services/storage';
+import { getDiagnosisHistory, saveDiagnosisResult, DiagnosisResult } from '../../../services/storage';
+import { aiAPI } from '../../../services/api';
+import { useConnectionStatus } from '../../../services/netinfo';
 import { formatDateTime } from '../../../utils/validators';
 
 const DiagnosisHistory: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { t, i18n } = useTranslation();
+    const { isConnected } = useConnectionStatus();
     const [history, setHistory] = useState<DiagnosisResult[]>([]);
 
-    useEffect(() => {
-        loadHistory();
-    }, []);
+    useFocusEffect(
+        React.useCallback(() => {
+            loadHistory();
+        }, [isConnected])
+    );
 
     const loadHistory = async () => {
-        const data = await getDiagnosisHistory();
-        setHistory(data);
+        const localData = await getDiagnosisHistory();
+        if (!isConnected) {
+            setHistory(localData);
+            return;
+        }
+
+        try {
+            const res = await aiAPI.getDiagnosisHistory();
+            const serverData = Array.isArray(res.data.data) ? res.data.data.map(normalizeDiagnosis) : [];
+            for (const item of serverData) {
+                await saveDiagnosisResult(item);
+            }
+            const merged = await getDiagnosisHistory();
+            setHistory(merged);
+        } catch {
+            setHistory(localData);
+        }
     };
+
+    const normalizeDiagnosis = (item: any): DiagnosisResult => ({
+        id: item._id || item.id,
+        serverId: item._id,
+        imageUri: item.imageUrl || item.imageUri,
+        diseaseName: item.diseaseName,
+        diseaseNameSi: item.diseaseNameSi,
+        confidence: item.confidence || 0,
+        treatments: item.treatments || [],
+        treatmentsSi: item.treatmentsSi || [],
+        preventionTips: item.preventionTips || [],
+        preventionTipsSi: item.preventionTipsSi || [],
+        recommendedChemicals: item.recommendedChemicals || [],
+        recommendedChemicalsSi: item.recommendedChemicalsSi || [],
+        expertReviewRequested: item.expertReviewRequested || false,
+        expertReviewRequestedAt: item.expertReviewRequestedAt,
+        expertReviewed: item.expertReviewed || false,
+        expertDiagnosis: item.expertDiagnosis,
+        expertNotes: item.expertNotes,
+        reviewStatus: item.reviewStatus,
+        reviewedAt: item.reviewedAt,
+        createdAt: item.createdAt || new Date().toISOString(),
+        synced: item.synced !== false,
+    });
 
     const renderItem = ({ item }: { item: DiagnosisResult }) => (
         <TouchableOpacity
@@ -63,6 +107,32 @@ const DiagnosisHistory: React.FC = () => {
                         </Text>
                     </View>
                 </View>
+
+                {(item.expertReviewed || item.expertReviewRequested) && (
+                    <View style={[
+                        styles.reviewPanel,
+                        item.expertReviewed ? styles.reviewPanelDone : styles.reviewPanelPending,
+                    ]}>
+                        <View style={styles.reviewHeader}>
+                            <Ionicons
+                                name={item.expertReviewed ? 'shield-checkmark' : 'time-outline'}
+                                size={15}
+                                color={item.expertReviewed ? COLORS.success : COLORS.warning}
+                            />
+                            <Text style={[
+                                styles.reviewTitle,
+                                { color: item.expertReviewed ? COLORS.success : COLORS.warning },
+                            ]}>
+                                {item.expertReviewed ? 'Expert reviewed' : 'Expert review requested'}
+                            </Text>
+                        </View>
+                        {item.expertReviewed && (
+                            <Text style={styles.reviewText} numberOfLines={2}>
+                                {item.expertDiagnosis || item.expertNotes || 'Expert review available'}
+                            </Text>
+                        )}
+                    </View>
+                )}
             </View>
 
             <Ionicons name="chevron-forward" size={20} color={COLORS.neutral[400]} />
@@ -172,6 +242,36 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '500',
         color: COLORS.neutral[600],
+    },
+    reviewPanel: {
+        marginTop: 10,
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderWidth: 1,
+    },
+    reviewPanelDone: {
+        backgroundColor: '#f0fdf4',
+        borderColor: '#bbf7d0',
+    },
+    reviewPanelPending: {
+        backgroundColor: '#fffbeb',
+        borderColor: '#fde68a',
+    },
+    reviewHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    reviewTitle: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    reviewText: {
+        marginTop: 4,
+        fontSize: 12,
+        color: COLORS.neutral[600],
+        lineHeight: 17,
     },
 });
 
