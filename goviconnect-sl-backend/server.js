@@ -122,6 +122,17 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\nPort ${PORT} is already in use.`);
+    console.error('Stop the other backend process or run `npm run dev`, which clears stale listeners first.\n');
+    process.exit(1);
+  }
+
+  console.error('SERVER ERROR!', err.name, err.message);
+  process.exit(1);
+});
+
 server.listen(PORT, () => {
   console.log(`\n🚀 GoviConnect SL Backend Server`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);

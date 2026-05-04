@@ -222,7 +222,7 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
     if (permissionDenied) {
         return (
             <View style={styles.cardPlain}>
-                <Ionicons name="location-off-outline" size={28} color={COLORS.neutral[400]} />
+                <Ionicons name="location-outline" size={28} color={COLORS.neutral[400]} />
                 <View style={styles.errorContent}>
                     <Text style={styles.errorTitle}>Location access denied</Text>
                     <Text style={styles.errorSubtitle}>

@@ -15,7 +15,7 @@
  *   const [t1, t2] = await translateBatch(['Hello', 'Goodbye'], 'si');
  */
 
-import { api } from './api';
+import api from './api';
 
 // ─── In-memory cache ─────────────────────────────────────────
 // Key: `${target}::${text}` → translated string

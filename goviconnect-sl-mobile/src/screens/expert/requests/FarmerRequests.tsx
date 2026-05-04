@@ -69,7 +69,7 @@ const FarmerRequests: React.FC = () => {
         return type === 'diagnosis' ? 'medical' : 'chatbubble-ellipses';
     };
 
-    const renderRequest = ({ item }: { item: typeof expertData.farmerRequests[0] }) => {
+    const renderRequest = ({ item }: { item: any }) => {
         const statusConfig = getStatusConfig(item.status);
         const priorityConfig = getPriorityConfig(item.priority);
 

@@ -671,7 +671,7 @@ const AddCropGuide: React.FC = () => {
                 <View style={styles.footerBtnContainer}>
                     <TouchableOpacity
                         style={styles.cancelButton}
-                        onPress={() => setViewMode('list')}
+                        onPress={() => navigation.goBack()}
                     >
                         <Text style={styles.cancelButtonText}>Cancel</Text>
                     </TouchableOpacity>
@@ -908,6 +908,17 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: COLORS.neutral[800],
         marginBottom: 16,
+    },
+    cropSelectedHint: {
+        fontSize: 13,
+        color: COLORS.neutral[500],
+        paddingHorizontal: 4,
+    },
+    cropPickerHint: {
+        fontSize: 13,
+        color: COLORS.primary[600],
+        fontWeight: '500',
+        paddingHorizontal: 4,
     },
     inputContainer: {
         marginBottom: 16,
