@@ -251,7 +251,7 @@ export const chatAPI = {
   getMessages: (chatId: string, page: number = 1, limit: number = 50) =>
     api.get(`/chats/${chatId}/messages`, { params: { page, limit } }),
 
-  sendMessage: (chatId: string, data: { content: string; type?: string }) =>
+  sendMessage: (chatId: string, data: { content: string; type?: string; attachmentData?: any }) =>
     api.post(`/chats/${chatId}/messages`, data),
 
   createChat: (data: { expertId: string }) =>

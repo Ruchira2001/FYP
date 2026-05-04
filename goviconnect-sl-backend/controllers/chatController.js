@@ -13,6 +13,7 @@ exports.getChats = async (req, res, next) => {
 
     const chats = await Chat.find({
       'participants.userId': userId,
+      lastMessage: { $nin: ['', null] },
     }).sort({ lastMessageTime: -1 });
 
     // Add online status for each chat participant
@@ -142,6 +143,13 @@ exports.sendMessage = async (req, res, next) => {
         message: message.toObject(),
         chatId,
       });
+      chat.participants.forEach((p) => {
+        io.to(`user_${p.userId.toString()}`).emit('chat_updated', {
+          chatId,
+          lastMessage: lastMsgPreview,
+          lastMessageType: type || 'text',
+        });
+      });
     } catch (socketErr) {
       // Socket not initialized, skip real-time
     }
@@ -217,18 +225,6 @@ exports.createChat = async (req, res, next) => {
         [expert._id.toString(), 0],
       ]),
     });
-
-    // Notify expert in real-time so their chat list updates immediately
-    try {
-      const io = getIO();
-      io.emit('new_chat', {
-        chat: chat.toObject(),
-        expertId: expert._id.toString(),
-        farmerName: req.user.name,
-      });
-    } catch (socketErr) {
-      // Socket not initialized, skip real-time
-    }
 
     res.status(201).json({ success: true, data: chat });
   } catch (error) {

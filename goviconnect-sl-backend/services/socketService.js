@@ -102,6 +102,13 @@ const setupSocketHandlers = (io) => {
           message: message.toObject(),
           chatId,
         });
+        chat.participants.forEach((p) => {
+          io.to(`user_${p.userId.toString()}`).emit('chat_updated', {
+            chatId,
+            lastMessage: lastMsgPreview,
+            lastMessageType: type || 'text',
+          });
+        });
 
         // Notify the sender of success
         socket.emit('message_sent', { messageId: message._id, chatId });

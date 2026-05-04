@@ -9,13 +9,15 @@ import {
     Platform,
     StyleSheet,
     StatusBar,
-    Alert
+    Alert,
+    Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '../../utils/constants';
 import { Message } from '../../services/storage';
 import { chatAPI } from '../../services/api';
@@ -40,6 +42,19 @@ const ChatDetail: React.FC = () => {
     const [inputText, setInputText] = useState('');
     const [showActions, setShowActions] = useState(false);
     const [chat, setChat] = useState<any>(null);
+    const [uploadingAttachment, setUploadingAttachment] = useState(false);
+
+    const mapMessage = (m: any): Message => ({
+        id: m._id || m.id,
+        chatId,
+        senderId: m.sender?._id || m.senderId || '',
+        senderType: m.senderType || (m.sender?.role === 'farmer' ? 'user' : 'expert'),
+        content: m.content || '',
+        type: m.type || 'text',
+        attachmentData: m.attachmentData,
+        timestamp: m.createdAt || m.timestamp,
+        synced: m.synced !== false,
+    });
 
     useEffect(() => {
         loadChat();
@@ -54,19 +69,21 @@ const ChatDetail: React.FC = () => {
 
             const handleNewMessage = (data: any) => {
                 if (data.chatId !== chatId) return;
-                const m = data.message;
+                const incoming = mapMessage(data.message);
                 setMessages(prev => {
-                    if (prev.some(msg => msg.id === (m._id || m.id))) return prev;
-                    return [...prev, {
-                        id: m._id || m.id,
-                        chatId,
-                        senderId: m.senderId || '',
-                        senderType: m.senderType || 'expert',
-                        content: m.content || '',
-                        type: m.type || 'text',
-                        timestamp: m.createdAt || m.timestamp,
-                        synced: true,
-                    }];
+                    if (prev.some(msg => msg.id === incoming.id)) return prev;
+                    const pendingIndex = prev.findIndex(msg =>
+                        msg.senderType === incoming.senderType &&
+                        msg.type === incoming.type &&
+                        (incoming.type === 'image' || msg.content === incoming.content) &&
+                        msg.id.startsWith('local-')
+                    );
+                    if (pendingIndex !== -1) {
+                        const next = [...prev];
+                        next[pendingIndex] = incoming;
+                        return next;
+                    }
+                    return [...prev, incoming];
                 });
                 setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
             };
@@ -98,16 +115,7 @@ const ChatDetail: React.FC = () => {
                 setChat({ id: chatId, expertName: paramExpertName });
             }
             const msgs = Array.isArray(msgsRes.data.data) ? msgsRes.data.data : [];
-            setMessages(msgs.map((m: any) => ({
-                id: m._id || m.id,
-                chatId: chatId,
-                senderId: m.sender?._id || m.senderId || '',
-                senderType: m.senderType || (m.sender?.role === 'farmer' ? 'user' : 'expert'),
-                content: m.content || '',
-                type: m.type || 'text',
-                timestamp: m.createdAt || m.timestamp,
-                synced: true,
-            })));
+            setMessages(msgs.map(mapMessage));
             setTimeout(() => flatListRef.current?.scrollToEnd(), 200);
         } catch (e) {
             console.error('Failed to load chat:', e);
@@ -118,7 +126,7 @@ const ChatDetail: React.FC = () => {
         if (!inputText.trim()) return;
 
         const newMessage: Message = {
-            id: generateId(),
+            id: `local-${generateId()}`,
             chatId,
             senderId: 'user',
             senderType: 'user',
@@ -133,7 +141,11 @@ const ChatDetail: React.FC = () => {
 
         // Send via API
         try {
-            await chatAPI.sendMessage(chatId, { content: inputText.trim(), type: 'text' });
+            const res = await chatAPI.sendMessage(chatId, { content: newMessage.content, type: 'text' });
+            const saved = res.data?.data ? mapMessage(res.data.data) : null;
+            if (saved) {
+                setMessages(prev => prev.map(msg => msg.id === newMessage.id ? saved : msg));
+            }
         } catch {
             // Queue if offline
             if (!isConnected) {
@@ -147,6 +159,48 @@ const ChatDetail: React.FC = () => {
         }, 100);
     };
 
+    const sendImageAttachment = async (asset: ImagePicker.ImagePickerAsset) => {
+        const uri = asset.uri;
+        const fileName = asset.fileName || `chat_image_${Date.now()}.jpg`;
+        const mimeType = asset.mimeType || 'image/jpeg';
+        const pendingMessage: Message = {
+            id: `local-${generateId()}`,
+            chatId,
+            senderId: 'user',
+            senderType: 'user',
+            content: uri,
+            type: 'image',
+            attachmentData: { url: uri, fileName, mimeType },
+            timestamp: new Date().toISOString(),
+            synced: false,
+        };
+
+        setMessages(prev => [...prev, pendingMessage]);
+        setUploadingAttachment(true);
+        setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
+
+        try {
+            const formData = new FormData();
+            formData.append('image', {
+                uri,
+                name: fileName,
+                type: mimeType,
+            } as any);
+
+            const res = await chatAPI.sendImageMessage(chatId, formData);
+            const saved = res.data?.data ? mapMessage(res.data.data) : null;
+            if (saved) {
+                setMessages(prev => prev.map(msg => msg.id === pendingMessage.id ? saved : msg));
+            }
+        } catch (e) {
+            console.error('Image attachment upload failed:', e);
+            setMessages(prev => prev.map(msg => msg.id === pendingMessage.id ? { ...msg, synced: false } : msg));
+            Alert.alert('Upload failed', 'Could not send this image. Please try again.');
+        } finally {
+            setUploadingAttachment(false);
+        }
+    };
+
     const handleBookMeeting = () => {
         navigation.navigate('BookMeetingFromChat', {
             chatId,
@@ -155,10 +209,29 @@ const ChatDetail: React.FC = () => {
         });
     };
 
-    const handleAttachment = (type: string) => {
+    const handleAttachment = async (type: string) => {
         setShowActions(false);
-        Alert.alert("Attachment", `You selected: ${type}`);
-        // Implement specific logic here
+        if (type !== 'Camera' && type !== 'Gallery') {
+            Alert.alert('Coming soon', `${type} attachments are not available yet.`);
+            return;
+        }
+
+        const permission = type === 'Camera'
+            ? await ImagePicker.requestCameraPermissionsAsync()
+            : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (!permission.granted) {
+            Alert.alert('Permission needed', `Please allow ${type === 'Camera' ? 'camera' : 'photo library'} access to send images.`);
+            return;
+        }
+
+        const result = type === 'Camera'
+            ? await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 })
+            : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+
+        if (!result.canceled && result.assets?.[0]) {
+            await sendImageAttachment(result.assets[0]);
+        }
     };
 
     const renderMessage = ({ item }: { item: Message }) => {
@@ -173,10 +246,24 @@ const ChatDetail: React.FC = () => {
                         !isUser && styles.bubbleShadow
                     ]}
                 >
-                    {item.type === 'image' && (
+                    {item.type === 'image' && item.content ? (
+                        <Image source={{ uri: item.content }} style={styles.imageAttachment} resizeMode="cover" />
+                    ) : item.type === 'image' ? (
                         <View style={styles.attachmentPlaceholder}>
                             <Ionicons name="image" size={32} color={COLORS.neutral[400]} />
                         </View>
+                    ) : null}
+
+                    {item.type !== 'image' && item.content ? (
+                        <Text style={[styles.messageText, isUser ? styles.textUser : styles.textExpert]}>
+                            {item.content}
+                        </Text>
+                    ) : item.type !== 'image' ? null : null}
+
+                    {item.type === 'image' && !item.synced && (
+                        <Text style={[styles.uploadStatus, isUser ? styles.timeUser : styles.timeExpert]}>
+                            Uploading...
+                        </Text>
                     )}
 
                     {item.type === 'diagnosis' && (
@@ -198,10 +285,6 @@ const ChatDetail: React.FC = () => {
                             <Text style={styles.predictionText}>Attached for review</Text>
                         </View>
                     )}
-
-                    <Text style={[styles.messageText, isUser ? styles.textUser : styles.textExpert]}>
-                        {item.content}
-                    </Text>
 
                     <View style={styles.metaRow}>
                         <Text style={[styles.timestamp, isUser ? styles.timeUser : styles.timeExpert]}>
@@ -327,6 +410,7 @@ const ChatDetail: React.FC = () => {
                         <TouchableOpacity
                             onPress={() => setShowActions(!showActions)}
                             style={styles.attachButton}
+                            disabled={uploadingAttachment}
                         >
                             <Ionicons
                                 name={showActions ? 'close' : 'add'}
@@ -477,6 +561,16 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    imageAttachment: {
+        width: 210,
+        height: 160,
+        borderRadius: 12,
+        backgroundColor: COLORS.neutral[200],
+    },
+    uploadStatus: {
+        fontSize: 12,
+        marginTop: 6,
     },
     attachmentBox: {
         borderRadius: 8,

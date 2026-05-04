@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -18,17 +18,16 @@ const ExpertChatsList: React.FC = () => {
 
     const [activeCategory, setActiveCategory] = useState('All');
     const [chats, setChats] = useState<any[]>([]);
+    const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
 
     const loadChats = useCallback(async () => {
         try {
             const res = await chatAPI.getChats();
             const data = Array.isArray(res.data.data) ? res.data.data : [];
-            setChats(data.map((c: any) => {
+            setChats(data.filter((c: any) => !!String(c.lastMessage || '').trim()).map((c: any) => {
                 // Participants: [{userType:'farmer',...},{userType:'expert',...}]
                 const farmer = c.participants?.find((p: any) => p.userType === 'farmer');
-                const unread = typeof c.unreadCount === 'object'
-                    ? (Object.values(c.unreadCount)[0] as number) || 0
-                    : c.unreadCount || 0;
+                const unread = Number(c.unreadCount || 0);
                 return {
                     id: c._id || c.id,
                     farmerId: farmer?.userId || c.farmerId,
@@ -53,12 +52,14 @@ const ExpertChatsList: React.FC = () => {
         if (socket) {
             socket.on('new_chat', loadChats);
             socket.on('new_message', loadChats);
+            socket.on('chat_updated', loadChats);
             socket.on('messages_read', loadChats);
         }
         return () => {
             if (socket) {
                 socket.off('new_chat', loadChats);
                 socket.off('new_message', loadChats);
+                socket.off('chat_updated', loadChats);
                 socket.off('messages_read', loadChats);
             }
         };
@@ -78,6 +79,36 @@ const ExpertChatsList: React.FC = () => {
     });
 
     const totalUnread = chats.reduce((sum, c) => sum + c.unreadCount, 0);
+
+    const confirmDeleteChat = (chat: any) => {
+        Alert.alert(
+            'Delete Conversation?',
+            `Are you sure you want to delete your conversation with ${chat.farmerName}?\n\nThis action will permanently remove all messages and cannot be undone.`,
+            [
+                { text: 'Keep Chat', style: 'cancel' },
+                {
+                    text: 'Delete Conversation',
+                    style: 'destructive',
+                    onPress: () => handleDeleteChat(chat.id),
+                },
+            ]
+        );
+    };
+
+    const handleDeleteChat = async (chatId: string) => {
+        if (deletingChatId) return;
+
+        try {
+            setDeletingChatId(chatId);
+            await chatAPI.deleteChat(chatId);
+            setChats(prev => prev.filter(chat => chat.id !== chatId));
+        } catch (e) {
+            console.error('Failed to delete expert chat:', e);
+            Alert.alert('Error', 'Could not delete chat. Please try again.');
+        } finally {
+            setDeletingChatId(null);
+        }
+    };
 
     const renderChat = ({ item }: { item: any }) => (
         <TouchableOpacity
@@ -104,9 +135,23 @@ const ExpertChatsList: React.FC = () => {
                             </View>
                         )}
                     </View>
-                    <Text style={styles.timeText}>
-                        {getRelativeTime(item.lastMessageTime, i18n.language)}
-                    </Text>
+                    <View style={styles.chatHeaderRight}>
+                        <Text style={styles.timeText}>
+                            {getRelativeTime(item.lastMessageTime, i18n.language)}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => confirmDeleteChat(item)}
+                            disabled={deletingChatId === item.id}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                            {deletingChatId === item.id ? (
+                                <ActivityIndicator size="small" color={COLORS.error} />
+                            ) : (
+                                <Ionicons name="trash-outline" size={16} color={COLORS.error} />
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <View style={styles.messageRow}>
@@ -250,6 +295,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginBottom: 2,
     },
+    chatHeaderRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     nameRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -280,6 +329,14 @@ const styles = StyleSheet.create({
     timeText: {
         fontSize: 12,
         color: COLORS.neutral[400],
+        marginRight: 8,
+    },
+    deleteButton: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     messageRow: {
         flexDirection: 'row',

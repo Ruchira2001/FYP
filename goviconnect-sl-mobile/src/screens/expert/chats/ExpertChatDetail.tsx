@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     View, Text, FlatList, TouchableOpacity, TextInput,
-    StyleSheet, KeyboardAvoidingView, Platform
+    StyleSheet, KeyboardAvoidingView, Platform, Image, Alert
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Header } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { formatTime, generateId } from '../../../utils/validators';
@@ -17,8 +18,10 @@ interface ChatMessage {
     senderId: string;
     senderType: 'expert' | 'farmer';
     content: string;
-    type: 'text' | 'image' | 'diagnosis';
+    type: 'text' | 'image' | 'diagnosis' | 'prediction';
+    attachmentData?: any;
     timestamp: string;
+    synced?: boolean;
 }
 
 const ExpertChatDetail: React.FC = () => {
@@ -30,6 +33,18 @@ const ExpertChatDetail: React.FC = () => {
     const farmerName = route.params?.farmerName || 'Farmer';
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputText, setInputText] = useState('');
+    const [uploadingAttachment, setUploadingAttachment] = useState(false);
+
+    const mapMessage = (m: any): ChatMessage => ({
+        id: m._id || m.id,
+        senderId: m.sender?._id || m.senderId || '',
+        senderType: m.senderType === 'expert' ? 'expert' : 'farmer',
+        content: m.content || '',
+        type: m.type || 'text',
+        attachmentData: m.attachmentData,
+        timestamp: m.createdAt || m.timestamp,
+        synced: m.synced !== false,
+    });
 
     useEffect(() => {
         loadMessages();
@@ -44,17 +59,21 @@ const ExpertChatDetail: React.FC = () => {
 
             const handleNewMessage = (data: any) => {
                 if (data.chatId !== chatId) return;
-                const m = data.message;
+                const incoming = mapMessage(data.message);
                 setMessages(prev => {
-                    if (prev.some(msg => msg.id === (m._id || m.id))) return prev;
-                    return [...prev, {
-                        id: m._id || m.id,
-                        senderId: m.senderId || '',
-                        senderType: m.senderType === 'expert' ? 'expert' : 'farmer',
-                        content: m.content || '',
-                        type: m.type || 'text',
-                        timestamp: m.createdAt || m.timestamp,
-                    }];
+                    if (prev.some(msg => msg.id === incoming.id)) return prev;
+                    const pendingIndex = prev.findIndex(msg =>
+                        msg.senderType === incoming.senderType &&
+                        msg.type === incoming.type &&
+                        (incoming.type === 'image' || msg.content === incoming.content) &&
+                        msg.id.startsWith('local-')
+                    );
+                    if (pendingIndex !== -1) {
+                        const next = [...prev];
+                        next[pendingIndex] = incoming;
+                        return next;
+                    }
+                    return [...prev, incoming];
                 });
                 setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
             };
@@ -73,14 +92,7 @@ const ExpertChatDetail: React.FC = () => {
             if (!chatId) return;
             const res = await chatAPI.getMessages(chatId);
             const data = Array.isArray(res.data.data) ? res.data.data : [];
-            setMessages(data.map((m: any) => ({
-                id: m._id || m.id,
-                senderId: m.sender?._id || m.senderId,
-                senderType: m.senderType === 'expert' ? 'expert' : 'farmer',
-                content: m.content || '',
-                type: m.type || 'text',
-                timestamp: m.createdAt || m.timestamp,
-            })));
+            setMessages(data.map(mapMessage));
             setTimeout(() => {
                 flatListRef.current?.scrollToEnd({ animated: false });
             }, 100);
@@ -93,12 +105,13 @@ const ExpertChatDetail: React.FC = () => {
         if (!inputText.trim()) return;
 
         const newMessage: ChatMessage = {
-            id: generateId(),
+            id: `local-${generateId()}`,
             senderId: 'expert-1',
             senderType: 'expert',
             content: inputText.trim(),
             type: 'text',
             timestamp: new Date().toISOString(),
+            synced: false,
         };
 
         setMessages(prev => [...prev, newMessage]);
@@ -109,11 +122,86 @@ const ExpertChatDetail: React.FC = () => {
 
         try {
             if (chatId) {
-                await chatAPI.sendMessage(chatId, { content: newMessage.content, type: 'text' });
+                const res = await chatAPI.sendMessage(chatId, { content: newMessage.content, type: 'text' });
+                const saved = res.data?.data ? mapMessage(res.data.data) : null;
+                if (saved) {
+                    setMessages(prev => prev.map(msg => msg.id === newMessage.id ? saved : msg));
+                }
             }
         } catch (e) {
             console.error('Failed to send message:', e);
         }
+    };
+
+    const sendImageAttachment = async (asset: ImagePicker.ImagePickerAsset) => {
+        if (!chatId) return;
+        const uri = asset.uri;
+        const fileName = asset.fileName || `chat_image_${Date.now()}.jpg`;
+        const mimeType = asset.mimeType || 'image/jpeg';
+        const pendingMessage: ChatMessage = {
+            id: `local-${generateId()}`,
+            senderId: 'expert-1',
+            senderType: 'expert',
+            content: uri,
+            type: 'image',
+            attachmentData: { url: uri, fileName, mimeType },
+            timestamp: new Date().toISOString(),
+            synced: false,
+        };
+
+        setMessages(prev => [...prev, pendingMessage]);
+        setUploadingAttachment(true);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+
+        try {
+            const formData = new FormData();
+            formData.append('image', {
+                uri,
+                name: fileName,
+                type: mimeType,
+            } as any);
+
+            const res = await chatAPI.sendImageMessage(chatId, formData);
+            const saved = res.data?.data ? mapMessage(res.data.data) : null;
+            if (saved) {
+                setMessages(prev => prev.map(msg => msg.id === pendingMessage.id ? saved : msg));
+            }
+        } catch (e) {
+            console.error('Failed to upload expert chat image:', e);
+            Alert.alert('Upload failed', 'Could not send this image. Please try again.');
+        } finally {
+            setUploadingAttachment(false);
+        }
+    };
+
+    const handleAttachImage = () => {
+        Alert.alert('Send Image', 'Choose an image source.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Camera',
+                onPress: async () => {
+                    const permission = await ImagePicker.requestCameraPermissionsAsync();
+                    if (!permission.granted) {
+                        Alert.alert('Permission needed', 'Please allow camera access to send images.');
+                        return;
+                    }
+                    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+                    if (!result.canceled && result.assets?.[0]) await sendImageAttachment(result.assets[0]);
+                },
+            },
+            {
+                text: 'Gallery',
+                onPress: async () => {
+                    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                    if (!permission.granted) {
+                        Alert.alert('Permission needed', 'Please allow photo library access to send images.');
+                        return;
+                    }
+                    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+                    if (!result.canceled && result.assets?.[0]) await sendImageAttachment(result.assets[0]);
+                },
+            },
+        ]);
     };
 
     const renderMessage = ({ item }: { item: ChatMessage }) => {
@@ -133,7 +221,9 @@ const ExpertChatDetail: React.FC = () => {
                     styles.messageBubble,
                     isExpert ? styles.expertBubble : styles.farmerBubble,
                 ]}>
-                    {item.type === 'image' ? (
+                    {item.type === 'image' && item.content ? (
+                        <Image source={{ uri: item.content }} style={styles.imageAttachment} resizeMode="cover" />
+                    ) : item.type === 'image' ? (
                         <View style={styles.imagePlaceholder}>
                             <Ionicons name="image" size={32} color={COLORS.neutral[400]} />
                             <Text style={styles.imagePlaceholderText}>Photo attached</Text>
@@ -144,6 +234,11 @@ const ExpertChatDetail: React.FC = () => {
                             isExpert ? styles.expertMessageText : styles.farmerMessageText,
                         ]}>
                             {item.content}
+                        </Text>
+                    )}
+                    {item.type === 'image' && !item.synced && (
+                        <Text style={[styles.uploadStatus, isExpert ? styles.expertTimeText : styles.farmerTimeText]}>
+                            Uploading...
                         </Text>
                     )}
                     <Text style={[
@@ -170,16 +265,6 @@ const ExpertChatDetail: React.FC = () => {
                 title={farmerName}
                 showBack
                 onBackPress={() => navigation.goBack()}
-                rightContent={
-                    <View style={styles.headerActions}>
-                        <TouchableOpacity style={styles.headerAction}>
-                            <Ionicons name="call-outline" size={20} color={COLORS.neutral[600]} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.headerAction}>
-                            <Ionicons name="videocam-outline" size={20} color={COLORS.neutral[600]} />
-                        </TouchableOpacity>
-                    </View>
-                }
             />
 
             {/* Farmer Info Bar */}
@@ -209,14 +294,9 @@ const ExpertChatDetail: React.FC = () => {
                 showsVerticalScrollIndicator={false}
             />
 
-            {/* Quick Action Buttons */}
-            <View style={styles.quickActionsBar}>
-                <ScrollableQuickActions navigation={navigation} />
-            </View>
-
             {/* Input Bar */}
             <View style={styles.inputBar}>
-                <TouchableOpacity style={styles.attachButton}>
+                <TouchableOpacity style={styles.attachButton} onPress={handleAttachImage} disabled={uploadingAttachment}>
                     <Ionicons name="add-circle" size={28} color={COLORS.primary[500]} />
                 </TouchableOpacity>
                 <View style={styles.inputContainer}>
@@ -246,42 +326,10 @@ const ExpertChatDetail: React.FC = () => {
     );
 };
 
-const ScrollableQuickActions: React.FC<{ navigation: any }> = ({ navigation }) => {
-    const actions = [
-        { label: 'View Diagnosis', icon: 'medical' as const, color: COLORS.error },
-        { label: 'Book Meeting', icon: 'calendar' as const, color: COLORS.info },
-        { label: 'Send Guide', icon: 'book' as const, color: COLORS.primary[600] },
-        { label: 'Prescribe', icon: 'document-text' as const, color: COLORS.secondary[600] },
-    ];
-
-    return (
-        <FlatList
-            horizontal
-            data={actions}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 12 }}
-            keyExtractor={(item) => item.label}
-            renderItem={({ item }) => (
-                <TouchableOpacity style={styles.quickActionChip} activeOpacity={0.7}>
-                    <Ionicons name={item.icon} size={14} color={item.color} />
-                    <Text style={[styles.quickActionText, { color: item.color }]}>{item.label}</Text>
-                </TouchableOpacity>
-            )}
-        />
-    );
-};
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.neutral[50],
-    },
-    headerActions: {
-        flexDirection: 'row',
-    },
-    headerAction: {
-        padding: 6,
-        marginLeft: 4,
     },
     farmerInfoBar: {
         flexDirection: 'row',
@@ -395,32 +443,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    imageAttachment: {
+        width: 200,
+        height: 150,
+        borderRadius: 12,
+        backgroundColor: COLORS.neutral[100],
+    },
     imagePlaceholderText: {
         fontSize: 12,
         color: COLORS.neutral[400],
         marginTop: 4,
     },
-    quickActionsBar: {
-        paddingVertical: 8,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.neutral[100],
-        backgroundColor: '#ffffff',
-    },
-    quickActionChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 50,
-        backgroundColor: COLORS.neutral[50],
-        borderWidth: 1,
-        borderColor: COLORS.neutral[200],
-        marginHorizontal: 4,
-    },
-    quickActionText: {
-        fontSize: 12,
-        fontWeight: '500',
-        marginLeft: 4,
+    uploadStatus: {
+        fontSize: 11,
+        marginTop: 6,
     },
     inputBar: {
         flexDirection: 'row',

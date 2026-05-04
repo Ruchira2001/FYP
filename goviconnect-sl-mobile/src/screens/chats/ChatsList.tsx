@@ -24,7 +24,7 @@ const ChatsList: React.FC = () => {
         try {
             const res = await chatAPI.getChats();
             const data = Array.isArray(res.data.data) ? res.data.data : [];
-            setChats(data.map((c: any) => {
+            setChats(data.filter((c: any) => !!String(c.lastMessage || '').trim()).map((c: any) => {
                 // Backend resolves unreadCount per-user but may return as Map object
                 const unread = typeof c.unreadCount === 'object' && c.unreadCount !== null
                     ? (Object.values(c.unreadCount)[0] as number) || 0
@@ -58,12 +58,14 @@ const ChatsList: React.FC = () => {
         const socket = getSocket();
         if (socket) {
             socket.on('new_message', loadChats);
+            socket.on('chat_updated', loadChats);
             socket.on('messages_read', loadChats);
             socket.on('chat_deleted', loadChats);
         }
         return () => {
             if (socket) {
                 socket.off('new_message', loadChats);
+                socket.off('chat_updated', loadChats);
                 socket.off('messages_read', loadChats);
                 socket.off('chat_deleted', loadChats);
             }
