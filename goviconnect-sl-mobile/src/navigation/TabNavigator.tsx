@@ -146,7 +146,6 @@ const TabNavigator: React.FC = () => {
                         <View style={styles.tabIconContainer}>
                             {focused && <View style={styles.activeIndicator} />}
                             <Ionicons name={iconName} size={22} color={color} />
-                            {route.name === 'AITab' && <TabBadge count={3} />}
                             {route.name === 'MeetingsTab' && <TabBadge count={expertCount} />}
                         </View>
                     );
