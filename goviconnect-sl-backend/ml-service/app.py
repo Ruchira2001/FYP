@@ -79,9 +79,10 @@ def load_model():
 
 
 def get_default_labels():
-    """Top 5 Target PlantVillage-compatible labels for Sri Lankan crops"""
+    """6 classes: 5 plant diseases + 1 Non_Plant rejection class"""
     return {
         "classes": [
+            "Non_Plant",
             "Rice___Brown_Spot",
             "Rice___Leaf_Blast",
             "Tomato___Bacterial_spot",
@@ -586,6 +587,26 @@ def predict():
             else:
                 predicted_class = f"Unknown_class_{predicted_idx}"
 
+            # ---- Model-level Non_Plant rejection ----
+            if predicted_class == "Non_Plant":
+                logger.info(f"Model classified image as Non_Plant ({confidence:.2%}) — rejecting non-plant image")
+                return jsonify({
+                    'success': True,
+                    'unrecognized': True,
+                    'prediction': {
+                        'class': 'Unrecognized',
+                        'diseaseName': 'Not a Plant Image',
+                        'diseaseNameSi': 'දූපත් රුපයක් නොවෙ',
+                        'crop': 'Unknown',
+                        'confidence': 0.0,
+                        'isHealthy': False,
+                        'treatments': [],
+                        'treatmentsSi': [],
+                        'preventionTips': ['Please take a clear photo of a plant leaf.'],
+                        'preventionTipsSi': ['කරුණාකර දකුනේ කොලයේ පැහේදිලි ඡායාරූපයක් ගන්න.'],
+                    }
+                })
+
             # ---- Entropy + margin reliability check ----
             reliable, reliability_reason = is_prediction_reliable(all_probs)
             if not reliable:
@@ -718,6 +739,26 @@ def predict_base64():
             confidence = float(all_probs[predicted_idx])
             class_names = labels.get('classes', [])
             predicted_class = class_names[predicted_idx] if predicted_idx < len(class_names) else f"Unknown_{predicted_idx}"
+
+            # ---- Model-level Non_Plant rejection ----
+            if predicted_class == "Non_Plant":
+                logger.info(f"Model classified image as Non_Plant ({confidence:.2%}) — rejecting")
+                return jsonify({
+                    'success': True,
+                    'unrecognized': True,
+                    'prediction': {
+                        'class': 'Unrecognized',
+                        'diseaseName': 'Not a Plant Image',
+                        'diseaseNameSi': 'දූපත් රුපයක් නොවෙ',
+                        'crop': 'Unknown',
+                        'confidence': 0.0,
+                        'isHealthy': False,
+                        'treatments': [],
+                        'treatmentsSi': [],
+                        'preventionTips': ['Please take a clear photo of a plant leaf.'],
+                        'preventionTipsSi': ['කරුණාකර දකුනේ කොලයේ පැහේදිලි ඡායාරූපයක් ගන්න.'],
+                    }
+                })
 
             # ---- Entropy + margin reliability check ----
             reliable, reliability_reason = is_prediction_reliable(all_probs)

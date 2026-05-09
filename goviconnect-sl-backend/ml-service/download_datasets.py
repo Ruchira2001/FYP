@@ -48,6 +48,7 @@ VAL_SPLIT   = 0.20
 # Tomato Early/Late blight (800 each) still need the full top-up to 2000.
 TARGET_TRAIN_PER_CLASS = 2000
 TARGET_TRAIN_RICE = 1750   # Rice classes are already at or above this — skip their sources
+TARGET_TRAIN_NON_PLANT = 2000  # target for the Non_Plant rejection class
 
 # ── Class definitions ─────────────────────────────────────────────────────────
 # Keywords used to locate the source folder inside a downloaded archive.
@@ -57,6 +58,9 @@ CLASSES = {
     "Tomato___Bacterial_spot": ["Tomato___Bacterial_spot", "bacterial_spot", "bacterial"],
     "Tomato___Early_blight":   ["Tomato___Early_blight",  "early_blight", "earlyblight"],
     "Tomato___Late_blight":    ["Tomato___Late_blight",   "late_blight",  "lateblight"],
+    # Non-plant rejection class — sub-folder names to collect from each dataset archive
+    "Non_Plant": ["airplane", "car", "cat", "dog", "motorbike", "person",
+                  "buildings", "glacier", "mountain", "sea", "street"],
 }
 
 # Ordered list of Kaggle datasets.  Each archive is only downloaded when at
@@ -86,6 +90,25 @@ SOURCES = [
         "classes": ["Rice___Brown_Spot"],
         "note": "Rice Leaf Diseases – extra Brown Spot images",
         "target": TARGET_TRAIN_RICE,
+    },
+    # ── Non-plant rejection class sources ─────────────────────────────────────
+    # Primary: 6 700 images across airplane/car/cat/dog/motorbike/person
+    {
+        "slug": "prasunroy/natural-images",
+        "classes": ["Non_Plant"],
+        "note": "Natural images dataset: airplane, car, cat, dog, motorbike, person",
+        "target": TARGET_TRAIN_NON_PLANT,
+        "multi_folder": True,
+    },
+    # Backup: Intel scene classification (buildings/glacier/mountain/sea/street)
+    # forest is excluded because green forest looks similar to plant backgrounds
+    {
+        "slug": "puneet6060/intel-image-classification",
+        "classes": ["Non_Plant"],
+        "note": "Intel scene classification: buildings, glacier, mountain, sea, street",
+        "target": TARGET_TRAIN_NON_PLANT,
+        "multi_folder": True,
+        "exclude_keywords": ["forest"],
     },
 ]
 
@@ -149,6 +172,75 @@ def find_folder_by_keywords(root, keywords):
                 if kw.lower().replace(" ", "_").replace("-", "_") in d_norm:
                     return os.path.join(dirpath, d)
     return None
+
+
+def find_all_folders_by_keywords(root, keywords, exclude_keywords=None):
+    """
+    Return ALL image-containing leaf folders whose name matches any keyword.
+    Used for Non_Plant where images live in many sub-category folders.
+    """
+    exclude_keywords = exclude_keywords or []
+    matched = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        imgs = [f for f in filenames if f.lower().endswith((".jpg", ".jpeg", ".png"))]
+        if not imgs:
+            continue
+        folder_name = os.path.basename(dirpath).lower().replace("-", "_").replace(" ", "_")
+        for kw in keywords:
+            if kw.lower().replace("-", "_") in folder_name:
+                if not any(ex.lower().replace("-", "_") in folder_name for ex in exclude_keywords):
+                    matched.append(dirpath)
+                break
+    return matched
+
+
+def copy_from_multi_folders(source_dirs, class_name, max_total):
+    """
+    Collect images from multiple source folders into a single class directory.
+    Spreads the budget evenly across all source folders, then applies
+    the standard train/val split.  Returns (train_added, val_added).
+    """
+    if not source_dirs:
+        return 0, 0
+
+    per_folder = max(1, max_total // len(source_dirs))
+    train_dst = os.path.join(TRAIN_DIR, class_name)
+    val_dst   = os.path.join(VAL_DIR,   class_name)
+    os.makedirs(train_dst, exist_ok=True)
+    os.makedirs(val_dst,   exist_ok=True)
+
+    total_train = total_val = 0
+    existing_train = len([f for f in os.listdir(train_dst)
+                          if f.lower().endswith((".jpg", ".jpeg", ".png"))])
+    existing_val   = len([f for f in os.listdir(val_dst)
+                          if f.lower().endswith((".jpg", ".jpeg", ".png"))])
+
+    for folder in source_dirs:
+        images = [
+            f for f in os.listdir(folder)
+            if f.lower().endswith((".jpg", ".jpeg", ".png"))
+        ]
+        random.shuffle(images)
+        images = images[:per_folder]
+
+        split_idx  = int(len(images) * (1 - VAL_SPLIT))
+        train_imgs = images[:split_idx]
+        val_imgs   = images[split_idx:]
+
+        for i, fname in enumerate(train_imgs):
+            shutil.copy2(
+                os.path.join(folder, fname),
+                os.path.join(train_dst, f"train_{existing_train + total_train + i}.jpg"),
+            )
+        for i, fname in enumerate(val_imgs):
+            shutil.copy2(
+                os.path.join(folder, fname),
+                os.path.join(val_dst, f"val_{existing_val + total_val + i}.jpg"),
+            )
+        total_train += len(train_imgs)
+        total_val   += len(val_imgs)
+
+    return total_train, total_val
 
 
 # ── Dataset helpers ───────────────────────────────────────────────────────────
@@ -290,12 +382,23 @@ def main():
             # Budget: how many total images to copy (train + val = max_new)
             max_new = int(need / (1 - VAL_SPLIT)) + 10
 
-            src = find_folder_by_keywords(tmp_dest, CLASSES[cls])
-            if src is None:
-                print(f"    {cls}: folder not found in archive, skipping.")
-                continue
+            if source.get("multi_folder"):
+                # ── Multi-folder path (Non_Plant: many sub-category folders) ──
+                exclude_kw = source.get("exclude_keywords", [])
+                all_dirs   = find_all_folders_by_keywords(tmp_dest, CLASSES[cls], exclude_kw)
+                if not all_dirs:
+                    print(f"    {cls}: no matching sub-folders found in archive, skipping.")
+                    continue
+                print(f"    {cls}: found {len(all_dirs)} sub-folders → collecting up to {max_new} images")
+                t, v = copy_from_multi_folders(all_dirs, cls, max_total=max_new)
+            else:
+                # ── Single-folder path (plant disease classes) ────────────────
+                src = find_folder_by_keywords(tmp_dest, CLASSES[cls])
+                if src is None:
+                    print(f"    {cls}: folder not found in archive, skipping.")
+                    continue
+                t, v = copy_and_split(src, cls, max_new=max_new)
 
-            t, v    = copy_and_split(src, cls, max_new=max_new)
             after   = current_train_count(cls)
             status  = "OK" if after >= target else f"still need {target - after}"
             print(f"    {cls}: +{t} train  +{v} val  (total train={after})  [{status}]")
