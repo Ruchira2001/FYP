@@ -7,31 +7,24 @@ import { FarmerNavigator } from './RootNavigator';
 import ExpertRootNavigator from './ExpertRootNavigator';
 import ShopNavigator from './ShopNavigator';
 import RoleSelectionScreen from '../screens/RoleSelectionScreen';
+import { Splash, Onboarding, LanguageSelect } from '../screens/auth';
 import { View, ActivityIndicator } from 'react-native';
 import { COLORS } from '../utils/constants';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator: React.FC = () => {
-    const { isAuthenticated: isFarmerAuth, isInitialized: isFarmerInitialized } = useApp();
-    const { isAuthenticated: isExpertAuth, isInitialized: isExpertInitialized } = useExpert();
-    const { isAuthenticated: isShopAuth, isInitialized: isShopInitialized } = useShop();
+    const { isInitialized: isFarmerInitialized } = useApp();
+    const { isInitialized: isExpertInitialized } = useExpert();
+    const { isInitialized: isShopInitialized } = useShop();
 
     const [initialRoute, setInitialRoute] = useState<string | null>(null);
 
     useEffect(() => {
         if (isFarmerInitialized && isExpertInitialized && isShopInitialized) {
-            if (isFarmerAuth) {
-                setInitialRoute('FarmerApp');
-            } else if (isExpertAuth) {
-                setInitialRoute('ExpertApp');
-            } else if (isShopAuth) {
-                setInitialRoute('ShopApp');
-            } else {
-                setInitialRoute('RoleSelection');
-            }
+            setInitialRoute('Splash');
         }
-    }, [isFarmerAuth, isExpertAuth, isShopAuth, isFarmerInitialized, isExpertInitialized, isShopInitialized]);
+    }, [isFarmerInitialized, isExpertInitialized, isShopInitialized]);
 
     if (!initialRoute) {
         return (
@@ -46,6 +39,27 @@ const AppNavigator: React.FC = () => {
             initialRouteName={initialRoute}
             screenOptions={{ headerShown: false }}
         >
+            <Stack.Screen
+                name="Splash"
+                component={Splash}
+                options={{
+                    animation: 'fade',
+                }}
+            />
+            <Stack.Screen
+                name="Onboarding"
+                component={Onboarding}
+                options={{
+                    animation: 'fade',
+                }}
+            />
+            <Stack.Screen
+                name="LanguageSelect"
+                component={LanguageSelect}
+                options={{
+                    animation: 'slide_from_right',
+                }}
+            />
             <Stack.Screen
                 name="RoleSelection"
                 component={RoleSelectionScreen}

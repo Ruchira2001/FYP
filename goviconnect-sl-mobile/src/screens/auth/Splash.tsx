@@ -4,9 +4,11 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../utils/constants';
+import { useApp } from '../../context';
 
 const Splash: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
+    const { hasCompletedOnboarding } = useApp();
 
     const logoScale = useRef(new Animated.Value(0.5)).current;
     const logoOpacity = useRef(new Animated.Value(0)).current;
@@ -53,11 +55,11 @@ const Splash: React.FC = () => {
 
         // Navigate after animation
         const timer = setTimeout(() => {
-            navigation.replace('Onboarding');
+            navigation.replace(hasCompletedOnboarding ? 'RoleSelection' : 'Onboarding');
         }, 2500);
 
         return () => clearTimeout(timer);
-    }, [navigation]);
+    }, [hasCompletedOnboarding, navigation]);
 
     return (
         <View style={{ flex: 1, backgroundColor: COLORS.primary[500], alignItems: 'center', justifyContent: 'center' }}>

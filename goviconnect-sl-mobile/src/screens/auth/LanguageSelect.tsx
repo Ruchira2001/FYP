@@ -30,7 +30,7 @@ const LanguageSelect: React.FC = () => {
         } catch (error) {
             console.log('Onboarding complete error:', error);
         }
-        navigation.replace('Login');
+        navigation.replace('RoleSelection');
     };
 
     return (

@@ -18,16 +18,23 @@ const RootStack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
 
 // Auth Stack Navigator
-const AuthNavigator = () => (
-    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-        <AuthStack.Screen name="Splash" component={Splash} />
-        <AuthStack.Screen name="Onboarding" component={Onboarding} />
-        <AuthStack.Screen name="LanguageSelect" component={LanguageSelect} />
-        <AuthStack.Screen name="Login" component={Login} />
-        <AuthStack.Screen name="Register" component={Register} />
-        <AuthStack.Screen name="ForgotPassword" component={ForgotPassword} />
-    </AuthStack.Navigator>
-);
+const AuthNavigator = () => {
+    const { hasCompletedOnboarding } = useApp();
+
+    return (
+        <AuthStack.Navigator
+            initialRouteName={hasCompletedOnboarding ? 'Login' : 'Splash'}
+            screenOptions={{ headerShown: false }}
+        >
+            <AuthStack.Screen name="Splash" component={Splash} />
+            <AuthStack.Screen name="Onboarding" component={Onboarding} />
+            <AuthStack.Screen name="LanguageSelect" component={LanguageSelect} />
+            <AuthStack.Screen name="Login" component={Login} />
+            <AuthStack.Screen name="Register" component={Register} />
+            <AuthStack.Screen name="ForgotPassword" component={ForgotPassword} />
+        </AuthStack.Navigator>
+    );
+};
 
 // Farmer Navigator Component (without NavigationContainer)
 export const FarmerNavigator: React.FC = () => {
