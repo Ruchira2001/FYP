@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../../utils/constants';
 import { useApp } from '../../context';
+import AppLogo from '../../components/AppLogo';
 
 const { width } = Dimensions.get('window');
 
@@ -46,15 +47,7 @@ const Login: React.FC = () => {
             >
                 {/* Logo & Branding */}
                 <View style={styles.brandingSection}>
-                    <View style={styles.logoContainer}>
-                        <View style={styles.logoOuter}>
-                            <View style={styles.logoInner}>
-                                <Ionicons name="leaf" size={40} color={COLORS.primary[600]} />
-                            </View>
-                        </View>
-                    </View>
-
-                    <Text style={styles.appTitle}>GoviConnect</Text>
+                    <AppLogo variant="vertical" globeSize={130} brandFontSize={34} slFontSize={13} />
                     <Text style={styles.appSubtitle}>Farmer Portal</Text>
                     <View style={styles.roleBadge}>
                         <Ionicons name="person" size={16} color={COLORS.primary[600]} />

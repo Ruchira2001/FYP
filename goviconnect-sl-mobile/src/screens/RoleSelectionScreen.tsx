@@ -18,6 +18,7 @@ import { COLORS, SHADOW } from '../utils/constants';
 import { useApp } from '../context/AppContext';
 import { useExpert } from '../context/ExpertContext';
 import { useShop } from '../context/ShopContext';
+import AppLogo from '../components/AppLogo';
 
 const { width } = Dimensions.get('window');
 
@@ -211,14 +212,7 @@ const RoleSelectionScreen: React.FC = () => {
                             },
                         ]}
                     >
-                        <LinearGradient
-                            colors={[COLORS.primary[500], COLORS.primary[700]]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.logoGradient}
-                        >
-                            <Ionicons name="leaf" size={36} color="#ffffff" />
-                        </LinearGradient>
+                        <AppLogo variant="vertical" globeSize={140} brandFontSize={36} slFontSize={13} />
                     </Animated.View>
 
                     <Animated.View
@@ -228,10 +222,6 @@ const RoleSelectionScreen: React.FC = () => {
                             alignItems: 'center',
                         }}
                     >
-                        <Text style={styles.appName}>
-                            Govi<Text style={styles.appNameAccent}>Connect</Text>
-                        </Text>
-                        <Text style={styles.appTagline}>Sri Lanka</Text>
                         <View style={styles.dividerDot}>
                             <View style={styles.dot} />
                             <View style={[styles.dotLine, { backgroundColor: COLORS.primary[300] }]} />

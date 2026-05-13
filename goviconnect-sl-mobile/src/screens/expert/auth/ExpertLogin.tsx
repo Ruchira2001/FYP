@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { useExpert } from '../../../context/ExpertContext';
+import AppLogo from '../../../components/AppLogo';
 
 const { width } = Dimensions.get('window');
 
@@ -51,15 +52,7 @@ const ExpertLogin: React.FC = () => {
             >
                 {/* Logo & Branding */}
                 <View style={styles.brandingSection}>
-                    <View style={styles.logoContainer}>
-                        <View style={styles.logoOuter}>
-                            <View style={styles.logoInner}>
-                                <Ionicons name="shield-checkmark" size={40} color={EXPERT_COLORS.primary} />
-                            </View>
-                        </View>
-                    </View>
-
-                    <Text style={styles.appTitle}>GoviConnect</Text>
+                    <AppLogo variant="vertical" globeSize={130} brandFontSize={34} slFontSize={13} />
                     <Text style={styles.appSubtitle}>Expert Portal</Text>
                     <View style={styles.expertBadge}>
                         <Ionicons name="medkit" size={16} color={EXPERT_COLORS.primary} />

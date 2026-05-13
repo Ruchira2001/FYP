@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useConnectionStatus } from '../services/netinfo';
 import { COLORS } from '../utils/constants';
+import AppLogo from './AppLogo';
 
 interface HeaderProps {
     title?: string;
@@ -81,14 +82,7 @@ const Header: React.FC<HeaderProps> = ({
                     )}
 
                     {showCursiveTitle ? (
-                        <View style={styles.logoContainer}>
-                            <View style={styles.logoIconBadge}>
-                                <Ionicons name="leaf" size={16} color="#ffffff" />
-                            </View>
-                            <Text style={styles.logoText}>
-                                Govi<Text style={styles.logoTextAccent}>Connect</Text>
-                            </Text>
-                        </View>
+                        <AppLogo variant="horizontal" globeSize={36} brandFontSize={22} slFontSize={11} />
                     ) : (
                         title && (
                             <Text style={styles.title} numberOfLines={1}>
@@ -196,24 +190,6 @@ const styles = StyleSheet.create({
     logoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-    },
-    logoIconBadge: {
-        width: 30,
-        height: 30,
-        borderRadius: 8,
-        backgroundColor: COLORS.primary[500],
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 8,
-    },
-    logoText: {
-        fontSize: 22,
-        fontWeight: '800',
-        color: COLORS.neutral[800],
-        letterSpacing: -0.3,
-    },
-    logoTextAccent: {
-        color: COLORS.primary[600],
     },
     title: {
         fontSize: 18,

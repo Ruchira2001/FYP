@@ -17,14 +17,16 @@ LogBox.ignoreLogs([
     'Non-serializable values were found in the navigation state',
 ]);
 
-import {
-    useFonts,
-    IrishGrover_400Regular
-} from '@expo-google-fonts/irish-grover';
+import { useFonts } from 'expo-font';
+import { IrishGrover_400Regular } from '@expo-google-fonts/irish-grover';
+import { DancingScript_700Bold } from '@expo-google-fonts/dancing-script';
 
 export default function App() {
     let [fontsLoaded] = useFonts({
         IrishGrover_400Regular,
+        DancingScript_700Bold,
+        Apricots: require('./src/assets/fonts/Apricot-BF650c4a6357ce1.otf'),
+        // LuluFontTH: require('./src/assets/fonts/LuluFontTH.ttf'), // add when you have the file
     });
 
     if (!fontsLoaded) {

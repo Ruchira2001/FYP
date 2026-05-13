@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, FlatList, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, FlatList, Text, Image, TouchableOpacity, StyleSheet, BackHandler } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,21 @@ const DiagnosisHistory: React.FC = () => {
             loadHistory();
         }, [isConnected])
     );
+
+    useFocusEffect(
+        React.useCallback(() => {
+            const backSubscription = BackHandler.addEventListener('hardwareBackPress', () => {
+                handleBack();
+                return true;
+            });
+
+            return () => backSubscription.remove();
+        }, [])
+    );
+
+    const handleBack = () => {
+        navigation.navigate('CropDoctorUpload');
+    };
 
     const loadHistory = async () => {
         const localData = await getDiagnosisHistory();
@@ -144,7 +159,7 @@ const DiagnosisHistory: React.FC = () => {
             <Header
                 title={t('ai.diagnosis_history')}
                 showBack
-                onBackPress={() => navigation.goBack()}
+                onBackPress={handleBack}
             />
 
             {history.length > 0 ? (

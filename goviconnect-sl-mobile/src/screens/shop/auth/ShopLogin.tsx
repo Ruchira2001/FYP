@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { useShop } from '../../../context/ShopContext';
+import AppLogo from '../../../components/AppLogo';
 
 const { width } = Dimensions.get('window');
 
@@ -56,15 +57,7 @@ const ShopLogin: React.FC = () => {
             >
                 {/* Logo & Branding */}
                 <View style={styles.brandingSection}>
-                    <View style={styles.logoContainer}>
-                        <View style={styles.logoOuter}>
-                            <View style={styles.logoInner}>
-                                <Ionicons name="storefront" size={40} color={SHOP_COLOR} />
-                            </View>
-                        </View>
-                    </View>
-
-                    <Text style={styles.appTitle}>GoviConnect</Text>
+                    <AppLogo variant="vertical" globeSize={130} brandFontSize={34} slFontSize={13} />
                     <Text style={styles.appSubtitle}>Shop Portal</Text>
                     <View style={styles.roleBadge}>
                         <Ionicons name="cart" size={16} color={SHOP_COLOR} />
