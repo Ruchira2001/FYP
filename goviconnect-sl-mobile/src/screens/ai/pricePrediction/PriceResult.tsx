@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet, ImageBackground } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,7 @@ import { queueService } from '../../../services/queueService';
 import { useConnectionStatus } from '../../../services/netinfo';
 import { generateId } from '../../../utils/validators';
 import cropsData from '../../../data/crops.json';
+import { getCropImage } from '../../../utils/cropImages';
 
 // Typical yield per acre (kg) for Sri Lanka — DOA/HARTI reference values
 const YIELD_PER_ACRE: Record<string, number> = {
@@ -174,12 +175,17 @@ const PriceResult: React.FC = () => {
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Crop Header */}
-                <View style={styles.headerBanner}>
+                <ImageBackground
+                    source={{ uri: getCropImage(params.crop, crop?.name) }}
+                    style={styles.headerBanner}
+                    imageStyle={styles.headerBannerImage}
+                >
+                    <View style={styles.headerOverlay} />
                     <View style={styles.headerContent}>
                         <View style={styles.iconContainer}>
                             <Text style={styles.icon}>{crop?.icon}</Text>
                         </View>
-                        <View>
+                        <View style={styles.headerTextBlock}>
                             <Text style={styles.cropName}>
                                 {i18n.language === 'si' ? crop?.nameSi : crop?.name}
                             </Text>
@@ -192,7 +198,7 @@ const PriceResult: React.FC = () => {
                             </Text>
                         </View>
                     </View>
-                </View>
+                </ImageBackground>
 
                 <View style={styles.content}>
                     {/* Price Range */}
@@ -345,13 +351,24 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     headerBanner: {
-        backgroundColor: '#3b82f6', // blue-500
+        backgroundColor: '#1e3a8a', // fallback deep blue
         paddingHorizontal: 16,
-        paddingVertical: 24,
+        paddingVertical: 28,
+    },
+    headerBannerImage: {
+        resizeMode: 'cover',
+        opacity: 0.55,
+    },
+    headerOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(30, 64, 175, 0.60)',
     },
     headerContent: {
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    headerTextBlock: {
+        flex: 1,
     },
     iconContainer: {
         width: 64,

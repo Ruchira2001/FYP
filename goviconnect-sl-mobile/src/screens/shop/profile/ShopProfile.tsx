@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, AppNotify, ActionCard } from '../../../components';
 import { shopAPI } from '../../../services/api';
 import { connectSocket, getSocket } from '../../../services/socketService';
+import { navigationRef } from '../../../navigation/navigationRef';
 
 const ShopProfile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -73,7 +74,12 @@ const ShopProfile: React.FC = () => {
         { id: 'help', icon: 'help-circle-outline', label: 'Help & FAQ', onPress: () => navigation.navigate('HelpFAQ') },
         {
             id: 'logout', icon: 'log-out-outline', label: 'Logout', color: COLORS.error, onPress: () => {
-                AppNotify.confirm('Logout', 'Are you sure you want to logout?', logout, { confirmLabel: 'Logout', destructive: true });
+                AppNotify.confirm('Logout', 'Are you sure you want to logout?', async () => {
+                    await logout();
+                    if (navigationRef.isReady()) {
+                        navigationRef.reset({ index: 0, routes: [{ name: 'Splash' }] });
+                    }
+                }, { confirmLabel: 'Logout', destructive: true });
             }
         },
     ];

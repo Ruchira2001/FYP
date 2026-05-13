@@ -6,9 +6,15 @@ import {
     ActivityIndicator,
     TouchableOpacity,
     Animated,
+    Easing,
+    Modal,
+    SafeAreaView,
+    Platform,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import MapView, { Marker, MapPressEvent, Region } from 'react-native-maps';
 import { COLORS } from '../utils/constants';
 
 // ─── WMO weather code helpers ─────────────────────────────────────────────────
@@ -51,43 +57,626 @@ function getFarmingAdvice(code: number, role: 'farmer' | 'expert'): string {
     return 'Stay indoors and protect your crops!';
 }
 
-// ─── Agriculture background images per weather condition ─────────────────────
+// ─── Animated weather backgrounds ─────────────────────────────────────────────
 
-const WEATHER_IMAGES: Record<string, string[]> = {
-    clear: [
-        'https://images.pexels.com/photos/974314/pexels-photo-974314.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/2382665/pexels-photo-2382665.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/1084540/pexels-photo-1084540.jpeg?auto=compress&cs=tinysrgb&w=800',
-    ],
-    cloudy: [
-        'https://images.pexels.com/photos/247599/pexels-photo-247599.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/1486785/pexels-photo-1486785.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/461940/pexels-photo-461940.jpeg?auto=compress&cs=tinysrgb&w=800',
-    ],
-    foggy: [
-        'https://images.pexels.com/photos/1179229/pexels-photo-1179229.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/235621/pexels-photo-235621.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/247599/pexels-photo-247599.jpeg?auto=compress&cs=tinysrgb&w=800',
-    ],
-    rainy: [
-        'https://images.pexels.com/photos/1118873/pexels-photo-1118873.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/1105019/pexels-photo-1105019.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/459501/pexels-photo-459501.jpeg?auto=compress&cs=tinysrgb&w=800',
-    ],
-    storm: [
-        'https://images.pexels.com/photos/1430770/pexels-photo-1430770.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/1118873/pexels-photo-1118873.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/2382665/pexels-photo-2382665.jpeg?auto=compress&cs=tinysrgb&w=800',
-    ],
+type WeatherBg = 'clear' | 'cloudy' | 'foggy' | 'drizzle' | 'rainy' | 'snowy' | 'storm';
+
+function getWeatherBg(code: number): WeatherBg {
+    if (code === 0)   return 'clear';
+    if (code <= 3)    return 'cloudy';
+    if (code <= 48)   return 'foggy';
+    if (code <= 57)   return 'drizzle';
+    if (code <= 77)   return code >= 70 ? 'snowy' : 'rainy';
+    if (code <= 82)   return 'rainy';
+    return 'storm';
+}
+
+const BG_GRADIENTS: Record<WeatherBg, [string, string, string]> = {
+    clear:   ['#0ea5e9', '#0284c7', '#075985'],   // bright sky blue
+    cloudy:  ['#475569', '#334155', '#1e293b'],   // slate
+    foggy:   ['#6b7280', '#4b5563', '#374151'],   // grey mist
+    drizzle: ['#1e3a5f', '#1a4a7a', '#0d1f3f'],   // cool navy
+    rainy:   ['#0f172a', '#1e3a5f', '#0c1a2e'],   // deep rainy night
+    snowy:   ['#bfdbfe', '#93c5fd', '#60a5fa'],   // light icy blue
+    storm:   ['#020617', '#0f172a', '#030712'],   // near black storm
 };
 
-function getWeatherImageSet(code: number): string[] {
-    if (code === 0) return WEATHER_IMAGES.clear;
-    if (code <= 3) return WEATHER_IMAGES.cloudy;
-    if (code <= 48) return WEATHER_IMAGES.foggy;
-    if (code <= 82) return WEATHER_IMAGES.rainy;
-    return WEATHER_IMAGES.storm;
+const CARD_H = 150;
+
+// ─────────────────────────────────────────────────────
+// RAIN / DRIZZLE / STORM  (wind-aware)
+// ─────────────────────────────────────────────────────
+interface RainProps {
+    windSpeed: number;   // km/h – drives slant angle
+    intensity: 'light' | 'moderate' | 'heavy';
+    color?: string;
 }
+
+const RainLayer: React.FC<RainProps> = ({ windSpeed, intensity, color = 'rgba(147,210,255,0.6)' }) => {
+    const count    = intensity === 'light' ? 12 : intensity === 'moderate' ? 22 : 36;
+    const dropH    = intensity === 'light' ? 14 : intensity === 'moderate' ? 20 : 28;
+    const dropW    = intensity === 'light' ? 1  : intensity === 'moderate' ? 1.5 : 2;
+    const speedMs  = intensity === 'light' ? 900 : intensity === 'moderate' ? 650 : 450;
+
+    // Wind slant: 0 km/h → 0°, 40+ km/h → ~35°
+    const slantX   = Math.min(windSpeed / 40, 1) * 35; // px horizontal offset over CARD_H
+
+    const anims = useRef(
+        Array.from({ length: count }, () => new Animated.Value(Math.random()))
+    ).current;
+
+    // Random positions seeded once
+    const cols = useRef(
+        Array.from({ length: count }, () => Math.random() * 110 - 5) // -5% to 105%
+    ).current;
+    const delays = useRef(
+        Array.from({ length: count }, (_, i) => (i / count) * speedMs)
+    ).current;
+    const speeds = useRef(
+        Array.from({ length: count }, () => speedMs * (0.85 + Math.random() * 0.3))
+    ).current;
+
+    useEffect(() => {
+        const loops = anims.map((anim, i) => {
+            anim.setValue(delays[i] / speeds[i]); // stagger start positions
+            return Animated.loop(
+                Animated.timing(anim, {
+                    toValue: 1,
+                    duration: speeds[i],
+                    easing: Easing.linear,
+                    useNativeDriver: true,
+                })
+            );
+        });
+        loops.forEach(l => l.start());
+        return () => loops.forEach(l => l.stop());
+    }, []);
+
+    return (
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+            {anims.map((anim, i) => {
+                const tY = anim.interpolate({
+                    inputRange:  [0, 1],
+                    outputRange: [-dropH - 10, CARD_H + dropH],
+                });
+                const tX = anim.interpolate({
+                    inputRange:  [0, 1],
+                    outputRange: [0, slantX],
+                });
+                return (
+                    <Animated.View
+                        key={i}
+                        style={{
+                            position: 'absolute',
+                            left: `${cols[i]}%` as any,
+                            top: 0,
+                            width: dropW,
+                            height: dropH,
+                            borderRadius: dropW,
+                            backgroundColor: color,
+                            transform: [{ translateY: tY }, { translateX: tX }],
+                        }}
+                    />
+                );
+            })}
+        </View>
+    );
+};
+
+// ─────────────────────────────────────────────────────
+// SNOW FLAKES (wind-aware sway)
+// ─────────────────────────────────────────────────────
+interface SnowProps { windSpeed: number; }
+
+const SnowLayer: React.FC<SnowProps> = ({ windSpeed }) => {
+    const count = 20;
+    const fallAnims = useRef(
+        Array.from({ length: count }, () => new Animated.Value(Math.random()))
+    ).current;
+    const swayAnims = useRef(
+        Array.from({ length: count }, () => new Animated.Value(0))
+    ).current;
+
+    const cols  = useRef(Array.from({ length: count }, () => Math.random() * 100)).current;
+    const sizes = useRef(Array.from({ length: count }, () => 4 + Math.random() * 5)).current;
+    const speeds = useRef(Array.from({ length: count }, () => 2500 + Math.random() * 2000)).current;
+
+    // wind sway amplitude
+    const swayAmp = Math.min(windSpeed / 2, 20);
+
+    useEffect(() => {
+        const fallLoops = fallAnims.map((anim, i) =>
+            Animated.loop(
+                Animated.timing(anim, {
+                    toValue: 1,
+                    duration: speeds[i],
+                    easing: Easing.linear,
+                    useNativeDriver: true,
+                })
+            )
+        );
+        const swayLoops = swayAnims.map((anim, i) =>
+            Animated.loop(
+                Animated.sequence([
+                    Animated.timing(anim, { toValue: 1,  duration: 1200 + i * 80, useNativeDriver: true }),
+                    Animated.timing(anim, { toValue: -1, duration: 1200 + i * 80, useNativeDriver: true }),
+                ])
+            )
+        );
+        [...fallLoops, ...swayLoops].forEach(l => l.start());
+        return () => [...fallLoops, ...swayLoops].forEach(l => l.stop());
+    }, []);
+
+    return (
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+            {fallAnims.map((fallAnim, i) => {
+                const tY = fallAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, CARD_H + 10] });
+                const tX = swayAnims[i].interpolate({ inputRange: [-1, 1], outputRange: [-swayAmp, swayAmp] });
+                return (
+                    <Animated.View
+                        key={i}
+                        style={{
+                            position: 'absolute',
+                            left: `${cols[i]}%` as any,
+                            top: 0,
+                            width: sizes[i],
+                            height: sizes[i],
+                            borderRadius: sizes[i] / 2,
+                            backgroundColor: 'rgba(255,255,255,0.82)',
+                            transform: [{ translateY: tY }, { translateX: tX }],
+                        }}
+                    />
+                );
+            })}
+        </View>
+    );
+};
+
+// ─────────────────────────────────────────────────────
+// SUN RAYS  (rotating rays + warm glow)
+// ─────────────────────────────────────────────────────
+const SunRays: React.FC = () => {
+    const rotate  = useRef(new Animated.Value(0)).current;
+    const glow    = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.timing(rotate, { toValue: 1, duration: 18000, easing: Easing.linear, useNativeDriver: true })
+        ).start();
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(glow, { toValue: 1, duration: 2000, useNativeDriver: true }),
+                Animated.timing(glow, { toValue: 0, duration: 2000, useNativeDriver: true }),
+            ])
+        ).start();
+    }, []);
+
+    const RAY_COUNT = 10;
+    const CARD_W    = 400; // generous over-estimate
+    const sunX      = CARD_W * 0.78;
+    const sunY      = CARD_H * 0.25;
+    const rayLen    = 80;
+
+    return (
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="none" >
+            {/* Rotating rays */}
+            <Animated.View
+                style={{
+                    position: 'absolute',
+                    left: sunX,
+                    top: sunY,
+                    width: 0,
+                    height: 0,
+                    transform: [{ rotate: rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }],
+                }}
+            >
+                {Array.from({ length: RAY_COUNT }).map((_, i) => {
+                    const angle = (i / RAY_COUNT) * 2 * Math.PI;
+                    const x2 = Math.cos(angle) * rayLen;
+                    const y2 = Math.sin(angle) * rayLen;
+                    return (
+                        <View
+                            key={i}
+                            style={{
+                                position: 'absolute',
+                                width: Math.abs(x2) || 1,
+                                height: 2,
+                                backgroundColor: 'rgba(253,224,71,0.35)',
+                                left: 0,
+                                top: 0,
+                                transform: [
+                                    { rotate: `${(i / RAY_COUNT) * 360}deg` },
+                                    { translateX: rayLen / 2 },
+                                ],
+                                borderRadius: 1,
+                            }}
+                        />
+                    );
+                })}
+            </Animated.View>
+            {/* Sun disc */}
+            <Animated.View
+                style={{
+                    position: 'absolute',
+                    left: sunX - 22,
+                    top:  sunY - 22,
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: '#fde047',
+                    opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.0] }),
+                    shadowColor: '#fde047',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.9,
+                    shadowRadius: 20,
+                    elevation: 10,
+                }}
+            />
+            {/* Warm glow halo */}
+            <Animated.View
+                style={{
+                    position: 'absolute',
+                    left: sunX - 55,
+                    top:  sunY - 55,
+                    width: 110,
+                    height: 110,
+                    borderRadius: 55,
+                    backgroundColor: '#fbbf24',
+                    opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.08, 0.22] }),
+                }}
+            />
+        </View>
+    );
+};
+
+// ─────────────────────────────────────────────────────
+// CLOUD PUFFS  (drifting, wind-speed driven)
+// ─────────────────────────────────────────────────────
+interface CloudProps { windSpeed: number; dark?: boolean; }
+
+const CloudPuffs: React.FC<CloudProps> = ({ windSpeed, dark = false }) => {
+    const count  = 3;
+    const baseMs = Math.max(6000 - windSpeed * 80, 2500); // faster at high wind
+    const anims  = useRef(Array.from({ length: count }, (_, i) => new Animated.Value(i / count))).current;
+
+    useEffect(() => {
+        const loops = anims.map((anim, i) =>
+            Animated.loop(
+                Animated.timing(anim, {
+                    toValue: 1,
+                    duration: baseMs * (0.9 + i * 0.15),
+                    easing: Easing.linear,
+                    useNativeDriver: true,
+                })
+            )
+        );
+        loops.forEach(l => l.start());
+        return () => loops.forEach(l => l.stop());
+    }, [baseMs]);
+
+    const CARD_W = 400;
+    const cloudW = [110, 80, 95];
+    const tops   = [12, 40, 20];
+    const opas   = dark ? [0.18, 0.12, 0.15] : [0.28, 0.20, 0.24];
+    const col    = dark ? '#1e293b' : '#e2e8f0';
+
+    return (
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+            {anims.map((anim, i) => (
+                <Animated.View
+                    key={i}
+                    style={{
+                        position: 'absolute',
+                        top: tops[i],
+                        width: cloudW[i],
+                        height: cloudW[i] * 0.55,
+                        borderRadius: cloudW[i] * 0.3,
+                        backgroundColor: col,
+                        opacity: opas[i],
+                        transform: [{
+                            translateX: anim.interpolate({
+                                inputRange:  [0, 1],
+                                outputRange: [-cloudW[i], CARD_W + cloudW[i]],
+                            }),
+                        }],
+                    }}
+                />
+            ))}
+        </View>
+    );
+};
+
+// ─────────────────────────────────────────────────────
+// FOG  (multi-layer mist at different speeds)
+// ─────────────────────────────────────────────────────
+interface FogProps { windSpeed: number; }
+
+const FogLayers: React.FC<FogProps> = ({ windSpeed }) => {
+    const baseMs = Math.max(7000 - windSpeed * 60, 2800);
+    const layers = [
+        { opa: 0.22, top: 0,     ms: baseMs },
+        { opa: 0.15, top: 40,    ms: baseMs * 1.3 },
+        { opa: 0.18, top: 80,    ms: baseMs * 0.7 },
+    ];
+    const anims = useRef(layers.map((_, i) => new Animated.Value(i % 2 === 0 ? 0 : 1))).current;
+
+    useEffect(() => {
+        const loops = anims.map((anim, i) =>
+            Animated.loop(
+                Animated.sequence([
+                    Animated.timing(anim, { toValue: 1,  duration: layers[i].ms, easing: Easing.linear, useNativeDriver: true }),
+                    Animated.timing(anim, { toValue: 0, duration: layers[i].ms, easing: Easing.linear, useNativeDriver: true }),
+                ])
+            )
+        );
+        loops.forEach(l => l.start());
+        return () => loops.forEach(l => l.stop());
+    }, []);
+
+    return (
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+            {layers.map((layer, i) => (
+                <Animated.View
+                    key={i}
+                    style={{
+                        position: 'absolute',
+                        left: 0, right: 0,
+                        top: layer.top,
+                        height: 55,
+                        backgroundColor: 'rgba(200,210,220,1)',
+                        opacity: anims[i].interpolate({
+                            inputRange:  [0, 0.5, 1],
+                            outputRange: [layer.opa * 0.4, layer.opa, layer.opa * 0.4],
+                        }),
+                        transform: [{
+                            translateX: anims[i].interpolate({
+                                inputRange:  [0, 1],
+                                outputRange: [-30, 30],
+                            }),
+                        }],
+                    }}
+                />
+            ))}
+        </View>
+    );
+};
+
+// ─────────────────────────────────────────────────────
+// LIGHTNING FLASH
+// ─────────────────────────────────────────────────────
+const LightningFlash: React.FC = () => {
+    const flash = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        let timeout: ReturnType<typeof setTimeout>;
+        const doFlash = () => {
+            Animated.sequence([
+                Animated.timing(flash, { toValue: 0.85, duration: 40,  useNativeDriver: true }),
+                Animated.timing(flash, { toValue: 0,    duration: 80,  useNativeDriver: true }),
+                Animated.timing(flash, { toValue: 0.5,  duration: 40,  useNativeDriver: true }),
+                Animated.timing(flash, { toValue: 0,    duration: 200, useNativeDriver: true }),
+            ]).start(() => {
+                timeout = setTimeout(doFlash, 2500 + Math.random() * 5000);
+            });
+        };
+        timeout = setTimeout(doFlash, 800 + Math.random() * 1500);
+        return () => clearTimeout(timeout);
+    }, []);
+
+    return (
+        <Animated.View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: '#dbeafe', opacity: flash }]}
+        />
+    );
+};
+
+// ─────────────────────────────────────────────────────
+// MASTER WEATHER ANIMATION — receives live wind + code
+// ─────────────────────────────────────────────────────
+interface WeatherAnimProps { bg: WeatherBg; windSpeed: number; }
+
+const WeatherAnimation: React.FC<WeatherAnimProps> = ({ bg, windSpeed }) => {
+    switch (bg) {
+        case 'clear':
+            return <><SunRays /><CloudPuffs windSpeed={windSpeed} /></>;
+        case 'cloudy':
+            return <CloudPuffs windSpeed={windSpeed} dark />;
+        case 'foggy':
+            return <><FogLayers windSpeed={windSpeed} /><CloudPuffs windSpeed={windSpeed} dark /></>;
+        case 'drizzle':
+            return (
+                <>
+                    <RainLayer windSpeed={windSpeed} intensity="light" color="rgba(186,230,253,0.5)" />
+                    <CloudPuffs windSpeed={windSpeed} dark />
+                </>
+            );
+        case 'rainy':
+            return (
+                <>
+                    <RainLayer windSpeed={windSpeed} intensity="moderate" color="rgba(147,197,253,0.65)" />
+                    <CloudPuffs windSpeed={windSpeed} dark />
+                </>
+            );
+        case 'snowy':
+            return (
+                <>
+                    <SnowLayer windSpeed={windSpeed} />
+                    <CloudPuffs windSpeed={windSpeed} />
+                </>
+            );
+        case 'storm':
+            return (
+                <>
+                    <RainLayer windSpeed={windSpeed} intensity="heavy" color="rgba(147,197,253,0.75)" />
+                    <CloudPuffs windSpeed={windSpeed} dark />
+                    <LightningFlash />
+                </>
+            );
+        default:
+            return null;
+    }
+};
+
+// ─── Map Location Picker Modal ────────────────────────────────────────────────
+
+interface LatLng { latitude: number; longitude: number; }
+
+interface MapPickerProps {
+    visible: boolean;
+    initial: LatLng;
+    onConfirm: (coord: LatLng) => void;
+    onClose: () => void;
+}
+
+const MapPicker: React.FC<MapPickerProps> = ({ visible, initial, onConfirm, onClose }) => {
+    const [pin, setPin] = useState<LatLng>(initial);
+    const [region, setRegion] = useState<Region>({
+        latitude:       initial.latitude,
+        longitude:      initial.longitude,
+        latitudeDelta:  0.15,
+        longitudeDelta: 0.15,
+    });
+
+    // Reset pin when modal opens with new initial coords
+    useEffect(() => {
+        if (visible) {
+            setPin(initial);
+            setRegion({
+                latitude:       initial.latitude,
+                longitude:      initial.longitude,
+                latitudeDelta:  0.15,
+                longitudeDelta: 0.15,
+            });
+        }
+    }, [visible, initial.latitude, initial.longitude]);
+
+    const handleMapPress = (e: MapPressEvent) => {
+        setPin(e.nativeEvent.coordinate);
+    };
+
+    return (
+        <Modal
+            visible={visible}
+            animationType="slide"
+            onRequestClose={onClose}
+        >
+            <SafeAreaView style={mapStyles.container}>
+                {/* Header */}
+                <View style={mapStyles.header}>
+                    <TouchableOpacity onPress={onClose} style={mapStyles.headerBtn} activeOpacity={0.7}>
+                        <Ionicons name="close" size={22} color={COLORS.neutral[700]} />
+                    </TouchableOpacity>
+                    <Text style={mapStyles.headerTitle}>Select Location</Text>
+                    <TouchableOpacity
+                        onPress={() => onConfirm(pin)}
+                        style={mapStyles.confirmBtn}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={mapStyles.confirmText}>Confirm</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Hint */}
+                <View style={mapStyles.hint}>
+                    <Ionicons name="information-circle-outline" size={14} color={COLORS.neutral[500]} />
+                    <Text style={mapStyles.hintText}>Tap anywhere on the map to move the pin</Text>
+                </View>
+
+                {/* Map */}
+                <MapView
+                    style={mapStyles.map}
+                    region={region}
+                    onRegionChangeComplete={setRegion}
+                    onPress={handleMapPress}
+                    showsUserLocation
+                    showsMyLocationButton
+                    toolbarEnabled={false}
+                >
+                    <Marker
+                        coordinate={pin}
+                        draggable
+                        onDragEnd={e => setPin(e.nativeEvent.coordinate)}
+                        pinColor={COLORS.primary[600]}
+                    />
+                </MapView>
+
+                {/* Coordinates display */}
+                <View style={mapStyles.coordBar}>
+                    <Ionicons name="location" size={14} color={COLORS.primary[600]} />
+                    <Text style={mapStyles.coordText}>
+                        {pin.latitude.toFixed(4)}°, {pin.longitude.toFixed(4)}°
+                    </Text>
+                </View>
+            </SafeAreaView>
+        </Modal>
+    );
+};
+
+const mapStyles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.neutral[100],
+    },
+    headerBtn: {
+        padding: 4,
+    },
+    headerTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: COLORS.neutral[800],
+    },
+    confirmBtn: {
+        backgroundColor: COLORS.primary[600],
+        paddingHorizontal: 16,
+        paddingVertical: 7,
+        borderRadius: 20,
+    },
+    confirmText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 14,
+    },
+    hint: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: COLORS.neutral[50],
+    },
+    hintText: {
+        fontSize: 12,
+        color: COLORS.neutral[500],
+    },
+    map: {
+        flex: 1,
+    },
+    coordBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.neutral[100],
+        backgroundColor: '#fff',
+    },
+    coordText: {
+        fontSize: 13,
+        color: COLORS.neutral[600],
+        fontVariant: ['tabular-nums'],
+    },
+});
 
 // ─── Open-Meteo fetch ─────────────────────────────────────────────────────────
 
@@ -159,28 +748,44 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
     const [loading, setLoading] = useState(true);
     const [permissionDenied, setPermissionDenied] = useState(false);
     const [error, setError] = useState(false);
-    const [bgIndex, setBgIndex] = useState(0);
-    const bgFade = useRef(new Animated.Value(1)).current;
+    const [mapOpen, setMapOpen] = useState(false);
+    const [pickedCoord, setPickedCoord] = useState<LatLng | null>(null);
+
+    // Persists the user's map-picked coord across renders & re-calls of load()
+    const customCoordRef = useRef<LatLng | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
         setError(false);
         setPermissionDenied(false);
         try {
-            const { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                setPermissionDenied(true);
-                setLoading(false);
-                return;
+            let coords: LatLng;
+
+            if (customCoordRef.current) {
+                // User previously picked a location on the map — always honour it
+                coords = customCoordRef.current;
+            } else {
+                // Fall back to device GPS
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                    setPermissionDenied(true);
+                    setLoading(false);
+                    return;
+                }
+                const loc = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
+                });
+                coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+                setPickedCoord(coords);
             }
-            const loc = await Location.getCurrentPositionAsync({
-                accuracy: Location.Accuracy.Balanced,
-            });
-            const data = await fetchWeather(loc.coords.latitude, loc.coords.longitude);
-            // If reverse geocode gave a generic result, use the profile fallback
-            if (data.locationName === 'Your Location' && fallbackLocation) {
+
+            const data = await fetchWeather(coords.latitude, coords.longitude);
+
+            // Use profile fallback name only when GPS is used and geocoding failed
+            if (data.locationName === 'Your Location' && fallbackLocation && !customCoordRef.current) {
                 data.locationName = fallbackLocation;
             }
+
             setWeather(data);
         } catch {
             setError(true);
@@ -189,24 +794,19 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
         }
     }, [fallbackLocation]);
 
+    const handleMapConfirm = async (coord: LatLng) => {
+        setMapOpen(false);
+        // Store in ref BEFORE calling load() so it is always read correctly
+        customCoordRef.current = coord;
+        setPickedCoord(coord);
+        await load();
+    };
+
+    // Only run once on mount — not every time load() identity changes
     useEffect(() => {
         load();
-    }, [load]);
-
-    // Auto-cycle background images every 5 seconds with a fade transition
-    useEffect(() => {
-        if (!weather) return;
-        const images = getWeatherImageSet(weather.weatherCode);
-        setBgIndex(0);
-        bgFade.setValue(1);
-        const timer = setInterval(() => {
-            Animated.timing(bgFade, { toValue: 0.1, duration: 700, useNativeDriver: true }).start(() => {
-                setBgIndex(prev => (prev + 1) % images.length);
-                Animated.timing(bgFade, { toValue: 1, duration: 700, useNativeDriver: true }).start();
-            });
-        }, 5000);
-        return () => clearInterval(timer);
-    }, [weather]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // ── Loading ────────────────────────────────────────────────────────────────
     if (loading) {
@@ -249,31 +849,50 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
     // ── Success ────────────────────────────────────────────────────────────────
     const { condition, icon, color } = getWeatherInfo(weather.weatherCode);
     const advice = getFarmingAdvice(weather.weatherCode, role);
-    const bgImages = getWeatherImageSet(weather.weatherCode);
+    const bg = getWeatherBg(weather.weatherCode);
+    // Default map center: Sri Lanka if no coord yet
+    const mapCenter: LatLng = pickedCoord ?? { latitude: 7.8731, longitude: 80.7718 };
 
     return (
         <View style={styles.card}>
-            {/* Animated agriculture background image */}
-            <Animated.Image
-                source={{ uri: bgImages[bgIndex] }}
-                style={[StyleSheet.absoluteFillObject, { opacity: bgFade }]}
-                resizeMode="cover"
+            {/* Animated gradient background */}
+            <LinearGradient
+                colors={BG_GRADIENTS[bg]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
             />
 
-            {/* Dark overlay for text readability */}
-            <View style={styles.bgOverlay} pointerEvents="none" />
+            {/* Weather-specific animated overlay */}
+            <WeatherAnimation bg={bg} windSpeed={weather.windSpeed} />
+
+            {/* Dark overlay — lighter for clear/snowy, darker for storm */}
+            <View
+                style={[
+                    styles.bgOverlay,
+                    bg === 'clear'  && { backgroundColor: 'rgba(0,20,60,0.22)' },
+                    bg === 'snowy'  && { backgroundColor: 'rgba(10,30,60,0.25)' },
+                    bg === 'storm'  && { backgroundColor: 'rgba(0,0,0,0.50)' },
+                ]}
+                pointerEvents="none"
+            />
 
             {/* Card content */}
             <View style={styles.cardContent}>
                 {/* Left: info */}
                 <View style={styles.info}>
-                    {/* Location row */}
-                    <View style={styles.locationRow}>
+                    {/* Location row — tap to open map picker */}
+                    <TouchableOpacity
+                        style={styles.locationRow}
+                        onPress={() => setMapOpen(true)}
+                        activeOpacity={0.75}
+                    >
                         <Ionicons name="location" size={14} color="rgba(255,255,255,0.8)" />
                         <Text style={styles.locationText} numberOfLines={1}>
                             {weather.locationName}
                         </Text>
-                    </View>
+                        <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.6)" style={{ marginLeft: 2 }} />
+                    </TouchableOpacity>
 
                     {/* Temperature + condition */}
                     <View style={styles.mainRow}>
@@ -304,16 +923,19 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
                 {/* Right: weather icon + dot indicators + refresh */}
                 <View style={styles.iconColumn}>
                     <Ionicons name={icon} size={60} color={color} />
-                    <View style={styles.dotRow}>
-                        {bgImages.map((_, i) => (
-                            <View key={i} style={[styles.dot, i === bgIndex && styles.dotActive]} />
-                        ))}
-                    </View>
                     <TouchableOpacity onPress={load} style={styles.refreshBtn} activeOpacity={0.7}>
                         <Ionicons name="refresh-outline" size={14} color="rgba(255,255,255,0.7)" />
                     </TouchableOpacity>
                 </View>
             </View>
+
+            {/* Map picker modal */}
+            <MapPicker
+                visible={mapOpen}
+                initial={mapCenter}
+                onConfirm={handleMapConfirm}
+                onClose={() => setMapOpen(false)}
+            />
         </View>
     );
 };
@@ -436,21 +1058,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginLeft: 12,
         gap: 6,
-    },
-    dotRow: {
-        flexDirection: 'row',
-        gap: 4,
-        alignItems: 'center',
-    },
-    dot: {
-        width: 5,
-        height: 5,
-        borderRadius: 3,
-        backgroundColor: 'rgba(255,255,255,0.35)',
-    },
-    dotActive: {
-        backgroundColor: '#ffffff',
-        width: 10,
     },
     refreshBtn: {
         padding: 4,

@@ -173,22 +173,6 @@ const RoleSelectionScreen: React.FC = () => {
         navigation.navigate('ShopApp');
     };
 
-    // Quick Login Handlers
-    const quickLoginFarmer = async () => {
-        const success = await loginFarmer('farmer@goviconnect.lk', 'farmer123');
-        if (success) navigation.navigate('FarmerApp');
-    };
-
-    const quickLoginExpert = async () => {
-        const success = await loginExpert('expert@goviconnect.lk', 'expert123');
-        if (success) navigation.navigate('ExpertApp');
-    };
-
-    const quickLoginShop = async () => {
-        const success = await loginShop('shop@goviconnect.lk', 'shop123');
-        if (success) navigation.navigate('ShopApp');
-    };
-
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#FAFDFB" />
@@ -264,64 +248,6 @@ const RoleSelectionScreen: React.FC = () => {
                         onPress={handleShopSelect}
                         delay={600}
                     />
-                </View>
-
-                {/* Separator */}
-                <View style={styles.separator}>
-                    <View style={styles.separatorLine} />
-                    <Text style={styles.separatorText}>QUICK ACCESS</Text>
-                    <View style={styles.separatorLine} />
-                </View>
-
-                {/* Quick Login Buttons */}
-                <View style={styles.quickLoginContainer}>
-                    <TouchableOpacity
-                        style={styles.quickBtn}
-                        onPress={quickLoginFarmer}
-                        activeOpacity={0.8}
-                    >
-                        <LinearGradient
-                            colors={[COLORS.primary[400], COLORS.primary[600]]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.quickBtnGradient}
-                        >
-                            <Text style={styles.quickBtnEmoji}>🌾</Text>
-                            <Text style={styles.quickBtnText}>Farmer</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.quickBtn}
-                        onPress={quickLoginExpert}
-                        activeOpacity={0.8}
-                    >
-                        <LinearGradient
-                            colors={[COLORS.secondary[400], COLORS.secondary[600]]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.quickBtnGradient}
-                        >
-                            <Text style={styles.quickBtnEmoji}>🔬</Text>
-                            <Text style={styles.quickBtnText}>Expert</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.quickBtn}
-                        onPress={quickLoginShop}
-                        activeOpacity={0.8}
-                    >
-                        <LinearGradient
-                            colors={['#60a5fa', '#2563eb']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.quickBtnGradient}
-                        >
-                            <Text style={styles.quickBtnEmoji}>🛒</Text>
-                            <Text style={styles.quickBtnText}>Shop</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
                 </View>
 
                 {/* Footer */}
@@ -482,53 +408,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    // Separator
-    separator: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 16,
-    },
-    separatorLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: COLORS.neutral[200],
-    },
-    separatorText: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: COLORS.neutral[400],
-        letterSpacing: 1.5,
-        marginHorizontal: 14,
-    },
-    // Quick Login
-    quickLoginContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginBottom: 24,
-    },
-    quickBtn: {
-        flex: 1,
-        marginHorizontal: 5,
-        borderRadius: 12,
-        overflow: 'hidden',
-        ...SHADOW.sm,
-    },
-    quickBtnGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 8,
-    },
-    quickBtnEmoji: {
-        fontSize: 14,
-        marginRight: 5,
-    },
-    quickBtnText: {
-        color: '#ffffff',
-        fontWeight: '700',
-        fontSize: 12.5,
     },
     // Footer
     footer: {

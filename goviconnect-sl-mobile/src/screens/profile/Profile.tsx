@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header, AppNotify } from '../../components';
 import { COLORS } from '../../utils/constants';
 import { useApp } from '../../context';
+import { navigationRef } from '../../navigation/navigationRef';
 import cropsData from '../../data/crops.json';
 
 const Profile: React.FC = () => {
@@ -36,7 +37,9 @@ const Profile: React.FC = () => {
             t('profile.logout_confirm'),
             async () => {
                 await logout();
-                navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
+                if (navigationRef.isReady()) {
+                    navigationRef.reset({ index: 0, routes: [{ name: 'Splash' }] });
+                }
             },
             { confirmLabel: t('profile.logout'), destructive: true }
         );

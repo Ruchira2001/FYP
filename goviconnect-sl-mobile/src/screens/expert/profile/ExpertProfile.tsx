@@ -8,6 +8,7 @@ import { Header, PrimaryButton, AppNotify } from '../../../components';
 import { COLORS, SHADOW } from '../../../utils/constants';
 import { useExpert } from '../../../context/ExpertContext';
 import { useApp } from '../../../context';
+import { navigationRef } from '../../../navigation/navigationRef';
 
 const ExpertProfile: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -19,7 +20,12 @@ const ExpertProfile: React.FC = () => {
         AppNotify.confirm(
             'Logout',
             'Are you sure you want to logout?',
-            () => logout(),
+            async () => {
+                await logout();
+                if (navigationRef.isReady()) {
+                    navigationRef.reset({ index: 0, routes: [{ name: 'Splash' }] });
+                }
+            },
             { confirmLabel: 'Logout', destructive: true }
         );
     };

@@ -10,6 +10,7 @@ import { AppProvider } from './src/context';
 import { ExpertProvider } from './src/context/ExpertContext';
 import { ShopProvider } from './src/context/ShopContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import { navigationRef } from './src/navigation/navigationRef';
 import { AppNotifyHost } from './src/components';
 
 // Ignore specific warnings (optional)
@@ -45,7 +46,7 @@ export default function App() {
                                     backgroundColor="#ffffff"
                                     translucent={false}
                                 />
-                                <NavigationContainer>
+                                <NavigationContainer ref={navigationRef}>
                                     <AppNavigator />
                                     <AppNotifyHost />
                                 </NavigationContainer>
