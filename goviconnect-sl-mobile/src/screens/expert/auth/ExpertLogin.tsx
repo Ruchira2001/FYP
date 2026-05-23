@@ -113,11 +113,6 @@ const ExpertLogin: React.FC = () => {
                         </View>
                     </View>
 
-                    {/* Forgot Password */}
-                    <TouchableOpacity style={styles.forgotButton}>
-                        <Text style={styles.forgotText}>Forgot Password?</Text>
-                    </TouchableOpacity>
-
                     {/* Login Button */}
                     <TouchableOpacity
                         style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}

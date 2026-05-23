@@ -172,6 +172,22 @@ exports.loginExpert = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
+    // Reject logins for experts whose application has not been approved yet
+    if (expert.applicationStatus === 'pending') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your expert application is still pending admin approval. You will be notified once it is reviewed.',
+      });
+    }
+    if (expert.applicationStatus === 'rejected') {
+      return res.status(403).json({
+        success: false,
+        message: expert.rejectionReason
+          ? `Your expert application was rejected: ${expert.rejectionReason}`
+          : 'Your expert application has been rejected. Please contact support.',
+      });
+    }
+
     if (req.body.expoPushToken) {
       expert.expoPushToken = req.body.expoPushToken;
       await expert.save({ validateBeforeSave: false });

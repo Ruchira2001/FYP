@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Image, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -375,24 +375,30 @@ const CropDoctorResult: React.FC = () => {
 
                     {/* Action Buttons */}
                     <View style={styles.actionsContainer}>
-                        <View style={styles.actionButtonWrapper}>
-                            <PrimaryButton
-                                title="Nearby Agro Shops"
-                                onPress={handleNearbyShops}
-                                icon="map-outline"
-                                variant="outline"
-                                fullWidth
-                            />
-                        </View>
+                        {/* Nearby Agro Shops — card-style CTA */}
+                        <TouchableOpacity
+                            style={styles.shopButton}
+                            onPress={handleNearbyShops}
+                            activeOpacity={0.82}
+                        >
+                            <View style={styles.shopButtonIcon}>
+                                <Ionicons name="storefront" size={22} color="#fff" />
+                            </View>
+                            <View style={styles.shopButtonText}>
+                                <Text style={styles.shopButtonTitle}>Nearby Agro Shops</Text>
+                                <Text style={styles.shopButtonSub}>Find pesticides & treatments near you</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color={COLORS.warning} />
+                        </TouchableOpacity>
+
                         <View style={styles.spacer} />
-                        <View style={styles.actionButtonWrapper}>
-                            <PrimaryButton
-                                title={t('ai.ask_expert')}
-                                onPress={handleAskExpert}
-                                icon="chatbubble-outline"
-                                fullWidth
-                            />
-                        </View>
+
+                        <PrimaryButton
+                            title={t('ai.ask_expert')}
+                            onPress={handleAskExpert}
+                            icon="chatbubble-outline"
+                            fullWidth
+                        />
                     </View>
                 </View>
             </ScrollView>
@@ -560,15 +566,45 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     actionsContainer: {
-        flexDirection: 'row',
+        flexDirection: 'column',
         marginTop: 4,
         marginBottom: 8,
+        gap: 10,
     },
-    actionButtonWrapper: {
+    shopButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fffbeb',
+        borderWidth: 1.5,
+        borderColor: COLORS.warning,
+        borderRadius: 14,
+        paddingVertical: 14,
+        paddingHorizontal: 14,
+    },
+    shopButtonIcon: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: COLORS.warning,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    shopButtonText: {
         flex: 1,
     },
+    shopButtonTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#92400e',
+    },
+    shopButtonSub: {
+        fontSize: 12,
+        color: '#b45309',
+        marginTop: 2,
+    },
     spacer: {
-        width: 8,
+        height: 0,
     },
 });
 

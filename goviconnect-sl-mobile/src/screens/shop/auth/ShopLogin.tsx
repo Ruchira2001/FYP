@@ -118,11 +118,6 @@ const ShopLogin: React.FC = () => {
                         </View>
                     </View>
 
-                    {/* Forgot Password */}
-                    <TouchableOpacity style={styles.forgotButton}>
-                        <Text style={styles.forgotText}>Forgot Password?</Text>
-                    </TouchableOpacity>
-
                     {/* Login Button */}
                     <TouchableOpacity
                         style={[styles.loginButton, loading && styles.loginButtonDisabled]}

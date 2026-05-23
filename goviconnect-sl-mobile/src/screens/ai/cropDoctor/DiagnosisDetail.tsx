@@ -221,39 +221,41 @@ const DiagnosisDetail: React.FC = () => {
 
                     {/* Action Buttons */}
                     <View style={styles.actionsContainer}>
-                        <View style={styles.actionButtonWrapper}>
-                            <PrimaryButton
-                                title="Nearby Agro Shops"
-                                onPress={() =>
-                                    navigation.navigate('NearbyShopsMap', {
-                                        diseaseName: item.diseaseName,
-                                    })
-                                }
-                                icon="map-outline"
-                                variant="outline"
-                                fullWidth
-                            />
-                        </View>
-                        <View style={styles.verticalSpacer} />
-                        <View style={styles.actionButtonWrapper}>
-                            <PrimaryButton
-                                title={t('ai.ask_expert')}
-                                onPress={handleAskExpert}
-                                disabled={item.expertReviewRequested}
-                                icon="chatbubble-outline"
-                                fullWidth
-                            />
-                        </View>
-                        <View style={styles.verticalSpacer} />
-                        <View style={styles.actionButtonWrapper}>
-                            <PrimaryButton
-                                title={t('ai.crop_doctor')}
-                                onPress={() => navigation.navigate('CropDoctorUpload')}
-                                icon="camera-outline"
-                                variant="outline"
-                                fullWidth
-                            />
-                        </View>
+                        {/* Nearby Agro Shops — card-style CTA */}
+                        <TouchableOpacity
+                            style={styles.shopButton}
+                            onPress={() =>
+                                navigation.navigate('NearbyShopsMap', {
+                                    diseaseName: item.diseaseName,
+                                })
+                            }
+                            activeOpacity={0.82}
+                        >
+                            <View style={styles.shopButtonIcon}>
+                                <Ionicons name="storefront" size={22} color="#fff" />
+                            </View>
+                            <View style={styles.shopButtonText}>
+                                <Text style={styles.shopButtonTitle}>Nearby Agro Shops</Text>
+                                <Text style={styles.shopButtonSub}>Find pesticides & treatments near you</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color={COLORS.warning} />
+                        </TouchableOpacity>
+
+                        <PrimaryButton
+                            title={t('ai.ask_expert')}
+                            onPress={handleAskExpert}
+                            disabled={item.expertReviewRequested}
+                            icon="chatbubble-outline"
+                            fullWidth
+                        />
+
+                        <PrimaryButton
+                            title={t('ai.crop_doctor')}
+                            onPress={() => navigation.navigate('CropDoctorUpload')}
+                            icon="camera-outline"
+                            variant="outline"
+                            fullWidth
+                        />
                     </View>
                 </View>
             </ScrollView>
@@ -467,12 +469,39 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         marginTop: 4,
         marginBottom: 24,
+        gap: 10,
     },
-    actionButtonWrapper: {
-        width: '100%',
+    shopButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fffbeb',
+        borderWidth: 1.5,
+        borderColor: COLORS.warning,
+        borderRadius: 14,
+        paddingVertical: 14,
+        paddingHorizontal: 14,
     },
-    verticalSpacer: {
-        height: 10,
+    shopButtonIcon: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: COLORS.warning,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    shopButtonText: {
+        flex: 1,
+    },
+    shopButtonTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#92400e',
+    },
+    shopButtonSub: {
+        fontSize: 12,
+        color: '#b45309',
+        marginTop: 2,
     },
 });
 

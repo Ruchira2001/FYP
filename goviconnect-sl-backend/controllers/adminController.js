@@ -498,6 +498,16 @@ exports.approveExpert = async (req, res) => {
     await expert.save({ validateBeforeSave: false });
 
     if (expert.farmerUserId) {
+      // When a farmer applied as expert, the Expert record was created with a random
+      // temporary password that the user never knew. Copy their real password hash now
+      // so they can log in with the same credentials they use as a farmer.
+      // We use findByIdAndUpdate (not expert.save) to bypass the pre-save bcrypt hook
+      // and avoid double-hashing the already-hashed password.
+      const linkedUser = await User.findById(expert.farmerUserId).select('+password');
+      if (linkedUser?.password) {
+        await Expert.findByIdAndUpdate(expert._id, { password: linkedUser.password });
+      }
+
       await User.findByIdAndUpdate(expert.farmerUserId, {
         expertId: expert._id,
         expertApplicationId: expert._id,

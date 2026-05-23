@@ -108,14 +108,6 @@ const Login: React.FC = () => {
                         </View>
                     </View>
 
-                    {/* Forgot Password */}
-                    <TouchableOpacity
-                        style={styles.forgotButton}
-                        onPress={() => navigation.navigate('ForgotPassword')}
-                    >
-                        <Text style={styles.forgotText}>Forgot Password?</Text>
-                    </TouchableOpacity>
-
                     {/* Login Button */}
                     <TouchableOpacity
                         style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
