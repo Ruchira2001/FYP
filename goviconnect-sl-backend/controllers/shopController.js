@@ -130,7 +130,7 @@ exports.getNearbyShops = async (req, res, next) => {
   try {
     const userLat = parseFloat(req.query.lat);
     const userLon = parseFloat(req.query.lng);
-    const radiusKm = Math.min(parseFloat(req.query.radiusKm) || 40, 200);
+    const radiusKm = Math.min(parseFloat(req.query.radiusKm) || 40, 600);
     const search = (req.query.search || '').trim().toLowerCase();
 
     if (Number.isNaN(userLat) || Number.isNaN(userLon)) {

@@ -68,7 +68,7 @@ const NearbyShopsMap: React.FC = () => {
             const res = await shopAPI.getNearbyShops({
                 lat,
                 lng,
-                radiusKm: 60,
+                radiusKm: 500,
             });
 
             const data = Array.isArray(res.data?.data) ? res.data.data : [];
@@ -195,7 +195,7 @@ const NearbyShopsMap: React.FC = () => {
 
                     <View style={styles.bottomCard}>
                         <Text style={styles.bottomTitle}>{shops.length} shop(s) found near you</Text>
-                        {shops.slice(0, 3).map((shop) => (
+                        {shops.map((shop) => (
                             <View key={shop.id} style={styles.shopRow}>
                                 <View style={styles.shopInfo}>
                                     <Text style={styles.shopName}>{shop.name}</Text>

@@ -67,7 +67,7 @@ const NearbyShopsMap: React.FC = () => {
             const lng = current.coords.longitude;
             setUserLocation({ latitude: lat, longitude: lng });
 
-            const res = await shopAPI.getNearbyShops({ lat, lng, radiusKm: 60 });
+            const res = await shopAPI.getNearbyShops({ lat, lng, radiusKm: 500 });
             const data = Array.isArray(res.data?.data) ? res.data.data : [];
             setShops(data);
         } catch (e) {
@@ -118,7 +118,7 @@ const NearbyShopsMap: React.FC = () => {
                 <View style={styles.centeredState}>
                     <Ionicons name="storefront-outline" size={48} color={COLORS.neutral[300]} />
                     <Text style={styles.stateTitle}>No shops found</Text>
-                    <Text style={styles.stateText}>No agro shops found within 60 km of your location.</Text>
+                    <Text style={styles.stateText}>No agro shops found near your location.</Text>
                 </View>
             ) : (
                 <ScrollView contentContainerStyle={styles.listContent}>
