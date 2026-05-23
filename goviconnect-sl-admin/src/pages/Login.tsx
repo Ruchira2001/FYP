@@ -10,8 +10,6 @@ import {
   ShieldCheck,
   Loader2,
   AlertCircle,
-  Sprout,
-  TreePine,
 } from 'lucide-react';
 
 export default function Login() {
@@ -47,20 +45,15 @@ export default function Login() {
   return (
     <div className="min-h-screen flex">
       {/* ─── Left branding panel ─── */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-green-900 via-green-800 to-emerald-700 flex-col items-center justify-center p-12 text-white">
-        {/* Animated floating shapes */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="login-float-1 absolute top-[10%] left-[15%] w-20 h-20 rounded-full bg-white/5 backdrop-blur-sm" />
-          <div className="login-float-2 absolute top-[60%] left-[10%] w-32 h-32 rounded-full bg-white/5 backdrop-blur-sm" />
-          <div className="login-float-3 absolute top-[25%] right-[10%] w-24 h-24 rounded-full bg-white/5 backdrop-blur-sm" />
-          <div className="login-float-1 absolute bottom-[15%] right-[20%] w-16 h-16 rounded-full bg-white/5 backdrop-blur-sm" />
-          <div className="login-float-2 absolute top-[45%] left-[45%] w-12 h-12 rounded-full bg-white/5 backdrop-blur-sm" />
-
-          {/* Decorative leaf icons */}
-          <Leaf className="login-float-3 absolute top-[18%] right-[25%] w-8 h-8 text-white/10" />
-          <Sprout className="login-float-1 absolute bottom-[25%] left-[20%] w-10 h-10 text-white/10" />
-          <TreePine className="login-float-2 absolute top-[70%] right-[15%] w-9 h-9 text-white/10" />
-        </div>
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden flex-col items-center justify-center p-12 text-white">
+        {/* Background photo */}
+        <img
+          src="https://images.unsplash.com/photo-1560493676-04071c5f467b?auto=format&fit=crop&w=1400&q=85"
+          alt="Sri Lankan paddy fields"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Gradient overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-green-800/70 to-emerald-700/60" />
 
         {/* Main branding content */}
         <div className="relative z-10 text-center max-w-md">
