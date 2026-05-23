@@ -9,7 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Header, Chip, CropCard, EmptyState, AppNotify } from '../../components';
-import { COLORS, CROP_CATEGORIES } from '../../utils/constants';
+import { COLORS, GUIDE_CATEGORIES } from '../../utils/constants';
 import { learnhubAPI, feedAPI } from '../../services/api';
 import { getSavedLearnHub } from '../../services/storage';
 import cropsData from '../../data/crops.json';
@@ -354,7 +354,7 @@ const LearnHub: React.FC = () => {
                     {/* Category Chips */}
                     <View style={styles.categoriesContainer}>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContent}>
-                            {CROP_CATEGORIES.map((category) => (
+                            {GUIDE_CATEGORIES.map((category) => (
                                 <Chip
                                     key={category.id}
                                     label={i18n.language === 'si' ? category.nameSi : category.nameEn}

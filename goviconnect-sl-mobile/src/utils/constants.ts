@@ -106,6 +106,19 @@ export const CROP_CATEGORIES = [
     { id: 'spices', nameEn: 'Spices', nameSi: 'කුළුබඩු' },
 ];
 
+// Categories that match AddCropGuide form — used for filtering guides in LearnHub
+export const GUIDE_CATEGORIES = [
+    { id: 'all', nameEn: 'All', nameSi: 'සියල්ල' },
+    { id: 'Vegetable', nameEn: 'Vegetable', nameSi: 'එළවළු' },
+    { id: 'Fruit', nameEn: 'Fruit', nameSi: 'පළතුරු' },
+    { id: 'Grain', nameEn: 'Grain', nameSi: 'ධාන්‍ය' },
+    { id: 'Spice', nameEn: 'Spice', nameSi: 'කුළුබඩු' },
+    { id: 'Legume', nameEn: 'Legume', nameSi: 'රනිල' },
+    { id: 'Herb', nameEn: 'Herb', nameSi: 'ඖෂධ පැළෑටි' },
+    { id: 'Root Crop', nameEn: 'Root Crop', nameSi: 'මූල ශාක' },
+    { id: 'Other', nameEn: 'Other', nameSi: 'අනෙකුත්' },
+];
+
 export const LAND_UNITS = [
     { id: 'acres', nameEn: 'Acres', nameSi: 'අක්කර' },
     { id: 'hectares', nameEn: 'Hectares', nameSi: 'හෙක්ටයාර' },
