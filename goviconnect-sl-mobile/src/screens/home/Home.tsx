@@ -24,6 +24,7 @@ const Home: React.FC = () => {
     const [chatUnreadCount, setChatUnreadCount] = useState(0);
     const [feedItems, setFeedItems] = useState<any[]>([]);
     const [guideCards, setGuideCards] = useState<any[]>([]);
+    const [tipCards, setTipCards] = useState<any[]>([]);
 
     useEffect(() => {
         loadData();
@@ -69,11 +70,12 @@ const Home: React.FC = () => {
 
     const loadData = async () => {
         try {
-            const [feedRes, unreadRes, chatsRes, guidesRes] = await Promise.all([
+            const [feedRes, unreadRes, chatsRes, guidesRes, tipsRes] = await Promise.all([
                 feedAPI.getFeed().catch(() => ({ data: { data: { tips: [], crops: [] } } })),
                 notificationAPI.getUnreadCount().catch(() => ({ data: { count: 0 } })),
                 chatAPI.getChats().catch(() => ({ data: { data: [] } })),
-                learnhubAPI.getCommunityGuides({ limit: 6 }).catch(() => ({ data: { data: [] } })),
+                learnhubAPI.getCommunityGuides({ limit: 4 }).catch(() => ({ data: { data: [] } })),
+                feedAPI.getTips().catch(() => ({ data: { data: [] } })),
             ]);
             const feed = feedRes.data.data;
             const feedArray = Array.isArray(feed) ? feed : (feed?.tips || feed?.feedItems || []);
@@ -84,6 +86,8 @@ const Home: React.FC = () => {
             setChatUnreadCount(chats.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0));
             const guides = Array.isArray(guidesRes.data.data) ? guidesRes.data.data : [];
             setGuideCards(guides);
+            const tips = Array.isArray(tipsRes.data.data) ? tipsRes.data.data : [];
+            setTipCards(tips.slice(0, 5));
         } catch (e) {
             console.error('Home loadData error:', e);
         }
@@ -250,6 +254,54 @@ const Home: React.FC = () => {
                         })}
                     </ScrollView>
                 </View>
+
+                {/* Farming Tips */}
+                {tipCards.length > 0 && (
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionTitle}>
+                            {i18n.language === 'si' ? 'ගොවිතැන් ඉඟි' : 'Farming Tips'}
+                        </Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.tipsScrollContent}
+                        >
+                            {tipCards.map((tip: any) => {
+                                const tipId = tip._id || tip.tipId || tip.id;
+                                const title = i18n.language === 'si' ? (tip.titleSi || tip.title) : tip.title;
+                                const content = i18n.language === 'si' ? (tip.contentSi || tip.content) : tip.content;
+                                const tipIcon = tip.icon || '💡';
+                                const categoryColors: Record<string, { bg: string; text: string }> = {
+                                    watering:    { bg: '#dbeafe', text: '#1d4ed8' },
+                                    pest_control:{ bg: '#fee2e2', text: '#dc2626' },
+                                    fertilizing: { bg: '#fef9c3', text: '#a16207' },
+                                    seasonal:    { bg: '#ffedd5', text: '#c2410c' },
+                                    market:      { bg: '#f3e8ff', text: '#7e22ce' },
+                                    technique:   { bg: '#ccfbf1', text: '#0f766e' },
+                                    planting:    { bg: '#dcfce7', text: '#15803d' },
+                                    general:     { bg: COLORS.primary[50], text: COLORS.primary[700] },
+                                };
+                                const cc = categoryColors[tip.category] || categoryColors.general;
+                                return (
+                                    <View key={tipId} style={styles.tipCard}>
+                                        <View style={[styles.tipIconBox, { backgroundColor: cc.bg }]}>
+                                            <Text style={styles.tipIconEmoji}>{tipIcon}</Text>
+                                        </View>
+                                        {tip.category ? (
+                                            <View style={[styles.tipCategoryBadge, { backgroundColor: cc.bg }]}>
+                                                <Text style={[styles.tipCategoryText, { color: cc.text }]}>
+                                                    {tip.category.replace('_', ' ')}
+                                                </Text>
+                                            </View>
+                                        ) : null}
+                                        <Text style={styles.tipTitle} numberOfLines={2}>{title}</Text>
+                                        <Text style={styles.tipContent} numberOfLines={3}>{content}</Text>
+                                    </View>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                )}
 
                 {/* LearnHub Guide Cards */}
                 <View style={styles.sectionContainer}>
@@ -520,6 +572,60 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         color: COLORS.primary[700],
+    },
+
+    /* Farming Tip cards */
+    tipsScrollContent: {
+        paddingRight: 16,
+    },
+    tipCard: {
+        width: 170,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        marginRight: 12,
+        padding: 14,
+        borderWidth: 1,
+        borderColor: COLORS.neutral[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    tipIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
+    tipIconEmoji: {
+        fontSize: 20,
+    },
+    tipCategoryBadge: {
+        alignSelf: 'flex-start',
+        borderRadius: 6,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        marginBottom: 6,
+    },
+    tipCategoryText: {
+        fontSize: 10,
+        fontWeight: '600',
+        textTransform: 'capitalize',
+    },
+    tipTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: COLORS.neutral[800],
+        marginBottom: 6,
+        lineHeight: 18,
+    },
+    tipContent: {
+        fontSize: 11,
+        color: COLORS.neutral[500],
+        lineHeight: 16,
     },
 });
 

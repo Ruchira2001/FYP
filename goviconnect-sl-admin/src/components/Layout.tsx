@@ -13,6 +13,7 @@ import {
   CalendarDays,
   ScanSearch,
   TrendingUp,
+  Lightbulb,
   LogOut,
   type LucideIcon,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Meetings', path: '/meetings', icon: CalendarDays },
   { label: 'AI Crop Doctor', path: '/ai-crop-doctor', icon: ScanSearch },
   { label: 'Price Predictions', path: '/price-predictions', icon: TrendingUp },
+  { label: 'Tips', path: '/tips', icon: Lightbulb },
   { label: 'Notifications', path: '/notifications', icon: Bell },
 ];
 
