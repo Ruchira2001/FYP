@@ -3,6 +3,7 @@ import {
     ActivityIndicator,
     Linking,
     Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -195,30 +196,36 @@ const NearbyShopsMap: React.FC = () => {
 
                     <View style={styles.bottomCard}>
                         <Text style={styles.bottomTitle}>{shops.length} shop(s) found near you</Text>
-                        {shops.map((shop) => (
-                            <View key={shop.id} style={styles.shopRow}>
-                                <View style={styles.shopInfo}>
-                                    <Text style={styles.shopName}>{shop.name}</Text>
-                                    <Text style={styles.shopMeta}>{shop.distanceKm} km • {shop.totalProducts} products</Text>
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            bounces={false}
+                            keyboardShouldPersistTaps="handled"
+                        >
+                            {shops.map((shop) => (
+                                <View key={shop.id} style={styles.shopRow}>
+                                    <View style={styles.shopInfo}>
+                                        <Text style={styles.shopName}>{shop.name}</Text>
+                                        <Text style={styles.shopMeta}>{shop.distanceKm} km • {shop.totalProducts} products</Text>
+                                    </View>
+                                    <TouchableOpacity style={styles.mapButton} onPress={() => openExternalMap(shop)}>
+                                        <Ionicons name="navigate-outline" size={16} color={COLORS.primary[700]} />
+                                        <Text style={styles.mapButtonText}>Map</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.detailButton}
+                                        onPress={() =>
+                                            navigation.navigate('NearbyShopDetail', {
+                                                shopId: shop.id,
+                                                userLocation,
+                                                diseaseName: params.diseaseName,
+                                            })
+                                        }
+                                    >
+                                        <Text style={styles.detailButtonText}>Details</Text>
+                                    </TouchableOpacity>
                                 </View>
-                                <TouchableOpacity style={styles.mapButton} onPress={() => openExternalMap(shop)}>
-                                    <Ionicons name="navigate-outline" size={16} color={COLORS.primary[700]} />
-                                    <Text style={styles.mapButtonText}>Map</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.detailButton}
-                                    onPress={() =>
-                                        navigation.navigate('NearbyShopDetail', {
-                                            shopId: shop.id,
-                                            userLocation,
-                                            diseaseName: params.diseaseName,
-                                        })
-                                    }
-                                >
-                                    <Text style={styles.detailButtonText}>Details</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ))}
+                            ))}
+                        </ScrollView>
                     </View>
                 </>
             )}
@@ -288,8 +295,10 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 16,
         borderWidth: 1,
         borderColor: COLORS.neutral[100],
-        padding: 14,
-        maxHeight: 220,
+        paddingHorizontal: 14,
+        paddingTop: 14,
+        paddingBottom: 0,
+        maxHeight: 260,
     },
     bottomTitle: {
         fontSize: 15,
